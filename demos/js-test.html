@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Actor System Playground</title>
+  <style>
+    body { font-family: sans-serif; display: flex; gap: 20px; }
+    textarea { width: 400px; height: 300px; font-family: monospace; }
+    .panel { flex: 1; }
+    .actor { border: 1px solid #ccc; padding: 8px; margin: 6px 0; }
+    input { width: 100%; margin: 4px 0; }
+  </style>
+</head>
+<body>
+
+<div class="panel">
+  <h3>Actor Code</h3>
+  <textarea id="code">
+class Actor {
+  constructor(id) {
+    this.id = id
+    this.energy = 100
+  }
+
+  receive(msg) {
+    if (msg.type === "PING") {
+      this.energy -= 10
+      console.log(
+        "Actor", this.id,
+        "received PING from", msg.from
+      )
+    }
+  }
+}
+
+return Actor
+  </textarea>
+  <br />
+  <button onclick="compile()">Compile</button>
+  <button onclick="spawn()">Spawn Actor</button>
+</div>
+
+<div class="panel">
+  <h3>Send Message</h3>
+  <input id="to" placeholder="To actor ID" />
+  <input id="from" placeholder="From actor ID" />
+  <input id="type" placeholder="Message type" />
+  <button onclick="sendMessage()">Send</button>
+
+  <h3>Actors</h3>
+  <div id="actors"></div>
+</div>
+
+<script>
+let ActorClass = null
+let actors = new Map()
+let nextId = 1
+
+function compile() {
+  const code = document.getElementById("code").value
+  try {
+    const result = new Function(code)()
+
+    // Enforce contract
+    if (typeof result !== "function") {
+      throw new Error("Code must return a class")
+    }
+    if (!result.prototype.receive) {
+      throw new Error("Actor must implement receive(msg)")
+    }
+
+    ActorClass = result
+    alert("Compiled successfully!")
+  } catch (e) {
+    alert("Compile error: " + e.message)
+  }
+}
+
+function spawn() {
+  if (!ActorClass) {
+    alert("Compile first!")
+    return
+  }
+
+  const id = nextId++
+  const actor = new ActorClass(id)
+
+  // Enforce runtime shape
+  if (typeof actor.receive !== "function") {
+    alert("Actor instance has no receive method")
+    return
+  }
+
+  actors.set(id, actor)
+  render()
+}
+
+function sendMessage() {
+  const to = Number(document.getElementById("to").value)
+  const from = Number(document.getElementById("from").value)
+  const type = document.getElementById("type").value
+
+  if (!actors.has(to)) {
+    alert("Target actor does not exist")
+    return
+  }
+
+  const msg = { type, from }
+
+  const actor = actors.get(to)
+  actor.receive(msg)
+
+  render()
+}
+
+function render() {
+  const container = document.getElementById("actors")
+  container.innerHTML = ""
+
+  for (const [id, actor] of actors.entries()) {
+    const div = document.createElement("div")
+    div.className = "actor"
+
+    const fields = Object.keys(actor)
+      .map(k => `${k}: ${actor[k]}`)
+      .join("<br/>")
+
+    div.innerHTML = `
+      <strong>Actor ${id}</strong><br/>
+      Class: ${actor.constructor.name}<br/>
+      ${fields}
+    `
+    container.appendChild(div)
+  }
+}
+</script>
+
+</body>
+</html>
