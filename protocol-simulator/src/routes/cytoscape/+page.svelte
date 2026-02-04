@@ -13,9 +13,11 @@
     function compile() {
         const result = parseProtocolCode(sourceCode);
 
+
         //note: svelte automatically updates them in the Graph.svelte!
         actors = result.actors;
         messages = result.messages;
+        //alert(actors.pop().label);
 
     }
 </script>

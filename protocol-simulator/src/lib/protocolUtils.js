@@ -5,12 +5,13 @@ export function parseProtocolCode(codeString) {
 
     try {
         // Sandbox: run user code
-        const ActorClass = new Function(codeString)();
+       // const ActorClass = new Function(codeString)();
 
 
         actors.push({ id: 'A', label: 'Actor A' });
         actors.push({ id: 'B', label: 'Actor B' });
         actors.push({ id: 'C', label: 'Actor C' });
+        actors.push({ id: 'D', label: 'Actor D' });
 
 
         messages.push({ source: 'A', target: 'B', label: 'msg1' });

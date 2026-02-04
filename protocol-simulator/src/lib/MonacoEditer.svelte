@@ -31,6 +31,7 @@
 
         editorInstance.onDidChangeModelContent(() => {
             sourceCode = editorInstance.getValue();
+            console.log("Cytoscape sourceCode changed: \n" + sourceCode);
         });
     });
 </script>

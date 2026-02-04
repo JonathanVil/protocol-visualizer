@@ -18,6 +18,7 @@
         cyInstance = cytoscape({
             container: cyContainer,
             elements: [
+                {data : {id: 'a'}},
                 ...nodes.map(n => ({ data: { id: n.id, label: n.label } })),
                 ...edges.map(e => ({ data: { source: e.source, target: e.target, label: e.label } }))
             ],
@@ -30,7 +31,7 @@
                         color: '#fff',
                         'text-valign': 'center',
                         'text-halign': 'center',
-                        'font-size': '12px'
+                        'font-size': '8px'
                     }
                 },
                 {
@@ -52,23 +53,24 @@
         });
     });
 
-
-    /**
-     * @param {{ id: string, label: string }[]} newNodes
-     * @param {{ source: string, target: string, label: string }[]} newEdges
-     */
-    export function updateGraph(newNodes, newEdges) {
-        if (!cyInstance) return;
-
+    //use svelte reactive statement
+    $: if (cyInstance) { //if the instance of the graph is created
         cyInstance.elements().remove();
 
-        cyInstance.add([
-            ...newNodes.map(n => ({ data: { id: n.id, label: n.label } })),
-            ...newEdges.map(e => ({ data: { source: e.source, target: e.target, label: e.label } }))
+        cyInstance.add([ //convert out data to cytoscape elements
+            ...nodes.map(n => ({ data: { id: n.id, label: n.label } })), //goes through evert node and converts them
         ]);
 
+        cyInstance.add([
+            ...edges.map(e => ({ data: { source: e.source, target: e.target, label: e.label } })),
+        ])
+
+        //run it again
         cyInstance.layout({ name: 'cose', animate: true }).run();
+
     }
+
+
 </script>
 
 <div bind:this={cyContainer} class="w-full h-96 border border-gray-300 rounded-md"></div>
