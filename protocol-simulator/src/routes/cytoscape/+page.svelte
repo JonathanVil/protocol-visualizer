@@ -8,11 +8,20 @@
     onMount(() => {
         const cy = cytoscape({
             container: cyContainer,
+
+            // ALL ACTORS GOES HERE
             elements: [
                 { data: { id: "A", label: "Actor A" } },
                 { data: { id: "B", label: "Actor B" } },
-                { data: { source: "A", target: "B", label: "msg1" } },
+                { data: { id: "C", label: "Actor C" } },
+                { data: { id: "D", label: "Actor D" } },
+
+                { data: { source: "A", target: "B", label: "" } },
+                { data: { source: "A", target: "C", label: "" } },
+                { data: { source: "A", target: "D", label: "" } },
             ],
+
+            // STYLING
             style: [
                 {
                     selector: "node",
@@ -22,12 +31,16 @@
                         color: "#fff",
                         "text-valign": "center",
                         "text-halign": "center",
+                        /** @type {*} */
+                        shape: "circle",
+                        "font-size": "5px",
+
                     },
                 },
                 {
                     selector: "edge",
                     style: {
-                        width: 2,
+                        width: 1,
                         "line-color": "#9ca3af",
                         "target-arrow-color": "#9ca3af",
                         "target-arrow-shape": "triangle",
@@ -38,11 +51,11 @@
                     },
                 },
             ],
-            layout: { name: "cose", animate: true },
+            layout: { name: "circle", animate: true },
         });
     });
 </script>
 
 <h1 class="text-4xl font-bold mb-4">Cytoscape Example</h1>
 
-<div bind:this={cyContainer} class="w-full h-96 border border-gray-300 rounded-md"></div>
+<div bind:this={cyContainer} class="w-full h-200 border border-gray-300 rounded-md"></div>
