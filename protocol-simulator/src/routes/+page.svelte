@@ -1,4 +1,4 @@
-<h1>Protocol Simulator</h1>
+<h1 class="text-5xl">Protocol Simulator</h1>
 
 <textarea
         bind:value={sourceCode}
@@ -6,8 +6,9 @@
 ></textarea>
 
 
-<div class="flex-1">
-    <h3>Actor code</h3>
+<div >
+    <h3 class="font-bold text-2xl">Actor code</h3>
+    <p class="text-xl">awd</p>
 </div>
 
 
