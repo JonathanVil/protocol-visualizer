@@ -57,3 +57,14 @@ To publish your library to [npm](https://www.npmjs.com):
 ```sh
 npm publish
 ```
+
+# Installing monaco
+```sh
+npm install monaco-editor
+```
+
+# Installing Cytoscape
+```sh
+npm install cytoscape
+```
+
