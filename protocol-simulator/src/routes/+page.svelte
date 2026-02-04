@@ -31,7 +31,7 @@
 
 <script lang="js">
     import {onMount} from "svelte";
-    import "./layout.css"; // ensure this path matches your project structure
+    import "./layout.css";
 
     let sourceCode = "";
     let ActorClass = null;
