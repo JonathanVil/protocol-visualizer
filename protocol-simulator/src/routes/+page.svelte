@@ -18,13 +18,7 @@
         </div>
 
         <!--Monaco Editor-->
-        <div bind:this={editorDiv} class="w-full h-80 border border-gray-300 rounded-md"></div>
-
-        <textarea
-                class="w-full border border-gray-300 rounded-md text-sm "
-                bind:value={sourceCode}
-                placeholder="Write your protocol here..."
-        ></textarea>
+        <div bind:this={editorDiv} class="w-full h-120 border border-gray-300 rounded-md"></div>
 
         <button on:click={compile}>
             Compile
@@ -42,10 +36,11 @@
     let sourceCode = "";
     let ActorClass = null;
 
+
+    /*!!!                MONACO EDITOR                  !!!*/
     //JSDOC comment for type
     /** @type {HTMLElement} */
     let editorDiv;
-
 
     /** @type {import('monaco-editor').editor.IStandaloneCodeEditor} */
     let editorInstance;
@@ -68,6 +63,7 @@
     });
 
 
+    /*!!!             COMPILING ACTOR                   !!!*/
     function compile() {
         const code = sourceCode;
         try {
