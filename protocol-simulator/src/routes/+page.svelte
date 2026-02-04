@@ -1,20 +1,35 @@
 <h1 class="text-5xl">Protocol Simulator</h1>
 
-<textarea
-        bind:value={sourceCode}
-        placeholder="Write your protocol here..."
-></textarea>
+
+<div class="flex flex-col gap-10">
+    <div>
+        <div>
+            <h3 class="font-bold text-1xl">Output</h3>
+        </div>
+        <div class="container-fluid border-2 h-100 border-gray-500 ">
+
+        </div>
+    </div>
 
 
-<div >
-    <h3 class="font-bold text-2xl">Actor code</h3>
-    <p class="text-xl">awd</p>
+    <div>
+        <div >
+            <h3 class="font-bold text-1xl">Actor code</h3>
+        </div>
+        <textarea
+                class="w-full border border-gray-300 rounded-md text-sm "
+                bind:value={sourceCode}
+                placeholder="Write your protocol here..."
+        ></textarea>
+
+        <button on:click={compile}>
+            Compile
+        </button>
+    </div>
 </div>
 
 
-<button on:click={compile}>
-    Compile
-</button>
+
 
 
 
