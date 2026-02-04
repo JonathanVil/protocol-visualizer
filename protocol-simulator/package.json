@@ -55,6 +55,7 @@
 		"svelte"
 	],
 	"dependencies": {
+		"cytoscape": "^3.33.1",
 		"monaco-editor": "^0.55.1"
 	}
 }

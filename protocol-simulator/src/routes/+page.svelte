@@ -68,6 +68,7 @@
         const code = sourceCode;
         try {
             const result = new Function(code)();
+            alert(code)
 
             // Enforce contract
             if (typeof result !== "function") {
