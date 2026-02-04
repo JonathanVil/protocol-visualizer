@@ -22,3 +22,15 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Created by https://www.toptal.com/developers/gitignore/api/svelte
+# Edit at https://www.toptal.com/developers/gitignore?templates=svelte
+
+### Svelte ###
+# gitignore template for the SvelteKit, frontend web component framework
+# website: https://kit.svelte.dev/
+
+.svelte-kit/
+package
+
+# End of https://www.toptal.com/developers/gitignore/api/svelte
