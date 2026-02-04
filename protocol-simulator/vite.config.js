@@ -7,9 +7,6 @@ export default defineConfig({
     plugins: [
         sveltekit(),
         tailwindcss(),
-        MonacoEditorPlugin({
-            languages: ['javascript', 'typescript', 'json', 'html', 'css'],
-        }),
     ],
     css: {
         // Make sure there is no 'postcss' section configured for Tailwind integration here.
