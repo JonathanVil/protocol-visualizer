@@ -1,11 +1,15 @@
 import { defineConfig } from 'vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite'; // Import the Vite plugin
+import MonacoEditorPlugin from 'vite-plugin-monaco-editor';
 
 export default defineConfig({
     plugins: [
         sveltekit(),
-        tailwindcss(), // Add the Tailwind CSS Vite plugin here!
+        tailwindcss(),
+        MonacoEditorPlugin({
+            languages: ['javascript', 'typescript', 'json', 'html', 'css'],
+        }),
     ],
     css: {
         // Make sure there is no 'postcss' section configured for Tailwind integration here.
