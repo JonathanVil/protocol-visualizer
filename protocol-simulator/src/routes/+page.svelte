@@ -3,16 +3,24 @@
     import  Graph  from "$lib/Graph.svelte";
     import { parseProtocolCode } from '$lib/protocolUtils.js';
 
+    /**
+     * @typedef {new (id: number) => { id: string }} ActorConstructor
+     */
+
     let sourceCode = "";
 
-    /** @type {{ id: string, label: string }[]} */
+    /** @type {{ id: string}[]} */
     let actors = [];
 
-    function compile() {
-        const result = parseProtocolCode(sourceCode);
+    let id = 0;
+    function spawnActor() {
+        /** @type {ActorConstructor} */
+        const actorClass = parseProtocolCode(sourceCode);
 
         //note: svelte automatically updates them in the Graph.svelte!
-        actors = result.actors;
+        let actor = new actorClass(id++);
+        actors = [...actors, actor];
+        console.log(actors);
 
     }
 </script>
@@ -23,8 +31,8 @@
 <MonacoEditer bind:sourceCode={sourceCode} />
 
 <button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        on:click={compile}>
-    Compile
+        on:click={spawnActor}>
+    Spawn actor
 </button>
 
 <Graph nodes={actors}/>

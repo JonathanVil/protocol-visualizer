@@ -2,7 +2,7 @@
     import { onMount } from 'svelte';
     import cytoscape from 'cytoscape';
 
-    /** @type {{ id: string, label: string }[]} */
+    /** @type {{ id: string}[]} */
     export let nodes = [];
 
     //This code does not do anything as of right now
@@ -20,7 +20,7 @@
             container: cyContainer,
             elements: [
                 {data : {id: 'a'}},
-                ...nodes.map(n => ({ data: { id: n.id, label: n.label } })),
+                ...nodes.map(n => ({ data: { id: n.id} })),
                 ...edges.map(e => ({ data: { source: e.source, target: e.target, label: e.label } }))
             ],
             style: [
@@ -28,7 +28,7 @@
                     selector: 'node',
                     style: {
                         'background-color': '#1d4ed8',
-                        label: 'data(label)',
+                        label: 'data(id)',
                         color: '#fff',
                         'text-valign': 'center',
                         'text-halign': 'center',
@@ -57,9 +57,8 @@
     //use svelte reactive statement
     $: if (cyInstance) { //if the instance of the graph is created
         cyInstance.elements().remove();
-
         cyInstance.add([ //convert out data to cytoscape elements
-            ...nodes.map(n => ({ data: { id: n.id, label: n.label } })), //goes through evert node and converts them
+            ...nodes.map(n => ({ data: { id: n.id} })), //goes through evert node and converts them
         ]);
 
         cyInstance.add([
