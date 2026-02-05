@@ -1,7 +1,12 @@
 ﻿// Implementation taken from:
 // https://www.geeksforgeeks.org/javascript/implementation-linkedlist-javascript/
+/** @typedef {import('$lib/types.js').Message} Message */
+
 
 export class Node{
+    /**
+     * @param {Message} value
+     */
     constructor(value)
     {
         this.value=value
@@ -12,10 +17,15 @@ export class LinkedList{
     constructor()
     {
         this.head=null
+        this.length = 0
     }
+    /**
+     * @param {Message} value
+     */
     append(value)
     {
         let newnode=new Node(value)
+        this.length++
         if(!this.head)
         {
             this.head=newnode
@@ -29,9 +39,13 @@ export class LinkedList{
         current.next=newnode
 
     }
+    /**
+     * @returns {Message | null}
+     */
     pop()
     {
         if (this.head != null){
+            this.length--
             let val = this.head.value
             this.head = this.head.next
             return val

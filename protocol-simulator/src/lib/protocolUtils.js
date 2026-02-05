@@ -1,6 +1,9 @@
 ﻿// This function parses the user code and returns actors + messages
 
-/** @returns {ActorConstructor}*/
+/**
+ * @param {string} codeString
+ * @returns {ActorConstructor}
+ */
 export function parseProtocolCode(codeString) {
 
     try {

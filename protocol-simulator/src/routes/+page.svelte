@@ -6,10 +6,12 @@
     import ManualMessageComponent from "$lib/ManualMessageComponent.svelte";
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
+    /** @typedef {import('$lib/types.js').Actor} Actor */
 
+    const stepsize = 100
     let sourceCode = "";
 
-    /** @type {{ id: string}[]} */
+    /** @type {Actor[]} */
     let actors = [];
 
     let messages = new LinkedList();
@@ -22,6 +24,7 @@
         const actorClass = parseProtocolCode(sourceCode);
 
         //note: svelte automatically updates them in the Graph.svelte!
+        /** @type {Actor} */
         let actor = new actorClass(id++);
         actors = [...actors, actor];
         console.log("Adding actor");
@@ -29,11 +32,32 @@
 
     }
 
+    /** @param {Message} message */
+    function deliverMessage(message) {
+        let actor = actors[message.destination];
+        let msg = {type: message.type, from: message.source};
+        actor.receive(msg)
+    }
     function startSimulation() {
-        setInterval(spawnActor, 100);
+        console.log("Starting simulation");
+        setInterval(step, stepsize); // this defines our stepsize
+
     }
 
-
+    function step() {
+        let n = messages.length;
+        for (let i = 0; i < n; i++) {
+            let message = messages.pop()
+            if (message != null){
+                message.elapsedSteps++
+                if (message.elapsedSteps === message.transitSteps){
+                    deliverMessage(message)
+                } else {
+                    messages.append(message)
+                }
+            }
+        }
+    }
 
 
 

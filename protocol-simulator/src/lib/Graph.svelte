@@ -2,11 +2,12 @@
     import { onMount } from 'svelte';
     import cytoscape from 'cytoscape';
 
-    /** @type {{ id: string}[]} */
+    /** @typedef {import('$lib/types.js').Actor} Actor */
+
+    /** @type {Actor[]} */
     export let nodes = [];
 
-    //This code does not do anything as of right now
-    /** @type {{ source: string, target: string, label: string }[]} */
+    /** @type {{ source: number, target: number, label: string }[]} */
     export let edges = [];
 
     /** @type {HTMLElement} */
@@ -15,14 +16,20 @@
     /** @type {any} */
     let cyInstance;
 
+    // Helper: convert Actor → cytoscape node
+    /**
+     * @param {Actor} actor
+     */
+    function actorToNode(actor) {
+        return {
+            data: { id: String(actor.id) } // cytoscape needs string IDs
+        };
+    }
+
     onMount(() => {
         cyInstance = cytoscape({
             container: cyContainer,
-            elements: [
-                {data : {id: 'a'}},
-                ...nodes.map(n => ({ data: { id: n.id} })),
-                ...edges.map(e => ({ data: { source: e.source, target: e.target, label: "" } }))
-            ],
+            elements: [],
             style: [
                 {
                     selector: 'node',

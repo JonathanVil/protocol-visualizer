@@ -9,7 +9,7 @@
 
     function sendMessageManual(){
         /** @type {Message} */
-        let message = {source: from, destination: to, type: type, transitSteps: 100, elapsedSteps: 0}
+        let message = {source: from, destination: to, type: type, transitSteps: 10, elapsedSteps: 0}
         messages.append(message);
         console.log("Sending message manually");
         console.log(messages);
