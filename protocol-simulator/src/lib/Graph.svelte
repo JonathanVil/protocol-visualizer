@@ -49,7 +49,7 @@
                     }
                 }
             ],
-            layout: { name: 'circle', animate: true }
+            layout: { name: 'circle', animate: true}
         });
     });
 
@@ -70,8 +70,7 @@
         ])
 
         //run it again
-        cyInstance.layout({ name: 'cose', animate: true }).run();
-
+        cyInstance.layout({name: 'circle', radius: 120, avoidOverlap: true, fit: true}).run();
     }
 
 
