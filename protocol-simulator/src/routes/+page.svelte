@@ -7,7 +7,7 @@
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
     /** @typedef {import('$lib/types.js').Actor} Actor */
-
+    const transitTime = 10 // this also exists in ManuelMessageComponent but is not connected, you need to update both
     const stepsize = 100
     let sourceCode = "";
 
@@ -21,7 +21,7 @@
 
     function spawnActor() {
         /** @type {ActorConstructor} */
-        const actorClass = parseProtocolCode(sourceCode);
+        const actorClass = parseProtocolCode(sourceCode, send); // we need to give send here so the actor "knows" it
 
         //note: svelte automatically updates them in the Graph.svelte!
         /** @type {Actor} */
@@ -38,10 +38,18 @@
         let msg = {type: message.type, from: message.source};
         actor.receive(msg)
     }
+
     function startSimulation() {
         console.log("Starting simulation");
         setInterval(step, stepsize); // this defines our stepsize
 
+    }
+    /** @param {number} from
+     *  @param {number} to
+     *  @param {string} type
+     * */
+    function send(from, to, type) {
+        messages.append({source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0})
     }
 
     function step() {

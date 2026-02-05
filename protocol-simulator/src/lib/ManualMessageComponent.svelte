@@ -1,7 +1,6 @@
 ﻿<script>
     import {LinkedList} from '$lib/LinkedList.js';
     /** @typedef {import('$lib/types.js').Message} Message */
-    /** {number} */
     let to = 0;
     let from = 0;
     let type = "";
