@@ -7,17 +7,12 @@
 
     /** @type {{ id: string, label: string }[]} */
     let actors = [];
-    /** @type {{ source: string, target: string, label: string }[]} */
-    let messages = [];
 
     function compile() {
         const result = parseProtocolCode(sourceCode);
 
-
         //note: svelte automatically updates them in the Graph.svelte!
         actors = result.actors;
-        messages = result.messages;
-        //alert(actors.pop().label);
 
     }
 </script>
@@ -32,5 +27,5 @@
     Compile
 </button>
 
-<Graph nodes={actors} edges={messages} />
+<Graph nodes={actors}/>
 

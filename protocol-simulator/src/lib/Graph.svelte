@@ -5,6 +5,7 @@
     /** @type {{ id: string, label: string }[]} */
     export let nodes = [];
 
+    //This code does not do anything as of right now
     /** @type {{ source: string, target: string, label: string }[]} */
     export let edges = [];
 
