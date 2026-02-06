@@ -1,11 +1,10 @@
 <script>
     import MonacoEditer from "$lib/MonacoEditer.svelte";
     import Graph  from "$lib/Graph.svelte";
-    import { parseProtocolCode } from '$lib/protocolUtils.js';
     import {LinkedList} from '$lib/LinkedList.js';
     import ManualMessageComponent from "$lib/ManualMessageComponent.svelte";
-    import {transitTime} from "$lib/protocolUtils.js";
-    import { getStepSize, setStepSize } from "$lib/protocolUtils.js";
+    import {transitTime, getNextMessageId, parseProtocolCode, getStepSize, setStepSize} from "$lib/protocolUtils.js";
+
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
     /** @typedef {import('$lib/types.js').Actor} Actor */
@@ -21,6 +20,7 @@
 
     let messages = new LinkedList();
     let id = 0;
+
 
     /** @type number */
     let intervalId;
@@ -77,7 +77,8 @@
      *  @param {string} type
      * */
     function send(from, to, type) {
-        messages.append({id: Date.now(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0})
+        console.log(from, "send to", to);
+        messages.append({id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0})
     }
 
     function step() {

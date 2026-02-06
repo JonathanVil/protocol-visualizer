@@ -29,3 +29,11 @@ export function getStepSize() {
 export function setStepSize(value) {
     stepSize = value;
 }
+
+// id's for messages
+/** @type {number} */
+let id_messages = -1;
+
+export function getNextMessageId() {
+    return id_messages--;
+}
