@@ -60,6 +60,15 @@
                         'text-rotation': 'autorotate',
                         'text-margin-y': -5
                     }
+                },
+                {
+                    selector: '.message',
+                    style: {
+                        'background-color': '#253478',
+                        label: "msg",
+                        'width': 25,
+                        'height': 25
+                    }
                 }
             ],
             layout: { name: 'circle', animate: true}
