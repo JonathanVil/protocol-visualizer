@@ -5,11 +5,11 @@
     import {LinkedList} from '$lib/LinkedList.js';
     import ManualMessageComponent from "$lib/ManualMessageComponent.svelte";
     import {transitTime} from "$lib/protocolUtils.js";
+    import {stepSize} from "$lib/protocolUtils.js";
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
     /** @typedef {import('$lib/types.js').Actor} Actor */
 
-    const stepsize = 100
     let sourceCode = "";
 
     /** @type {Actor[]} */
@@ -18,6 +18,7 @@
     let messages = new LinkedList();
     let id = 0;
 
+    let paused = false;
 
 
     function spawnActor() {
@@ -42,9 +43,16 @@
 
     function startSimulation() {
         console.log("Starting simulation");
-        setInterval(step, stepsize); // this defines our stepsize
-
+        paused = false;
+        setInterval(step, stepSize); // this defines our stepsize
     }
+
+    function pauseSimulation() {
+        console.log("Pausing simulation");
+        paused = true;
+    }
+
+
     /** @param {number} from
      *  @param {number} to
      *  @param {string} type
@@ -54,6 +62,9 @@
     }
 
     function step() {
+        if (paused) {
+            return
+        }
         let n = messages.length;
         for (let i = 0; i < n; i++) {
             let message = messages.pop()
@@ -85,6 +96,11 @@
 <button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         on:click={startSimulation}>
     Start Simulator
+</button>
+
+<button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        on:click={pauseSimulation}>
+    Pause Simulator
 </button>
 
 <ManualMessageComponent messages={messages} />
