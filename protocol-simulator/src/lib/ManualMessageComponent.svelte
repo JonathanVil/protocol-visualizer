@@ -1,5 +1,7 @@
 ﻿<script>
     import {LinkedList} from '$lib/LinkedList.js';
+    import {transitTime} from "$lib/protocolUtils.js";
+
     /** @typedef {import('$lib/types.js').Message} Message */
     let to = 0;
     let from = 0;
@@ -8,7 +10,7 @@
 
     function sendMessageManual(){
         /** @type {Message} */
-        let message = {source: from, destination: to, type: type, transitSteps: 10, elapsedSteps: 0}
+        let message = {source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0}
         messages.append(message);
         console.log("Sending message manually");
         console.log(messages);

@@ -19,3 +19,5 @@ export function parseProtocolCode(codeString, send) {
         return null;
     }
 }
+
+export const transitTime = 10;

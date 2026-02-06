@@ -4,10 +4,11 @@
     import { parseProtocolCode } from '$lib/protocolUtils.js';
     import {LinkedList} from '$lib/LinkedList.js';
     import ManualMessageComponent from "$lib/ManualMessageComponent.svelte";
+    import {transitTime} from "$lib/protocolUtils.js";
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
     /** @typedef {import('$lib/types.js').Actor} Actor */
-    const transitTime = 10 // this also exists in ManuelMessageComponent but is not connected, you need to update both
+
     const stepsize = 100
     let sourceCode = "";
 
