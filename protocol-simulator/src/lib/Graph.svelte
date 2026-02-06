@@ -2,7 +2,7 @@
     import { onMount } from 'svelte';
     import cytoscape from 'cytoscape';
     import {transitTime} from "$lib/protocolUtils.js";
-    import {stepSize} from "$lib/protocolUtils.js";
+    import {getStepSize} from "$lib/protocolUtils.js";
 
     /** @typedef {import('$lib/types.js').Actor} Actor */
     /** @typedef {import('$lib/types.js').Message} Message */
@@ -113,7 +113,7 @@
         msg.animate({
             position: {x: targetPosThisStepX, y: targetPosThisStepY}
         }, {
-            duration: stepSize,
+            duration: getStepSize(),
             easing: 'linear',
             queue: false,
             complete: () => {
