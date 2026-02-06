@@ -1,14 +1,20 @@
 ﻿<script>
     import { onMount } from 'svelte';
     import cytoscape from 'cytoscape';
+    import {transitTime} from "$lib/protocolUtils.js";
+    import {stepSize} from "$lib/protocolUtils.js";
 
     /** @typedef {import('$lib/types.js').Actor} Actor */
+    /** @typedef {import('$lib/types.js').Message} Message */
 
     /** @type {Actor[]} */
     export let nodes = [];
 
     /** @type {{ source: number, target: number, label: string }[]} */
     export let edges = [];
+
+    /** @type {import('cytoscape').NodeSingular[]} */
+    let graphMessages = [];
 
     /** @type {HTMLElement} */
     let cyContainer;
@@ -60,7 +66,7 @@
         });
     });
 
-    //use svelte reactive statement
+    //Adding Nodes
     $: if (cyInstance) { //if the instance of the graph is created
         cyInstance.elements().remove();
         cyInstance.add([ //convert out data to cytoscape elements
@@ -80,6 +86,49 @@
         cyInstance.layout({name: 'circle', radius: 120, avoidOverlap: true, fit: true}).run();
     }
 
+    /** @param {Message} message */
+    export function animateNewMessage(message) {
+
+        const source = cyInstance.getElementById(message.source).position();
+        const target = cyInstance.getElementById(message.destination).position();
+
+
+        const targetPosThisStepX = source.x + ((target.x - source.x) * message.elapsedSteps) / transitTime
+        const targetPosThisStepY = source.y + ((target.y - source.y) * message.elapsedSteps) / transitTime
+
+        //Create the message node
+        if (message.elapsedSteps === 1) {
+            const msg = cyInstance.add({
+                group: 'nodes',
+                data: {id: message.id},
+                position: {x: source.x, y: source.y},
+                classes: 'message'
+            })
+            //console.log("Added message", msg)
+            graphMessages.push(msg)
+        }
+
+        let msg = cyInstance.getElementById(message.id)
+
+        msg.animate({
+            position: {x: targetPosThisStepX, y: targetPosThisStepY}
+        }, {
+            duration: stepSize,
+            easing: 'linear',
+            queue: false,
+            complete: () => {
+                if (message.elapsedSteps >= message.transitSteps) {
+                    // remove message node from graph
+                    cyInstance.remove(msg);
+                    //remove the message from array
+                    //console.log("Removed message", msg);
+                    graphMessages.splice(graphMessages.indexOf(msg), 1);
+
+                }
+            }
+        });
+
+    }
 
 </script>
 
