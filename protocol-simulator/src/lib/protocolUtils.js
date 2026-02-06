@@ -20,5 +20,12 @@ export function parseProtocolCode(codeString, send) {
     }
 }
 
-export const transitTime = 10;
-export const stepSize = 100;
+export let transitTime = 10;
+let stepSize = 100;
+export function getStepSize() {
+    return stepSize;
+}
+
+export function setStepSize(value) {
+    stepSize = value;
+}

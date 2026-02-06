@@ -21,6 +21,9 @@
     <input id="to" bind:value={to} placeholder="To actor ID" />
     <input id="from" bind:value={from} placeholder="From actor ID" />
     <input id="type" bind:value={type} placeholder="Message type" />
-    <button on:click={sendMessageManual}>Send</button>
+    <button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            on:click={sendMessageManual}>
+        Send
+    </button>
 
 </div>
