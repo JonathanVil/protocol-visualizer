@@ -22,6 +22,15 @@
     /** @type {any} */
     let cyInstance;
 
+    /**
+     * Used to reset the visuals in the graph
+     */
+    export function resetGraph() {
+        nodes = [];
+        graphMessages = [];
+        edges = [];
+    }
+
     // Helper: convert Actor → cytoscape node
     /**
      * @param {Actor} actor
@@ -96,7 +105,7 @@
     }
 
     /** @param {Message} message */
-    export function animateNewMessage(message) {
+    export function animateMessage(message) {
 
         const source = cyInstance.getElementById(message.source).position();
         const target = cyInstance.getElementById(message.destination).position();
