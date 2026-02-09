@@ -100,8 +100,19 @@
             ...edges.map(e => ({ data: { source: e.source, target: e.target, label: e.label } })),
         ])
 
+
         //run it again
         cyInstance.layout({name: 'circle', radius: 120, avoidOverlap: true, fit: true}).run();
+
+        //Add messages back
+        cyInstance.add(
+            graphMessages.map(e => ({
+                group: 'nodes',
+                data: {id: e.id()},
+                position: e.position(),
+                classes: 'message'
+            }))
+        )
     }
 
     /** @param {Message} message */
@@ -114,19 +125,17 @@
         const targetPosThisStepX = source.x + ((target.x - source.x) * message.elapsedSteps) / transitTime
         const targetPosThisStepY = source.y + ((target.y - source.y) * message.elapsedSteps) / transitTime
 
-        //Create the message node
-        if (message.elapsedSteps === 1) {
-            const msg = cyInstance.add({
+        //Create the message node in graph, if it does not exists.
+        let msg = cyInstance.getElementById(message.id)
+        if (msg.empty()) {
+            msg = cyInstance.add({
                 group: 'nodes',
                 data: {id: message.id},
                 position: {x: source.x, y: source.y},
                 classes: 'message'
-            })
-            //console.log("Added message", msg)
-            graphMessages.push(msg)
+            });
+            graphMessages.push(msg);
         }
-
-        let msg = cyInstance.getElementById(message.id)
 
         msg.animate({
             position: {x: targetPosThisStepX, y: targetPosThisStepY}
