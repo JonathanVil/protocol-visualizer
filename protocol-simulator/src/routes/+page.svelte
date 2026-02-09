@@ -150,17 +150,17 @@
      *  @param {any} data
      *  @param {string} type
      * */
-    function send(from, to, type, data) {
+    function send(from, to, type, data) { //Example of use: send(this.id, from.id, "PING", "Hello")
         console.log(from, "send to", to);
         messages.append({id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0, data: data})
     }
 
 
-    function getActors() {
+    function getActors() { //Example of use: let total actors = getActors()
         return actors.length;
     }
 
-    function createQueue() {
+    function createQueue() { //Example of use: let q = createQueue(); q.push("hey"); let hey = q.pop();
         return new Queue();
     }
 
@@ -169,7 +169,7 @@
      * @param {number} steps
      * @param {function} reaction
      */
-    function timeout(actor, steps, reaction) {
+    function timeout(actor, steps, reaction) { //Example of use: timeout(this, 10, fart); function fart() { console.log("fart") }
         timeouts.append({
             steps,
             reaction: reaction.bind(actor)
