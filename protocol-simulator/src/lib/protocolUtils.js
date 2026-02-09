@@ -3,16 +3,18 @@
 /**
  * @param {string} codeString
  * @param {function} send
+ * @param {function} getActors
  * @returns {ActorConstructor}
  */
-export function parseProtocolCode(codeString, send) {
+export function parseProtocolCode(codeString, send, getActors) {
 
     try {
 
         return new Function(
             "send",
+            "getActors",
             codeString
-        )(send);
+        )(send, getActors);
 
     } catch (e) {
         console.error('Error parsing code:', e);
