@@ -1,11 +1,10 @@
 ﻿// Implementation taken from:
 // https://www.geeksforgeeks.org/javascript/implementation-linkedlist-javascript/
-/** @typedef {import('$lib/types.js').Message} Message */
 
 
 export class Node{
     /**
-     * @param {Message} value
+     * @param {any} value
      */
     constructor(value)
     {
@@ -13,14 +12,14 @@ export class Node{
         this.next=null
     }
 }
-export class LinkedList{
+export class Queue {
     constructor()
     {
         this.head=null
         this.length = 0
     }
     /**
-     * @param {Message} value
+     * @param {any} value
      */
     append(value)
     {
@@ -40,7 +39,7 @@ export class LinkedList{
 
     }
     /**
-     * @returns {Message | null}
+     * @returns {any}
      */
     pop()
     {
