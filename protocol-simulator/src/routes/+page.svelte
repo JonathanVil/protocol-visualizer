@@ -79,10 +79,6 @@
 
 
 
-    function createQueue() {
-        return new Queue();
-    }
-
     function step() {
         if (paused) {
             return
@@ -136,6 +132,7 @@
 
 
     // These are the functions we export into the Actors
+    // TODO: put these somewhere nice :)
 
     /** @param {number} from
      *  @param {number} to
@@ -149,6 +146,10 @@
 
     function getActors() {
         return actors.length;
+    }
+
+    function createQueue() {
+        return new Queue();
     }
 
     /**
