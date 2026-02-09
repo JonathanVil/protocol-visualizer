@@ -105,7 +105,7 @@
     }
 
     /** @param {Message} message */
-    export function animateNewMessage(message) {
+    export function animateMessage(message) {
 
         const source = cyInstance.getElementById(message.source).position();
         const target = cyInstance.getElementById(message.destination).position();

@@ -114,7 +114,7 @@
             if (message != null){
                 message.elapsedSteps++
                 //Animate messages
-                graphRef.animateNewMessage(message);
+                graphRef.animateMessage(message);
 
                 if (message.elapsedSteps === message.transitSteps){
                     deliverMessage(message)
