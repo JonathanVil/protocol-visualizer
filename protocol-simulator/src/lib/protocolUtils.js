@@ -4,17 +4,21 @@
  * @param {string} codeString
  * @param {function} send
  * @param {function} getActors
+ * @param {function} createQueue
+ * @param {function} timeout
  * @returns {ActorConstructor}
  */
-export function parseProtocolCode(codeString, send, getActors) {
+export function parseProtocolCode(codeString, send, getActors, createQueue, timeout) {
 
     try {
 
         return new Function(
             "send",
             "getActors",
+            "createQueue",
+            "timeout",
             codeString
-        )(send, getActors);
+        )(send, getActors, createQueue, timeout);
 
     } catch (e) {
         console.error('Error parsing code:', e);
@@ -37,5 +41,6 @@ export function setStepSize(value) {
 let id_messages = -1;
 
 export function getNextMessageId() {
+    if (id_messages < -1000) {id_messages = -1}
     return id_messages--;
 }

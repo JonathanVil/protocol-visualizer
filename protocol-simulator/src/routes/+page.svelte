@@ -1,7 +1,7 @@
 <script>
     import MonacoEditer from "$lib/MonacoEditer.svelte";
     import Graph  from "$lib/Graph.svelte";
-    import {LinkedList} from '$lib/LinkedList.js';
+    import {Queue} from '$lib/Queue.js';
     import ManualMessageComponent from "$lib/ManualMessageComponent.svelte";
     import {transitTime, getNextMessageId, parseProtocolCode, getStepSize, setStepSize} from "$lib/protocolUtils.js";
 
@@ -18,7 +18,8 @@
     /** @type {Actor[]} */
     let actors = [];
 
-    let messages = new LinkedList();
+    let messages = new Queue();
+    let timeouts = new Queue();
     let id = 0;
 
 
@@ -31,7 +32,7 @@
 
     function spawnActor() {
         /** @type {ActorConstructor} */
-        const actorClass = parseProtocolCode(sourceCode, send, getActors); // we need to give send here so the actor "knows" it
+        const actorClass = parseProtocolCode(sourceCode, send, getActors, createQueue, timeout); // we need to give send here so the actor "knows" it
 
         if (actorClass == null) {
           console.error("Actor class not defined");
@@ -47,10 +48,14 @@
 
     }
 
-    /** @param {Message} message */
+
+    /**
+     * Deliver message to destination actor. Transform message to lightweight msg. Lastly invoke actors 'receive' method
+     * @param {Message} message
+     */
     function deliverMessage(message) {
         let actor = actors[message.destination];
-        let msg = {type: message.type, from: message.source};
+        let msg = {type: message.type, from: message.source, data: message.data};
         actor.receive(msg)
     }
 
@@ -77,46 +82,104 @@
         stepSizeUpdated = true;
     }
 
-    /** @param {number} from
-     *  @param {number} to
-     *  @param {any} data
-     *  @param {string} type
-     * */
-    function send(from, to, type, data ) {
-        console.log(from, "send to", to);
-        messages.append({id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0, data: data})
+    function resetSimulation() {
+        clearInterval(intervalId);
+        messages = new Queue();
+        timeouts = new Queue();
+        actors = [];
+        id = 0;
+        stepSizeUpdated = false;
+        paused = false;
+        graphRef.resetGraph();
     }
 
-    function getActors() {
-        return actors.length;
-    }
+
 
     function step() {
         if (paused) {
             return
         }
-        let n = messages.length;
-        for (let i = 0; i < n; i++) {
-            let message = messages.pop()
-            if (message != null){
-                message.elapsedSteps++
-                //Animate messages
-                graphRef.animateNewMessage(message);
+        //handle messages
+        messageStep()
 
-                if (message.elapsedSteps === message.transitSteps){
-                    deliverMessage(message)
-                } else {
-                    messages.append(message)
-                }
-            }
-        }
+        //handle timeouts
+        timeoutStep()
+
+        //handle updating stepsize
         if (stepSizeUpdated) { // We need to reboot the simulation loop in order to update stepsize
             paused = true;
             startSimulation();
         }
     }
 
+    function messageStep() {
+        let n = messages.length;
+        for (let i = 0; i < n; i++) {
+            let message = messages.pop()
+            if (message != null){
+                message.elapsedSteps++
+                //Animate messages
+                graphRef.animateMessage(message);
 
+                if (message.elapsedSteps === message.transitSteps){
+                    deliverMessage(message)
+                } else {
+                    messages.push(message)
+                }
+            }
+        }
+    }
+
+    function timeoutStep() {
+        let n = timeouts.length;
+        for (let i = 0; i < n; i++) {
+            let timer = timeouts.pop()
+            if (timer != null){
+                if (timer.steps === 0){
+                    timer.reaction()
+                } else {
+                    timer.steps -= 1
+                    timeouts.push(timer);
+                }
+
+            }
+        }
+    }
+
+
+    // These are the functions we export into the Actors
+    // TODO: put these somewhere nice :)
+
+    /** @param {number} from
+     *  @param {number} to
+     *  @param {any} data
+     *  @param {string} type
+     * */
+    function send(from, to, type, data) { //Example of use: send(this.id, from.id, "PING", "Hello")
+        console.log(from, "send to", to);
+        messages.push({id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0, data: data})
+    }
+
+
+    function getActors() { //Example of use: let total actors = getActors()
+        return actors.length;
+    }
+
+    function createQueue() { //Example of use: let q = createQueue(); q.push("hey"); let hey = q.pop();
+        return new Queue();
+    }
+
+    /**
+     * @param {Actor} actor
+     * @param {number} steps
+     * @param {function} reaction
+     */
+    function timeout(actor, steps, reaction) { //Example of use: timeout(this, 10, fart); function fart() { console.log("fart") }
+        timeouts.push({
+            steps,
+            reaction: reaction.bind(actor)
+        });
+    }
 
 </script>
 

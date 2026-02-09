@@ -1,5 +1,5 @@
 ﻿<script>
-    import {LinkedList} from '$lib/LinkedList.js';
+    import {Queue} from '$lib/Queue.js';
     import {getNextMessageId, transitTime} from "$lib/protocolUtils.js";
 
     /** @typedef {import('$lib/types.js').Message} Message */
@@ -11,12 +11,12 @@
     let data = "";
 
 
-    export let messages = new LinkedList();
+    export let messages = new Queue();
 
     function sendMessageManual(){
         /** @type {Message} */
         let message = {id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0, data: "a"}
-        messages.append(message);
+        messages.push(message);
         console.log("Sending message manually");
         console.log(messages);
     }

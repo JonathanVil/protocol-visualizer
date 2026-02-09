@@ -1,0 +1,70 @@
+﻿class Actor {
+    constructor(id) {
+        this.id = id;
+
+        this.alive = true;
+        this.leader = null;
+        this.leaderIsAlive = false;
+
+
+    }
+
+    receive(msg) {
+        if (msg.type === 'SENDPING') {
+            console.log(this.id, "received SENDPING");
+            if (this.leader) {
+                this.leaderIsAlive = false;
+                send(this.id, this.leader, "PING")
+                timeout(this, 40, this.startElection)
+            } else {
+                this.startElection()
+            }
+
+        }
+        if (msg.type === "PING") {
+            if (this.alive){
+                send(this.id, msg.from, "PONG")
+            }
+        }
+        if (msg.type === "PONG") {
+            this.leaderIsAlive = true;
+        }
+        if (msg.type === "ELECTION") {
+            if (this.alive) {
+                send(this.id, msg.from, "REPLY")
+            }
+        }
+        if (msg.type === "REPLY") {
+            this.leaderIsAlive = true;
+            if (this.leader === null || this.leader < msg.from) {
+                this.leader = msg.from
+            }
+        }
+        if (msg.type === "KILL") {
+            this.alive = false;
+        }
+        if (msg.type === "LIVE") {
+            this.alive = true;
+        }
+
+    }
+
+    startElection(){
+        console.log("Starting Election");
+        if (!this.leaderIsAlive) {
+            console.log("deadLeader")
+
+            this.leader = this.id
+
+            for (let i = this.id + 1; i < getActors(); i++) {
+                console.log("sending ELECTION to", i);
+                send(this.id, i, "ELECTION");
+            }
+        }
+
+    }
+}
+
+
+
+return Actor;
