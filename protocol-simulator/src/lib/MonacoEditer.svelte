@@ -35,6 +35,6 @@
     });
 </script>
 
-<div bind:this={editorDiv} class="w-full h-80 border border-gray-300 rounded-md"></div>
+<div bind:this={editorDiv} class="w-full h-180 border border-gray-300 rounded-md"></div>
 
 
