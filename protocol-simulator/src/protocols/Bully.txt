@@ -5,8 +5,6 @@
         this.alive = true;
         this.leader = null;
         this.leaderIsAlive = false;
-
-
     }
 
     receive(msg) {
@@ -31,7 +29,9 @@
         }
         if (msg.type === "ELECTION") {
             if (this.alive) {
+                this.leaderIsAlive = false
                 send(this.id, msg.from, "REPLY")
+                this.startElection()
             }
         }
         if (msg.type === "REPLY") {
@@ -50,14 +50,10 @@
     }
 
     startElection(){
-        console.log("Starting Election");
         if (!this.leaderIsAlive) {
-            console.log("deadLeader")
-
             this.leader = this.id
 
             for (let i = this.id + 1; i < getActors(); i++) {
-                console.log("sending ELECTION to", i);
                 send(this.id, i, "ELECTION");
             }
         }
