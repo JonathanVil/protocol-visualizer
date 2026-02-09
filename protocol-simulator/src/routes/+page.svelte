@@ -1,7 +1,7 @@
 <script>
     import MonacoEditer from "$lib/MonacoEditer.svelte";
     import Graph  from "$lib/Graph.svelte";
-    import {LinkedList} from '$lib/LinkedList.js';
+    import {Queue} from '$lib/Queue.js';
     import ManualMessageComponent from "$lib/ManualMessageComponent.svelte";
     import {transitTime, getNextMessageId, parseProtocolCode, getStepSize, setStepSize} from "$lib/protocolUtils.js";
 
@@ -18,7 +18,7 @@
     /** @type {Actor[]} */
     let actors = [];
 
-    let messages = new LinkedList();
+    let messages = new Queue();
     let id = 0;
 
 
