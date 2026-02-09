@@ -27,7 +27,7 @@
 
     let stepSizeInput = getStepSize();
     let stepSizeUpdated = false;
-    let paused = false;
+    let paused = true;
 
     function spawnActor() {
         /** @type {ActorConstructor} */
@@ -120,34 +120,36 @@
 <!--Connect to the MonacoEditor and gets the written sourceCode-->
 <MonacoEditer bind:sourceCode={sourceCode} />
 
-<button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        on:click={spawnActor}>
-    Spawn actor
-</button>
+<div class="mt-4 flex-row space-x-2 pt-2">
+    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            on:click={spawnActor}>
+        Spawn actor
+    </button>
 
-<button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        on:click={startSimulation}>
-    Start Simulator
-</button>
+    {#if paused}
+        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 inline-flex items-center"
+                on:click={startSimulation}>
+            <span>Start Simulator</span>
+        </button>
+    {:else}
+        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 inline-flex items-center"
+                on:click={pauseSimulation}>
+            <span>Pause Simulator</span>
+        </button>
+    {/if}
 
-<button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        on:click={pauseSimulation}>
-    Pause Simulator
-</button>
-
-
-<input
+    <input
         type="number"
         bind:value={stepSizeInput}
         placeholder="100"
-/>
+    />
 
-<button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        on:click={setStepSizeInput}>
-    Set step size (ms)
-</button>
+    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            on:click={setStepSizeInput}>
+        Set step size (ms)
+    </button>
+</div>
 
 <ManualMessageComponent messages={messages} />
 
 <Graph bind:this={graphRef} nodes={actors}/>
-
