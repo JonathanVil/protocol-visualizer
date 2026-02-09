@@ -74,11 +74,12 @@
 
     /** @param {number} from
      *  @param {number} to
+     *  @param {any} data
      *  @param {string} type
      * */
-    function send(from, to, type) {
+    function send(from, to, type, data ) {
         console.log(from, "send to", to);
-        messages.append({id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0})
+        messages.append({id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0, data: data})
     }
 
     function step() {
