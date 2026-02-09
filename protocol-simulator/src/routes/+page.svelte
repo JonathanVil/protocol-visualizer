@@ -76,6 +76,16 @@
         stepSizeUpdated = true;
     }
 
+    function resetSimulation() {
+        clearInterval(intervalId);
+        messages = new Queue();
+        actors = [];
+        id = 0;
+        stepSizeUpdated = false;
+        paused = false;
+        graphRef.resetGraph();
+    }
+
 
     // <--------- User methods ---------> //TODO: Refactor these into seperate component
 
@@ -156,6 +166,10 @@
 <button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         on:click={setStepSizeInput}>
     Set step size (ms)
+</button>
+<button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        on:click={resetSimulation}>
+    Reset Simulation
 </button>
 
 <ManualMessageComponent messages={messages} />

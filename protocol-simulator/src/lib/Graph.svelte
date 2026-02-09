@@ -22,6 +22,15 @@
     /** @type {any} */
     let cyInstance;
 
+    /**
+     * Used to reset the visuals in the graph
+     */
+    export function resetGraph() {
+        nodes = [];
+        graphMessages = [];
+        edges = [];
+    }
+
     // Helper: convert Actor → cytoscape node
     /**
      * @param {Actor} actor
