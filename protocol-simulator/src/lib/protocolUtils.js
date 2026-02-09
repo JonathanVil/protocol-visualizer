@@ -5,9 +5,10 @@
  * @param {function} send
  * @param {function} getActors
  * @param {function} createQueue
+ * @param {function} timeout
  * @returns {ActorConstructor}
  */
-export function parseProtocolCode(codeString, send, getActors, createQueue) {
+export function parseProtocolCode(codeString, send, getActors, createQueue, timeout) {
 
     try {
 
@@ -15,8 +16,9 @@ export function parseProtocolCode(codeString, send, getActors, createQueue) {
             "send",
             "getActors",
             "createQueue",
+            "timeout",
             codeString
-        )(send, getActors, createQueue);
+        )(send, getActors, createQueue, timeout);
 
     } catch (e) {
         console.error('Error parsing code:', e);
