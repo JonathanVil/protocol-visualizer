@@ -31,7 +31,7 @@
 
     function spawnActor() {
         /** @type {ActorConstructor} */
-        const actorClass = parseProtocolCode(sourceCode, send); // we need to give send here so the actor "knows" it
+        const actorClass = parseProtocolCode(sourceCode, send, getActors); // we need to give send here so the actor "knows" it
 
         //  svelte automatically updates them in the Graph.svelte
         /** @type {Actor} */
@@ -79,6 +79,10 @@
     function send(from, to, type) {
         console.log(from, "send to", to);
         messages.append({id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0})
+    }
+
+    function getActors() {
+        return actors.length;
     }
 
     function step() {
