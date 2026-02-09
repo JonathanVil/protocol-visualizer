@@ -19,6 +19,7 @@
     let actors = [];
 
     let messages = new Queue();
+    let timeouts = new Queue();
     let id = 0;
 
 
@@ -72,24 +73,26 @@
         stepSizeUpdated = true;
     }
 
-    /** @param {number} from
-     *  @param {number} to
-     *  @param {any} data
-     *  @param {string} type
-     * */
-    function send(from, to, type, data ) {
-        console.log(from, "send to", to);
-        messages.append({id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0, data: data})
-    }
 
-    function getActors() {
-        return actors.length;
-    }
 
     function step() {
         if (paused) {
             return
         }
+        //handle messages
+        messageStep()
+
+        //handle timeouts
+        timeoutStep()
+
+        //handle updating stepsize
+        if (stepSizeUpdated) { // We need to reboot the simulation loop in order to update stepsize
+            paused = true;
+            startSimulation();
+        }
+    }
+
+    function messageStep() {
         let n = messages.length;
         for (let i = 0; i < n; i++) {
             let message = messages.pop()
@@ -105,13 +108,48 @@
                 }
             }
         }
-        if (stepSizeUpdated) { // We need to reboot the simulation loop in order to update stepsize
-            paused = true;
-            startSimulation();
+    }
+
+    function timeoutStep() {
+        let n = timeouts.length;
+        for (let i = 0; i < n; i++) {
+            let timer = timeouts.pop()
+            if (timer != null){
+                if (timer.steps === 0){
+                    timer.reaction()
+                } else {
+                    timer.steps -= 1
+                    timeouts.append(timer);
+                }
+
+            }
         }
     }
 
 
+    // These are the functions we export into the Actors
+
+    /** @param {number} from
+     *  @param {number} to
+     *  @param {any} data
+     *  @param {string} type
+     * */
+    function send(from, to, type, data) {
+        console.log(from, "send to", to);
+        messages.append({id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0, data: data})
+    }
+
+    function getActors() {
+        return actors.length;
+    }
+
+    /**
+    *  @param {number} steps
+    *  @param {function} reaction
+    * */
+    function Timeout(steps, reaction) {
+        timeouts.append({steps: steps, reaction: reaction});
+    }
 
 </script>
 
