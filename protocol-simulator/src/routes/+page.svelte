@@ -33,6 +33,11 @@
         /** @type {ActorConstructor} */
         const actorClass = parseProtocolCode(sourceCode, send, getActors); // we need to give send here so the actor "knows" it
 
+        if (actorClass == null) {
+          console.error("Actor class not defined");
+          return;
+        }
+
         //  svelte automatically updates them in the Graph.svelte
         /** @type {Actor} */
         let actor = new actorClass(id++);
