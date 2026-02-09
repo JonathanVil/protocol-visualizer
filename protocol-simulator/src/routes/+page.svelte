@@ -119,7 +119,7 @@
                 if (message.elapsedSteps === message.transitSteps){
                     deliverMessage(message)
                 } else {
-                    messages.append(message)
+                    messages.push(message)
                 }
             }
         }
@@ -134,7 +134,7 @@
                     timer.reaction()
                 } else {
                     timer.steps -= 1
-                    timeouts.append(timer);
+                    timeouts.push(timer);
                 }
 
             }
@@ -152,7 +152,7 @@
      * */
     function send(from, to, type, data) { //Example of use: send(this.id, from.id, "PING", "Hello")
         console.log(from, "send to", to);
-        messages.append({id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0, data: data})
+        messages.push({id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0, data: data})
     }
 
 
@@ -170,7 +170,7 @@
      * @param {function} reaction
      */
     function timeout(actor, steps, reaction) { //Example of use: timeout(this, 10, fart); function fart() { console.log("fart") }
-        timeouts.append({
+        timeouts.push({
             steps,
             reaction: reaction.bind(actor)
         });

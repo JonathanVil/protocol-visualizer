@@ -16,7 +16,7 @@
     function sendMessageManual(){
         /** @type {Message} */
         let message = {id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0, data: "a"}
-        messages.append(message);
+        messages.push(message);
         console.log("Sending message manually");
         console.log(messages);
     }
