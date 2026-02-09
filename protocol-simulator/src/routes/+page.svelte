@@ -80,6 +80,7 @@
     function resetSimulation() {
         clearInterval(intervalId);
         messages = new Queue();
+        timeouts = new Queue();
         actors = [];
         id = 0;
         stepSizeUpdated = false;
