@@ -31,7 +31,7 @@
 
     function spawnActor() {
         /** @type {ActorConstructor} */
-        const actorClass = parseProtocolCode(sourceCode, send, getActors); // we need to give send here so the actor "knows" it
+        const actorClass = parseProtocolCode(sourceCode, send, getActors, createQueue); // we need to give send here so the actor "knows" it
 
         //  svelte automatically updates them in the Graph.svelte
         /** @type {Actor} */
@@ -42,10 +42,14 @@
 
     }
 
-    /** @param {Message} message */
+
+    /**
+     * Deliver message to destination actor. Transform message to lightweight msg. Lastly invoke actors 'receive' method
+     * @param {Message} message
+     */
     function deliverMessage(message) {
         let actor = actors[message.destination];
-        let msg = {type: message.type, from: message.source};
+        let msg = {type: message.type, from: message.source, data: message.data};
         actor.receive(msg)
     }
 
@@ -72,6 +76,9 @@
         stepSizeUpdated = true;
     }
 
+
+    // <--------- User methods ---------> //TODO: Refactor these into seperate component
+
     /** @param {number} from
      *  @param {number} to
      *  @param {any} data
@@ -84,6 +91,10 @@
 
     function getActors() {
         return actors.length;
+    }
+
+    function createQueue() {
+        return new Queue();
     }
 
     function step() {
