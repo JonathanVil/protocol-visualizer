@@ -41,5 +41,6 @@ export function setStepSize(value) {
 let id_messages = -1;
 
 export function getNextMessageId() {
+    if (id_messages !== -1) {id_messages = -1}
     return id_messages--;
 }
