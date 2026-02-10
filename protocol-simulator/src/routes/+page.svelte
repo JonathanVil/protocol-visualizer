@@ -89,7 +89,7 @@
         actors = [];
         id = 0;
         stepSizeUpdated = false;
-        paused = false;
+        paused = true;
         graphRef.resetGraph();
     }
 
@@ -192,6 +192,11 @@
     <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             on:click={spawnActor}>
         Spawn actor
+    </button>
+
+    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            on:click={resetSimulation}>
+        Reset simulation
     </button>
 
     {#if paused}
