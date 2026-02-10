@@ -1,7 +1,6 @@
 ﻿<script>
     import { onMount } from 'svelte';
     import cytoscape from 'cytoscape';
-    import {transitTime} from "$lib/protocolUtils.js";
     import {getStepSize} from "$lib/protocolUtils.js";
 
     /** @typedef {import('$lib/types.js').Actor} Actor */
@@ -122,8 +121,8 @@
         const target = cyInstance.getElementById(message.destination).position();
 
 
-        const targetPosThisStepX = source.x + ((target.x - source.x) * message.elapsedSteps) / transitTime
-        const targetPosThisStepY = source.y + ((target.y - source.y) * message.elapsedSteps) / transitTime
+        const targetPosThisStepX = source.x + ((target.x - source.x) * message.elapsedSteps) / message.transitSteps
+        const targetPosThisStepY = source.y + ((target.y - source.y) * message.elapsedSteps) / message.transitSteps
 
         //Create the message node in graph, if it does not exists.
         let msg = cyInstance.getElementById(message.id)
