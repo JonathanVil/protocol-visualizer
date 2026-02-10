@@ -9,7 +9,14 @@
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
     /** @typedef {import('$lib/types.js').Actor} Actor */
 
-    let sourceCode = "";
+    export let data; // props from +page.server.js
+    let predefinedProtocols = data.protocols;
+    /**
+	 * @type {{ name: string; content: string; } | null}
+	 */
+    let selectedProtocol = null;
+    
+    let sourceCode = "// Write your code here...";
 
     //reference to graph instance
     /** @type {import('$lib/Graph.svelte').default} */
