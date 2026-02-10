@@ -29,7 +29,6 @@
     let timeouts = new Queue();
     let id = 0;
 
-
     /** @type number */
     let intervalId;
 
@@ -191,6 +190,14 @@
 </script>
 
 <h1 class="text-5xl font-bold mb-6">Protocol Simulator</h1>
+
+<select class="mb-4 p-2 border border-gray-300 rounded" bind:value={selectedProtocol}>
+    {#each predefinedProtocols as protocol}
+        <option value={protocol}>{protocol.name}</option>
+    {/each}
+</select>
+
+<button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" on:click={() => sourceCode = selectedProtocol.content}>Load</button>
 
 <!--Connect to the MonacoEditor and gets the written sourceCode-->
 <MonacoEditer bind:sourceCode={sourceCode} />

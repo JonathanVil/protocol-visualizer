@@ -13,6 +13,7 @@
     /** @type {import('monaco-editor').editor.IStandaloneCodeEditor} */
     let editorInstance;
 
+    let ignoreNextUpdate = false;
 
     onMount(async () => {
         // dynamic import only runs in the browser
@@ -21,7 +22,7 @@
         if (!editorDiv) return;
 
         editorInstance = monaco.editor.create(editorDiv, {
-            value: sourceCode || "// Write your code here...",
+            value: sourceCode,
             language: "javascript",
             theme: "vs-dark",
             automaticLayout: true,
@@ -30,11 +31,23 @@
         });
 
         editorInstance.onDidChangeModelContent(() => {
+            ignoreNextUpdate = true;
             sourceCode = editorInstance.getValue();
         });
     });
+
+    // Reactively update the editor when sourceCode changes from the parent
+    $: if (
+        editorInstance &&
+        !ignoreNextUpdate &&
+        editorInstance.getValue() !== sourceCode
+    ) {
+        editorInstance.setValue(sourceCode);
+    }
+    // Reset the ignore flag after the update cycle
+    $: if (ignoreNextUpdate) {
+        ignoreNextUpdate = false;
+    }
 </script>
 
 <div bind:this={editorDiv} class="w-full h-180 border border-gray-300 rounded-md"></div>
-
-
