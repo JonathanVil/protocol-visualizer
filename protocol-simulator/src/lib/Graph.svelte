@@ -74,7 +74,7 @@
                     selector: '.message',
                     style: {
                         'background-color': '#253478',
-                        label: "msg",
+                        label: "data(type)",
                         'width': 25,
                         'height': 25
                     }
@@ -108,7 +108,7 @@
         cyInstance.add(
             graphMessages.map(e => ({
                 group: 'nodes',
-                data: {id: e.id()},
+                data: {id: e.id(), type: e.data('type')},
                 position: e.position(),
                 classes: 'message'
             }))
@@ -130,7 +130,7 @@
         if (msg.empty()) {
             msg = cyInstance.add({
                 group: 'nodes',
-                data: {id: message.id},
+                data: {id: message.id, type: message.type},
                 position: {x: source.x, y: source.y},
                 classes: 'message'
             });
