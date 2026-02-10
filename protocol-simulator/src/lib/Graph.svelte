@@ -49,7 +49,7 @@
                 {
                     selector: 'node',
                     style: {
-                        'background-color': '#1d4ed8',
+                        'background-color': 'data(color)',
                         label: 'data(id)',
                         color: '#fff',
                         'text-valign': 'center',
@@ -88,7 +88,7 @@
     $: if (cyInstance) { //if the instance of the graph is created
         cyInstance.elements().remove();
         cyInstance.add([ //convert out data to cytoscape elements
-            ...nodes.map(n => ({ data: { id: n.id} })), //goes through evert node and converts them
+            ...nodes.map(n => ({ data: { id: n.id, color: n.nodeColor ?? '#1d4ed8'} })), //goes through evert node and converts them
         ]);
 
         for (let i = 0; i < nodes.length - 1; i++) {
