@@ -21,7 +21,7 @@ export class Queue {
     /**
      * @param {any} value
      */
-    append(value)
+    push(value)
     {
         let newnode=new Node(value)
         this.length++
