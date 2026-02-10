@@ -35,13 +35,11 @@ export function getTransitTime() {
     return Math.floor(Math.random() * (transitTimeUpperBound - transitTimeLowerBound + 1)) + transitTimeLowerBound;
 }
 
-export function setUpperTransitTime(bound) {
-    transitTimeUpperBound = bound;
+export function setTransitbounds(highBound, lowBound) {
+    transitTimeUpperBound = highBound;
+    transitTimeLowerBound = lowBound;
 }
 
-export function setLowerTransitTime(bound) {
-    transitTimeLowerBound = bound;
-}
 
 let stepSize = 100;
 export function getStepSize() {

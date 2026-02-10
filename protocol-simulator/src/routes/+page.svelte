@@ -3,7 +3,7 @@
     import Graph  from "$lib/Graph.svelte";
     import {Queue} from '$lib/Queue.js';
     import ManualMessageComponent from "$lib/ManualMessageComponent.svelte";
-    import {getTransitTime, setLowerTransitTime, setUpperTransitTime, getNextMessageId, parseProtocolCode, getStepSize, setStepSize} from "$lib/protocolUtils.js";
+    import {getTransitTime, setTransitbounds, getNextMessageId, parseProtocolCode, getStepSize, setStepSize} from "$lib/protocolUtils.js";
 
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
@@ -25,6 +25,10 @@
 
     /** @type number */
     let intervalId;
+
+    // the actual values of these is not stored here, so these are not important until updated by user
+    let transitLowerInput = 8
+    let transitUpperInput = 12
 
     let stepSizeInput = getStepSize();
     let stepSizeUpdated = false;
@@ -80,6 +84,10 @@
     function setStepSizeInput() {
         setStepSize(stepSizeInput);
         stepSizeUpdated = true;
+    }
+
+    function setTransitTimeInput() {
+        setTransitbounds(transitUpperInput, transitLowerInput);
     }
 
     function resetSimulation() {
@@ -218,6 +226,22 @@
     <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             on:click={setStepSizeInput}>
         Set step size (ms)
+    </button>
+
+    <input
+            type="number"
+            bind:value={transitUpperInput}
+            placeholder="12"
+    />
+    <input
+            type="number"
+            bind:value={transitLowerInput}
+            placeholder="8"
+    />
+
+    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            on:click={setTransitTimeInput}>
+        Set transit time interval
     </button>
 </div>
 

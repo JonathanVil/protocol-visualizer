@@ -1,6 +1,6 @@
 ﻿<script>
     import {Queue} from '$lib/Queue.js';
-    import {getNextMessageId, getTransitTime, setUpperTransitTime, setLowerTransitTime} from "$lib/protocolUtils.js";
+    import {getNextMessageId, getTransitTime} from "$lib/protocolUtils.js";
 
     /** @typedef {import('$lib/types.js').Message} Message */
     let to = 0;
