@@ -1,4 +1,5 @@
-﻿// This function parses the user code and returns actors + messages
+﻿
+// This function parses the user code and returns actors + messages
 
 /**
  * @param {string} codeString
@@ -26,7 +27,20 @@ export function parseProtocolCode(codeString, send, getActors, createQueue, time
     }
 }
 
-export let transitTime = 10;
+let transitTimeUpperBound = 12;
+let transitTimeLowerBound = 8;
+
+
+export function getTransitTime() {
+    return Math.floor(Math.random() * (transitTimeUpperBound - transitTimeLowerBound + 1)) + transitTimeLowerBound;
+}
+
+export function setTransitbounds(highBound, lowBound) {
+    transitTimeUpperBound = highBound;
+    transitTimeLowerBound = lowBound;
+}
+
+
 let stepSize = 100;
 export function getStepSize() {
     return stepSize;
