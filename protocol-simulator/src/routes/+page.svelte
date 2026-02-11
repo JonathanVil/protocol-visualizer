@@ -206,7 +206,7 @@
     {/each}
 </select>
 
-<button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" on:click={() => sourceCode = selectedProtocol.content}>Load</button>
+<button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" on:click={() => sourceCode = selectedProtocol?.content ?? ""}>Load</button>
 
 <!--Connect to the MonacoEditor and gets the written sourceCode-->
 <MonacoEditer bind:sourceCode={sourceCode} />
