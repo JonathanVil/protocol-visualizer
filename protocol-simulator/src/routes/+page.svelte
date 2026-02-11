@@ -9,6 +9,8 @@
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
     /** @typedef {import('$lib/types.js').Actor} Actor */
 
+
+    /**@type {{ protocols: { name: string; content: string }[] }}*/
     export let data; // props from +page.server.js
     let predefinedProtocols = data.protocols;
     /**
