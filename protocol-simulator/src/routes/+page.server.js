@@ -5,6 +5,8 @@ import path from 'path';
 export async function load() {
     const protocolsDir = path.resolve('src/protocols');
     const files = fs.readdirSync(protocolsDir);
+
+    /** @type {{ name: string; content: string }[]} */
     const protocols = [];
 
     for (const file of files) {
