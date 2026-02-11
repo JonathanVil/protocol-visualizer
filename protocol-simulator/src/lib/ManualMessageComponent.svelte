@@ -1,6 +1,6 @@
 ﻿<script>
     import {Queue} from '$lib/Queue.js';
-    import {getNextMessageId, transitTime} from "$lib/protocolUtils.js";
+    import {getNextMessageId, getTransitTime} from "$lib/protocolUtils.js";
 
     /** @typedef {import('$lib/types.js').Message} Message */
     let to = 0;
@@ -14,8 +14,9 @@
     export let messages = new Queue();
 
     function sendMessageManual(){
+        let transitTime = getTransitTime();
         /** @type {Message} */
-        let message = {id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0, data: "a"}
+        let message = {id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0, data: data}
         messages.push(message);
         console.log("Sending message manually");
         console.log(messages);

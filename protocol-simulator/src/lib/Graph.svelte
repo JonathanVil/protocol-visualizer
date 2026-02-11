@@ -1,7 +1,6 @@
 ﻿<script>
     import { onMount } from 'svelte';
     import cytoscape from 'cytoscape';
-    import {transitTime} from "$lib/protocolUtils.js";
     import {getStepSize} from "$lib/protocolUtils.js";
 
     /** @typedef {import('$lib/types.js').Actor} Actor */
@@ -74,7 +73,7 @@
                     selector: '.message',
                     style: {
                         'background-color': '#253478',
-                        label: "msg",
+                        label: "data(type)",
                         'width': 25,
                         'height': 25
                     }
@@ -108,7 +107,7 @@
         cyInstance.add(
             graphMessages.map(e => ({
                 group: 'nodes',
-                data: {id: e.id()},
+                data: {id: e.id(), type: e.data('type')},
                 position: e.position(),
                 classes: 'message'
             }))
@@ -122,15 +121,15 @@
         const target = cyInstance.getElementById(message.destination).position();
 
 
-        const targetPosThisStepX = source.x + ((target.x - source.x) * message.elapsedSteps) / transitTime
-        const targetPosThisStepY = source.y + ((target.y - source.y) * message.elapsedSteps) / transitTime
+        const targetPosThisStepX = source.x + ((target.x - source.x) * message.elapsedSteps) / message.transitSteps
+        const targetPosThisStepY = source.y + ((target.y - source.y) * message.elapsedSteps) / message.transitSteps
 
         //Create the message node in graph, if it does not exists.
         let msg = cyInstance.getElementById(message.id)
         if (msg.empty()) {
             msg = cyInstance.add({
                 group: 'nodes',
-                data: {id: message.id},
+                data: {id: message.id, type: message.type},
                 position: {x: source.x, y: source.y},
                 classes: 'message'
             });

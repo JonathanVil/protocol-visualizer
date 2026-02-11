@@ -3,13 +3,20 @@
     import Graph  from "$lib/Graph.svelte";
     import {Queue} from '$lib/Queue.js';
     import ManualMessageComponent from "$lib/ManualMessageComponent.svelte";
-    import {transitTime, getNextMessageId, parseProtocolCode, getStepSize, setStepSize} from "$lib/protocolUtils.js";
+    import {getTransitTime, setTransitbounds, getNextMessageId, parseProtocolCode, getStepSize, setStepSize} from "$lib/protocolUtils.js";
 
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
     /** @typedef {import('$lib/types.js').Actor} Actor */
 
-    let sourceCode = "";
+    export let data; // props from +page.server.js
+    let predefinedProtocols = data.protocols;
+    /**
+	 * @type {{ name: string; content: string; } | null}
+	 */
+    let selectedProtocol = null;
+    
+    let sourceCode = "// Write your code here...";
 
     //reference to graph instance
     /** @type {import('$lib/Graph.svelte').default} */
@@ -22,9 +29,12 @@
     let timeouts = new Queue();
     let id = 0;
 
-
     /** @type number */
     let intervalId;
+
+    // the actual values of these is not stored here, so these are not important until updated by user
+    let transitLowerInput = 8
+    let transitUpperInput = 12
 
     let stepSizeInput = getStepSize();
     let stepSizeUpdated = false;
@@ -82,6 +92,10 @@
         stepSizeUpdated = true;
     }
 
+    function setTransitTimeInput() {
+        setTransitbounds(transitUpperInput, transitLowerInput);
+    }
+
     function resetSimulation() {
         clearInterval(intervalId);
         messages = new Queue();
@@ -89,7 +103,7 @@
         actors = [];
         id = 0;
         stepSizeUpdated = false;
-        paused = false;
+        paused = true;
         graphRef.resetGraph();
     }
 
@@ -157,6 +171,7 @@
      * */
     function send(from, to, type, data) { //Example of use: send(this.id, from.id, "PING", "Hello")
         console.log(from, "send to", to);
+        let transitTime = getTransitTime();
         messages.push({id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0, data: data})
     }
 
@@ -185,6 +200,14 @@
 
 <h1 class="text-5xl font-bold mb-6">Protocol Simulator</h1>
 
+<select class="mb-4 p-2 border border-gray-300 rounded" bind:value={selectedProtocol}>
+    {#each predefinedProtocols as protocol}
+        <option value={protocol}>{protocol.name}</option>
+    {/each}
+</select>
+
+<button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" on:click={() => sourceCode = selectedProtocol.content}>Load</button>
+
 <!--Connect to the MonacoEditor and gets the written sourceCode-->
 <MonacoEditer bind:sourceCode={sourceCode} />
 
@@ -192,6 +215,11 @@
     <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             on:click={spawnActor}>
         Spawn actor
+    </button>
+
+    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            on:click={resetSimulation}>
+        Reset simulation
     </button>
 
     {#if paused}
@@ -217,6 +245,22 @@
     <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             on:click={setStepSizeInput}>
         Set step size (ms)
+    </button>
+
+    <input
+            type="number"
+            bind:value={transitUpperInput}
+            placeholder="12"
+    />
+    <input
+            type="number"
+            bind:value={transitLowerInput}
+            placeholder="8"
+    />
+
+    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            on:click={setTransitTimeInput}>
+        Set transit time interval
     </button>
 </div>
 
