@@ -53,11 +53,10 @@
 
         //  svelte automatically updates them in the Graph.svelte
         /** @type {Actor} */
-        let actor = new actorClass(id++);
+        let actor = watchActor(new actorClass(id++));
         actors = [...actors, actor];
         console.log("Adding actor");
         console.log(actors);
-
     }
 
 
@@ -108,8 +107,6 @@
         paused = true;
         graphRef.resetGraph();
     }
-
-
 
     function step() {
         if (paused) {
@@ -162,6 +159,19 @@
         }
     }
 
+    function watchActor(actor) {
+        return new Proxy(actor, {
+            set(target, prop, value) {
+                const prev = target[prop];
+                target[prop] = value;
+
+                if (prev !== value) {
+                    console.log(`Actor ${target.id}: ${String(prop)} changed`, { prev, next: value });
+                }
+                return true;
+            }
+        });
+    }
 
     // These are the functions we export into the Actors
     // TODO: put these somewhere nice :)
