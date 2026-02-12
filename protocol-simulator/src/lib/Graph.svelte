@@ -44,8 +44,12 @@
      * @param {Actor} actor
      */
     function actorToNode(actor) {
+        //Check if color contains opacity & is hex
+        let color = actor.nodeColor ?? '#1d4ed8';
+        if (color.includes("#")) {color = color.slice(0, 7);}
+
         return {
-            data: { id: String(actor.id) } // cytoscape needs string IDs
+            data: { id: String(actor.id), color: color } // cytoscape needs string IDs
         };
     }
 
