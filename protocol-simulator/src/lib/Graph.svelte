@@ -40,6 +40,38 @@
         };
     }
 
+    // Helper: ensure an actor node exists
+    /** @param {Actor} actor */
+    function ensureActorNode(actor) {
+        const id = String(actor.id);
+        const existing = cyInstance.getElementById(id);
+        if (!existing.empty()) return { added: false, id };
+
+        const node = actorToNode(actor);
+        cyInstance.add(node);
+
+        return { added: true, id };
+    }
+
+    // Helper: ensure an edge exists
+    /**
+     * @param {{ source: number, target: number, label: string }} e
+     */
+    function ensureEdge(e) {
+        const source = String(e.source);
+        const target = String(e.target);
+        const edgeId = `${source}->${target}`; // deterministic id prevents duplicates
+
+        const existing = cyInstance.getElementById(edgeId);
+        if (!existing.empty()) return false;
+
+        cyInstance.add({
+            group: 'edges',
+            data: { id: edgeId, source, target, label: e.label ?? "" }
+        });
+        return true;
+    }
+
     onMount(() => {
         cyInstance = cytoscape({
             container: cyContainer,
@@ -83,43 +115,47 @@
         });
     });
 
-    //Adding Nodes
-    $: if (cyInstance) { //if the instance of the graph is created
-        cyInstance.elements().remove();
-        cyInstance.add([ //convert out data to cytoscape elements
-            ...nodes.map(n => ({ data: { id: n.id} })), //goes through evert node and converts them
-        ]);
+    //Adding Nodes (incrementally)
+    $: if (cyInstance) {
+        // Only add what’s new; do NOT remove existing nodes/edges/messages
+        cyInstance.batch(() => {
+            let addedSomething = false;
 
-        for (let i = 0; i < nodes.length - 1; i++) {
-            const nodeA = nodes[i];
-            const nodeB = nodes[nodes.length - 1];
-            edges = [ ...edges, { source: nodeA.id, target: nodeB.id, label: "" } ];
-        }
-        cyInstance.add([
-            ...edges.map(e => ({ data: { source: e.source, target: e.target, label: e.label } })),
-        ])
+            // 1) Ensure all actor nodes exist
+            for (const actor of nodes) {
+                const { added } = ensureActorNode(actor);
+                if (added) addedSomething = true;
+            }
 
+            // 2) Keep your “connect everyone to newest node” behavior,
+            //    but only create missing edges (no duplicates)
+            if (nodes.length >= 2) {
+                const newest = nodes[nodes.length - 1];
+                for (let i = 0; i < nodes.length - 1; i++) {
+                    const nodeA = nodes[i];
+                    const newEdge = { source: nodeA.id, target: newest.id, label: "" };
 
-        //run it again
-        cyInstance.layout({name: 'circle', radius: 120, avoidOverlap: true, fit: true}).run();
+                    // keep your local edges array updated (optional but consistent)
+                    // and ensure the edge exists in Cytoscape
+                    const edgeAdded = ensureEdge(newEdge);
+                    if (edgeAdded) {
+                        edges = [...edges, newEdge];
+                        addedSomething = true;
+                    }
+                }
+            }
 
-        //Add messages back
-        cyInstance.add(
-            graphMessages.map(e => ({
-                group: 'nodes',
-                data: {id: e.id(), type: e.data('type')},
-                position: e.position(),
-                classes: 'message'
-            }))
-        )
+            // 3) Only re-run layout when we actually added nodes/edges
+            if (addedSomething) {
+                cyInstance.layout({name: 'circle', radius: 120, avoidOverlap: true, fit: true}).run();
+            }
+        });
     }
 
     /** @param {Message} message */
     export function animateMessage(message) {
-
         const source = cyInstance.getElementById(message.source).position();
         const target = cyInstance.getElementById(message.destination).position();
-
 
         const targetPosThisStepX = source.x + ((target.x - source.x) * message.elapsedSteps) / message.transitSteps
         const targetPosThisStepY = source.y + ((target.y - source.y) * message.elapsedSteps) / message.transitSteps
@@ -155,7 +191,6 @@
         });
 
     }
-
 </script>
 
 <div bind:this={cyContainer} class="w-full h-96 border border-gray-300 rounded-md"></div>
