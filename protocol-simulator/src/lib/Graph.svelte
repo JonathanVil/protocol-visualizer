@@ -48,7 +48,7 @@
                 {
                     selector: 'node',
                     style: {
-                        'background-color': '#1d4ed8',
+                        'background-color': 'data(color)',
                         label: 'data(id)',
                         color: '#fff',
                         'text-valign': 'center',
@@ -84,10 +84,22 @@
     });
 
     //Adding Nodes
-    $: if (cyInstance) { //if the instance of the graph is created
+    $: if (cyInstance) {
         cyInstance.elements().remove();
-        cyInstance.add([ //convert out data to cytoscape elements
-            ...nodes.map(n => ({ data: { id: n.id} })), //goes through evert node and converts them
+        //convert our nodes to cytoscape elements
+        cyInstance.add([
+            ...nodes.map(n => {
+
+                //Check if color contains opacity & is hex
+                let color = n.nodeColor ?? '#1d4ed8';
+                if (color.includes("#")) {color = color.slice(0, 7);}
+                return {
+                    data: {
+                        id: n.id,
+                        color: color
+                    }
+                };
+            })
         ]);
 
         for (let i = 0; i < nodes.length - 1; i++) {
@@ -124,7 +136,7 @@
         const targetPosThisStepX = source.x + ((target.x - source.x) * message.elapsedSteps) / message.transitSteps
         const targetPosThisStepY = source.y + ((target.y - source.y) * message.elapsedSteps) / message.transitSteps
 
-        //Create the message node in graph, if it does not exists.
+        //Create the message node in graph, if it does not exist.
         let msg = cyInstance.getElementById(message.id)
         if (msg.empty()) {
             msg = cyInstance.add({
@@ -144,10 +156,8 @@
             queue: false,
             complete: () => {
                 if (message.elapsedSteps >= message.transitSteps) {
-                    // remove message node from graph
+                    // remove message node from graph & array
                     cyInstance.remove(msg);
-                    //remove the message from array
-                    //console.log("Removed message", msg);
                     graphMessages.splice(graphMessages.indexOf(msg), 1);
 
                 }

@@ -6,7 +6,8 @@
 /**
  * @typedef {{
  *   id: number,
- *   receive(message: { type: string, from: number }): void
+ *   receive(message: { type: string, from: number }): void,
+ *   nodeColor: string
  * }} Actor
  */
 
