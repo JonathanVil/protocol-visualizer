@@ -1,7 +1,14 @@
 ﻿<script>
     import { onMount } from 'svelte';
-    import cytoscape from 'cytoscape';
     import {getStepSize} from "$lib/protocolUtils.js";
+    import cytoscape from 'cytoscape';
+    import cytoscapePopper from 'cytoscape-popper';
+    import {
+        computePosition,
+        flip,
+        shift,
+        limitShift,
+    } from '@floating-ui/dom';
 
     /** @typedef {import('$lib/types.js').Actor} Actor */
     /** @typedef {import('$lib/types.js').Message} Message */
@@ -47,8 +54,10 @@
         const existing = cyInstance.getElementById(id);
         if (!existing.empty()) return { added: false, id };
 
-        const node = actorToNode(actor);
-        cyInstance.add(node);
+        cyInstance.add(actorToNode(actor));
+
+        // add popper
+        updateActorStatePopper(actor);
 
         return { added: true, id };
     }
@@ -71,6 +80,74 @@
         });
         return true;
     }
+
+    /** @type {Map<number, { popper: any, el: HTMLDivElement }>} */
+    const poppers = new Map();
+
+    // Helper: adds or updates a "popper" displaying the actor state to cytoscape nodes
+    /**
+     * @param {Actor} actor
+     */
+    function updateActorStatePopper(actor) {
+        const id = actor.id;
+        let entry = poppers.get(id);
+        const node = cyInstance.getElementById(String(id));
+
+        if (!entry) { // if no popper exists yet, we create one
+            const el = document.createElement('div');
+            el.style.position = 'absolute'; // critical
+            el.innerHTML = 'Newly created popper';
+            document.body.appendChild(el);
+
+            const popper = node.popper({
+                content: () => el // always return the same element
+            });
+
+            const update = () => popper.update();
+            node.on('position', update);
+            cyInstance.on('pan zoom resize', update);
+
+            entry = { popper, el };
+            poppers.set(id, entry);
+        }
+
+        // Update the content
+        entry.el.innerHTML = `Actor ${node.id()}`;
+
+        // Reposition after content size may have changed
+        entry.popper.update();
+    }
+
+    /**
+     * @param {cytoscapePopper.RefElement} ref
+     * @param {HTMLElement} content
+     * @param {cytoscapePopper.PopperOptions|undefined} options
+     */
+    function popperFactory(ref, content, options) {
+        // see https://floating-ui.com/docs/computePosition#options
+        const popperOptions = {
+            // matching the default behaviour from Popper@2
+            // https://floating-ui.com/docs/migration#configure-middleware
+            middleware: [
+                flip(),
+                shift({limiter: limitShift()})
+            ],
+            ...options,
+        }
+
+        function update() {
+            computePosition(ref, content, popperOptions).then(({x, y}) => {
+                Object.assign(content.style, {
+                    left: `${x}px`,
+                    top: `${y}px`,
+                });
+            });
+        }
+        update();
+        return { update };
+    }
+
+    cytoscape.use(cytoscapePopper(popperFactory));
 
     onMount(() => {
         cyInstance = cytoscape({
