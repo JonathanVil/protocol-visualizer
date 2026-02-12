@@ -1,10 +1,9 @@
-<script>
+﻿<script>
     import MonacoEditer from "$lib/MonacoEditer.svelte";
     import Graph  from "$lib/Graph.svelte";
     import {Queue} from '$lib/Queue.js';
     import ManualMessageComponent from "$lib/ManualMessageComponent.svelte";
     import {getTransitTime, setTransitbounds, getNextMessageId, parseProtocolCode, getStepSize, setStepSize} from "$lib/protocolUtils.js";
-    import Icon from '@iconify/svelte';
 
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
@@ -15,10 +14,10 @@
     export let data; // props from +page.server.js
     let predefinedProtocols = data.protocols;
     /**
-	 * @type {{ name: string; content: string; } | null}
-	 */
+     * @type {{ name: string; content: string; } | null}
+     */
     let selectedProtocol = null;
-    
+
     let sourceCode = "// Write your code here...";
 
     //reference to graph instance
@@ -48,8 +47,8 @@
         const actorClass = parseProtocolCode(sourceCode, send, getActors, createQueue, timeout); // we need to give send here so the actor "knows" it
 
         if (actorClass == null) {
-          console.error("Actor class not defined");
-          return;
+            console.error("Actor class not defined");
+            return;
         }
 
         //  svelte automatically updates them in the Graph.svelte
@@ -199,68 +198,7 @@
         });
     }
 
-
 </script>
-
-
-<!--Top navigation bar-->
-<header class="h-14 bg-white shadow flex items-center justify-between px-6">
-    <div class="flex items-center gap-3">
-        <div class="w-6 h-6 bg-gray-300 rounded"></div>
-        <h1 class="text-lg font-semibold">Protocol Simulator</h1>
-    </div>
-    <div class="w-8 h-8 bg-gray-300 rounded-full"></div>
-</header>
-
-<!--Dotted graph (background)-->
-<div class="cy-wrapper">
-    <Graph bind:this={graphRef} nodes={actors} />
-</div>
-
-
-<div class="absolute top-20 w-full flex justify-between items-center">
-    <div class="flex flex-col ">
-        <p>Code</p>
-        <button class="p-2 rounded-lg hover:bg-gray-200 transition">
-            <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
-        </button>
-    </div>
-
-    <div class="flex flex-col ">
-        <p>Settings</p>
-        <button class="p-2 rounded-lg hover:bg-gray-200 transition">
-            <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
-        </button>
-    </div>
-</div>
-
-<!--Code block-->
-<div>
-
-</div>
-
-<!--Settings block-->
-
-<!--Message block-->
-
-
-
-
-
-<!-- 🔹 Bottom Right Buttons -->
-<div class="absolute bottom-6 right-6 flex flex-col gap-3">
-    <button class="bg-blue-600 text-white px-6 py-2 rounded-lg shadow hover:bg-blue-700" >
-        Start Simulator
-    </button>
-    <button class="bg-blue-600 text-white px-6 py-2 rounded-lg shadow hover:bg-blue-700">
-        Reset
-    </button>
-</div>
-
-
-
-
-
 
 <h1 class="text-5xl font-bold mb-6">Protocol Simulator</h1>
 
@@ -301,9 +239,9 @@
     {/if}
 
     <input
-        type="number"
-        bind:value={stepSizeInput}
-        placeholder="100"
+            type="number"
+            bind:value={stepSizeInput}
+            placeholder="100"
     />
 
     <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -331,22 +269,3 @@
 <ManualMessageComponent messages={messages} />
 
 <Graph bind:this={graphRef} nodes={actors}/>
-
-
-<style>
-    .cy-wrapper {
-        width: 100vw;
-        height: 100vh;
-
-        /* dots*/
-        background-color: #ffffff;
-        background-image: radial-gradient(#d1d5db 1px, transparent 1px);
-        background-size: 30px 30px;
-    }
-
-    /* Sørg for at komponenten indeni rent faktisk fylder wrapperen - google AI */
-    :global(.cy-wrapper > *) {
-        width: 100% !important;
-        height: 100% !important;
-    }
-</style>

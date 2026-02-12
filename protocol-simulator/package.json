@@ -55,6 +55,7 @@
 		"svelte"
 	],
 	"dependencies": {
+		"@iconify/svelte": "^5.2.1",
 		"cytoscape": "^3.33.1",
 		"monaco-editor": "^0.55.1"
 	}
