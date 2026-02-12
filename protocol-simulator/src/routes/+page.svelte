@@ -205,13 +205,22 @@
     onMount(() => {
         //Frontend functions & variables'
         /** @type {HTMLElement | null} */
-        const button = document.getElementById("btn");
+        const codeButton = document.getElementById("btn-code");
         /** @type {HTMLElement | null} */
         const codepanel = document.getElementById("codepanel")
 
-        if (button && codepanel) {
-            button.addEventListener("click", () => { codepanel.classList.toggle("hidden"); });
+        /** @type {HTMLElement | null} */
+        const settingsButton = document.getElementById("btn-settings");
+        /** @type {HTMLElement | null} */
+        const settingspanel = document.getElementById("settingspanel");
+
+        if (codeButton && codepanel) {
+            codeButton.addEventListener("click", () => { codepanel.classList.toggle("hidden"); });
         }
+        if (settingspanel && settingsButton) {
+            settingsButton.addEventListener("click", () => { settingspanel.classList.toggle("hidden"); });
+        }
+
     })
 </script>
 
@@ -230,21 +239,46 @@
     <Graph bind:this={graphRef} nodes={actors} />
 </div>
 
+
 <!--Code block-->
 <div id="codepanel" class="hidden absolute top-22 left-1 rounded-lg w-2/5 h-4/5">
     <MonacoEditer bind:sourceCode={sourceCode} />
 </div>
 
+
 <!--Burger menu's-->
 <div class="flex flex-col absolute top-14 ">
-    <button id="btn" class="p-1 rounded-lg hover:bg-blue-200">
+    <button id="btn-code" class="p-1 rounded-lg hover:bg-blue-200">
+        <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
+    </button>
+</div>
+
+<div class="flex flex-col absolute top-14 right-5 ">
+    <button id="btn-settings" class="p-1 rounded-lg hover:bg-blue-200">
         <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
     </button>
 </div>
 
 
 <!--Settings block-->
+<div id="settingspanel" class="hidden absolute top-22 right-1 rounded-lg w-1/7 h-2/5 bg-[#91B7C7]/16 border">
+    <div class="flex flex-col gap-3">
+        <div class="font-medium">
+            <p class="">Step size</p>
+        </div>
+        <div>
+            <input type="range" class="w-3/4" min="10" max="1000" bind:value={stepSizeInput} on:input={setStepSizeInput}>
+            <p>{stepSizeInput}</p>
+        </div>
+        <div class="font-medium">
+            <p>Transit time</p>
+        </div>
+        <div>
+            <input type="range" class="w-3/4">
+        </div>
+    </div>
 
+</div>
 
 <!--Message block-->
 
@@ -331,8 +365,6 @@
 </div>
 
 <ManualMessageComponent messages={messages} />
-
-<Graph bind:this={graphRef} nodes={actors}/>
 
 
 <style>
