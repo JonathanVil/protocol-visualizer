@@ -27,6 +27,27 @@
         actor
             ? Object.entries(actor).filter(([k, v]) => typeof v !== 'function' && !excludedAttributes.includes(k))
             : [];
+
+    // --- flash-on-change bookkeeping ---
+    /** @type {Map<string, any>} */
+    let prevByKey = new Map();
+
+    /** @type {Map<string, number>} */
+    let versionByKey = new Map();
+
+    $: if (actor) {
+        for (const [key, value] of entries) {
+            const prev = prevByKey.get(key);
+
+            // NOTE: Object.is is great for primitives; if you need deep detection for objects,
+            // compare formatValue(prev) vs formatValue(value) instead (slower, but catches mutations).
+            if (prevByKey.has(key) && !Object.is(prev, value)) {
+                versionByKey.set(key, (versionByKey.get(key) ?? 0) + 1);
+            }
+
+            prevByKey.set(key, value);
+        }
+    }
 </script>
 
 <div
@@ -39,8 +60,30 @@
     {:else}
         {#each entries as [key, value] (key)}
             <div class="font-mono opacity-95">
-                <span class="opacity-90">{key}</span>: <span>{formatValue(value)}</span>
+                <span class="opacity-90">{key}</span>:
+                {#key versionByKey.get(key) ?? 0}
+                    <span class="flash">{formatValue(value)}</span>
+                {/key}
             </div>
         {/each}
     {/if}
 </div>
+
+<style>
+    @keyframes flash {
+        0% {
+            background: rgba(250, 204, 21, 0.55); /* amber-ish */
+            color: white;
+        }
+        100% {
+            background: transparent;
+            color: inherit;
+        }
+    }
+
+    .flash {
+        animation: flash 450ms ease-out;
+        border-radius: 0.25rem;
+        padding: 0 0.15rem;
+    }
+</style>
