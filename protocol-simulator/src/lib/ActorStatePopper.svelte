@@ -39,8 +39,6 @@
         for (const [key, value] of entries) {
             const prev = prevByKey.get(key);
 
-            // NOTE: Object.is is great for primitives; if you need deep detection for objects,
-            // compare formatValue(prev) vs formatValue(value) instead (slower, but catches mutations).
             if (prevByKey.has(key) && !Object.is(prev, value)) {
                 versionByKey.set(key, (versionByKey.get(key) ?? 0) + 1);
             }
