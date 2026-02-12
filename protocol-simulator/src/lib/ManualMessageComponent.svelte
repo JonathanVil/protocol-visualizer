@@ -23,14 +23,36 @@
     }
 </script>
 
-<div>
-    <input id="to" bind:value={to} placeholder="To actor ID" />
-    <input id="from" bind:value={from} placeholder="From actor ID" />
-    <input id="type" bind:value={type} placeholder="Message type" />
-    <input id="data" bind:value={data} placeholder="Data" />
+<div class="flex flex-row gap-12">
+
+
+    <div class="flex flex-row gap-3 h-full w-full">
+        <div class="basis-[10%]">
+            From
+            <input class="border" id="from" bind:value={from} placeholder="From actor ID" />
+        </div>
+        <div class="basis-[10%]">
+            To
+            <input class="border" id="to" bind:value={to} placeholder="To actor ID" />
+        </div>
+        <div class="basis-[33%]">
+            Message Type
+            <input class="border" id="type" bind:value={type} placeholder="Message type" />
+        </div>
+        <div class="basis-[33%] ">
+            <p>Data</p>
+            <input class="border" id="data" bind:value={data} placeholder="Data" />
+
+        </div>
+
+    </div>
     <button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             on:click={sendMessageManual}>
         Send
     </button>
+
+
+
+
 
 </div>

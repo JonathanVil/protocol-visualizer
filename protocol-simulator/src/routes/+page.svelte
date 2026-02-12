@@ -231,7 +231,17 @@
         <div class="w-6 h-6 bg-gray-300 rounded"></div>
         <h1 class="text-lg font-semibold">Protocol Simulator</h1>
     </div>
+    <div class="items-center">
+        <select class="mb-4 p-2 border border-gray-300 rounded" bind:value={selectedProtocol}>
+            {#each predefinedProtocols as protocol}
+                <option value={protocol}>{protocol.name}</option>
+            {/each}
+        </select>
+
+        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" on:click={() => sourceCode = selectedProtocol?.content ?? ""}>Load</button>
+    </div>
     <div class="w-8 h-8 bg-gray-300 rounded-full"></div>
+
 </header>
 
 <!--Dotted graph (background)-->
@@ -243,6 +253,10 @@
 <!--Code block-->
 <div id="codepanel" class="hidden absolute top-22 left-1 rounded-lg w-2/5 h-4/5">
     <MonacoEditer bind:sourceCode={sourceCode} />
+    <button class="absolute bottom-6 right-2 py-3 bg-blue-600 text-white rounded hover:bg-blue-700"
+            on:click={spawnActor}>
+        Spawn actor
+    </button>
 </div>
 
 
@@ -254,6 +268,7 @@
 </div>
 
 <div class="flex flex-col absolute top-14 right-5 ">
+
     <button id="btn-settings" class="p-1 rounded-lg hover:bg-blue-200">
         <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
     </button>
@@ -291,6 +306,9 @@
 </div>
 
 <!--Message block-->
+<div class="absolute bottom-5 left-1 rounded-lg w-2/5 h-1/12 bg-white border">
+    <ManualMessageComponent messages={messages} />
+</div>
 
 
 <!-- 🔹 Bottom Right Buttons -->
@@ -316,82 +334,10 @@
 
 
 
-
-
-
-<h1 class="text-5xl font-bold mb-6">Protocol Simulator</h1>
-
-<select class="mb-4 p-2 border border-gray-300 rounded" bind:value={selectedProtocol}>
-    {#each predefinedProtocols as protocol}
-        <option value={protocol}>{protocol.name}</option>
-    {/each}
-</select>
-
-<button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" on:click={() => sourceCode = selectedProtocol?.content ?? ""}>Load</button>
-
-<!--Connect to the MonacoEditor and gets the written sourceCode-->
-<MonacoEditer bind:sourceCode={sourceCode} />
-
-<div class="mt-4 flex-row space-x-2 pt-2">
-    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            on:click={spawnActor}>
-        Spawn actor
-    </button>
-
-    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            on:click={resetSimulation}>
-        Reset simulation
-    </button>
-
-    {#if paused}
-        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 inline-flex items-center"
-                on:click={startSimulation}>
-            <svg class="fill-current w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M320-200v-560l440 280-440 280Z"/></svg>
-            <span>Start Simulator</span>
-        </button>
-    {:else}
-        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 inline-flex items-center"
-                on:click={pauseSimulation}>
-            <svg class="fill-current w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M560-200v-560h160v560H560Zm-320 0v-560h160v560H240Z"/></svg>
-            <span>Pause Simulator</span>
-        </button>
-    {/if}
-
-    <input
-        type="number"
-        bind:value={stepSizeInput}
-        placeholder="100"
-    />
-
-    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            on:click={setStepSizeInput}>
-        Set step size (ms)
-    </button>
-
-    <input
-            type="number"
-            bind:value={transitUpperInput}
-            placeholder="12"
-    />
-    <input
-            type="number"
-            bind:value={transitLowerInput}
-            placeholder="8"
-    />
-
-    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            on:click={setTransitTimeInput}>
-        Set transit time interval
-    </button>
-</div>
-
-<ManualMessageComponent messages={messages} />
-
-
 <style>
     .cy-wrapper {
         width: 100vw;
-        height: 100vh;
+        height: 95vh;
 
         /* dots*/
         background-color: #ffffff;
