@@ -69,7 +69,7 @@
                 send(this.id, i, "COORDINATE");
             }
             this.coordinationSent = true;
-            timeout(this, 30, finishCoordinate);
+            timeout(this, 30, this.finishCoordinate);
         }
 
     }
