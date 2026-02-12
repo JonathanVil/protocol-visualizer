@@ -15,7 +15,7 @@
         if (msg.type === "REQUEST") {
             this.recievedTimestamp = msg.data;
             this.coordinateTS(); // ensure correct timestamps
-            if ((this.wantsCS && ((this.requestTimestamp > msg.data) || (this.requestTimestamp === msg.data && this.id > msg.from))) || this.inCS) { //crazy conditional
+            if ((this.wantsCS && ((this.requestTimestamp < msg.data) || (this.requestTimestamp === msg.data && this.id < msg.from))) || this.inCS) { //crazy conditional
                 this.messageQueue.push(msg.from) //DENIED
             } else {
                 send(this.id, msg.from, "REPLY", this.timestamp) //approved :)
