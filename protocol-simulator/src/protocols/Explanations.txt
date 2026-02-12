@@ -1,0 +1,30 @@
+﻿-- System details --
+
+
+
+-- Functions --
+
+send(from, to, type, ?data)
+This function allows sending messages between nodes.
+from should always be this.id. It enables the recipient to reply if necessary.
+to is the id of the recipient of the message.
+type is a string that specifies the kind of message being sent. In practice, it is used for matching messages in the receive method.
+data is an optional field that allows you to send additional information in a message, such as timestamps, or even objects.
+
+
+getActors()
+returns the number of actors currently in the systems
+
+
+createQueue()
+returns an empty linked list queue
+queue.push(element) allows you to push one element to the back of the queue.
+queue.pop() allows you tot pop one element from the front of the queue.
+queue.length gives the amount of elements in the queue.
+
+
+timeout(actor, steps, reaction)
+This function allows calling a method after a set amount of steps.
+actor should always be "this". This is important to ensure the method can access state.
+steps is the number of steps the timer waits before executing the reaction.
+reaction is the method to be called when the timer finishes. This method must take no arguments.
