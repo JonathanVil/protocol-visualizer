@@ -1,5 +1,5 @@
 ﻿<script>
-    import { onMount } from 'svelte';
+    import {mount, onMount} from 'svelte';
     import {getStepSize} from "$lib/protocolUtils.js";
     import cytoscape from 'cytoscape';
     import cytoscapePopper from 'cytoscape-popper';
@@ -9,6 +9,7 @@
         shift,
         limitShift,
     } from '@floating-ui/dom';
+    import ActorStatePopper from "$lib/ActorStatePopper.svelte";
 
     /** @typedef {import('$lib/types.js').Actor} Actor */
     /** @typedef {import('$lib/types.js').Message} Message */
@@ -96,11 +97,15 @@
         if (!entry) { // if no popper exists yet, we create one
             const el = document.createElement('div');
             el.style.position = 'absolute'; // critical
-            el.innerHTML = 'Newly created popper';
-            document.body.appendChild(el);
+            cyContainer.appendChild(el);
+
+            const app = mount(ActorStatePopper, {
+                target: el,
+                props: { actor }
+            });
 
             const popper = node.popper({
-                content: () => el // always return the same element
+                content: () => el
             });
 
             const update = () => popper.update();
@@ -110,9 +115,6 @@
             entry = { popper, el };
             poppers.set(id, entry);
         }
-
-        // Update the content
-        entry.el.innerHTML = `Actor ${node.id()}`;
 
         // Reposition after content size may have changed
         entry.popper.update();
@@ -270,4 +272,4 @@
     }
 </script>
 
-<div bind:this={cyContainer} class="w-full h-96 border border-gray-300 rounded-md"></div>
+<div bind:this={cyContainer} class="w-full h-96 border border-gray-300 rounded-md relative overflow-hidden"></div>
