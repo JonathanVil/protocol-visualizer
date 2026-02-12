@@ -273,8 +273,18 @@
         <div class="font-medium">
             <p>Transit time</p>
         </div>
-        <div>
-            <input type="range" class="w-3/4">
+        <div class="flex">
+            <div class="flex flex-col">
+                <p>Min</p>
+                <input type="range" class="w-1/2" min="1" max="{transitUpperInput - 1}" bind:value={transitLowerInput} on:input={setTransitTimeInput}>
+                <p>{transitLowerInput}</p>
+            </div>
+            <div>
+                <p>Max</p>
+                <input type="range" class="w-1/2" min="{transitLowerInput}" max="50" bind:value={transitUpperInput} on:input={setTransitTimeInput}>
+                <p>{transitUpperInput}</p>
+            </div>
+
         </div>
     </div>
 
