@@ -88,7 +88,18 @@
         cyInstance.elements().remove();
         //convert our nodes to cytoscape elements
         cyInstance.add([
-            ...nodes.map(n => ({ data: { id: n.id, color: n.nodeColor ?? '#1d4ed8'} })),
+            ...nodes.map(n => {
+
+                //Check if color contains opacity & is hex
+                let color = n.nodeColor ?? '#1d4ed8';
+                if (color.includes("#")) {color = color.slice(0, 7);}
+                return {
+                    data: {
+                        id: n.id,
+                        color: color
+                    }
+                };
+            })
         ]);
 
         for (let i = 0; i < nodes.length - 1; i++) {
