@@ -5,6 +5,7 @@
     import ManualMessageComponent from "$lib/ManualMessageComponent.svelte";
     import {getTransitTime, setTransitbounds, getNextMessageId, parseProtocolCode, getStepSize, setStepSize} from "$lib/protocolUtils.js";
     import Icon from '@iconify/svelte';
+    import {onMount} from "svelte";
 
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
@@ -200,6 +201,18 @@
     }
 
 
+
+    onMount(() => {
+        //Frontend functions & variables'
+        /** @type {HTMLElement | null} */
+        const button = document.getElementById("btn");
+        /** @type {HTMLElement | null} */
+        const codepanel = document.getElementById("codepanel")
+
+        if (button && codepanel) {
+            button.addEventListener("click", () => { codepanel.classList.toggle("hidden"); });
+        }
+    })
 </script>
 
 
@@ -217,34 +230,23 @@
     <Graph bind:this={graphRef} nodes={actors} />
 </div>
 
-
-<div class="absolute top-20 w-full flex justify-between items-center">
-    <div class="flex flex-col ">
-        <p>Code</p>
-        <button class="p-2 rounded-lg hover:bg-gray-200 transition">
-            <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
-        </button>
-    </div>
-
-    <div class="flex flex-col ">
-        <p>Settings</p>
-        <button class="p-2 rounded-lg hover:bg-gray-200 transition">
-            <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
-        </button>
-    </div>
-</div>
-
 <!--Code block-->
-<div>
-
+<div id="codepanel" class="hidden absolute top-22 left-1 rounded-lg w-2/5 h-4/5">
+    <MonacoEditer bind:sourceCode={sourceCode} />
 </div>
+
+<!--Burger menu's-->
+<div class="flex flex-col absolute top-14 ">
+    <button id="btn" class="p-1 rounded-lg hover:bg-blue-200">
+        <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
+    </button>
+</div>
+
 
 <!--Settings block-->
 
+
 <!--Message block-->
-
-
-
 
 
 <!-- 🔹 Bottom Right Buttons -->
