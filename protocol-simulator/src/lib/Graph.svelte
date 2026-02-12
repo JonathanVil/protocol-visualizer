@@ -10,6 +10,7 @@
         limitShift,
     } from '@floating-ui/dom';
     import ActorStatePopper from "$lib/ActorStatePopper.svelte";
+    import {writable} from "svelte/store";
 
     /** @typedef {import('$lib/types.js').Actor} Actor */
     /** @typedef {import('$lib/types.js').Message} Message */
@@ -82,14 +83,15 @@
         return true;
     }
 
-    /** @type {Map<number, { popper: any, el: HTMLDivElement }>} */
+    /** @typedef {import('svelte/store').Writable<Actor>} ActorStore */
+    /** @type {Map<number, { popper: any, actorStore: ActorStore }>} */
     const poppers = new Map();
 
     // Helper: adds or updates a "popper" displaying the actor state to cytoscape nodes
     /**
      * @param {Actor} actor
      */
-    function updateActorStatePopper(actor) {
+    export function updateActorStatePopper(actor) {
         const id = actor.id;
         let entry = poppers.get(id);
         const node = cyInstance.getElementById(String(id));
@@ -99,9 +101,11 @@
             el.style.position = 'absolute'; // critical
             cyContainer.appendChild(el);
 
-            const app = mount(ActorStatePopper, {
+            const actorStore = writable(actor);
+
+            mount(ActorStatePopper, {
                 target: el,
-                props: { actor }
+                props: { store: actorStore }
             });
 
             const popper = node.popper({
@@ -112,11 +116,12 @@
             node.on('position', update);
             cyInstance.on('pan zoom resize', update);
 
-            entry = { popper, el };
+            entry = { popper, actorStore };
             poppers.set(id, entry);
+        } else {
+            entry.actorStore.set(actor);
         }
 
-        // Reposition after content size may have changed
         entry.popper.update();
     }
 

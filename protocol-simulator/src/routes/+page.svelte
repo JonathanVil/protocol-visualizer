@@ -159,6 +159,7 @@
         }
     }
 
+    /** @param {Actor} actor */
     function watchActor(actor) {
         return new Proxy(actor, {
             set(target, prop, value) {
@@ -167,6 +168,7 @@
 
                 if (prev !== value) {
                     console.log(`Actor ${target.id}: ${String(prop)} changed`, { prev, next: value });
+                    graphRef.updateActorStatePopper(target);
                 }
                 return true;
             }
