@@ -5,10 +5,11 @@
         this.alive = true;
         this.leader = null;
         this.leaderIsAlive = false;
+        this.coordinationSent = false;
     }
 
     receive(msg) {
-        if (msg.type === 'SENDPING') {
+        if (msg.type === 'SENDPING') { //this just allows us to send a normal ping from a node
             console.log(this.id, "received SENDPING");
             if (this.leader) {
                 this.leaderIsAlive = false;
@@ -17,33 +18,35 @@
             } else {
                 this.startElection()
             }
-
         }
-        if (msg.type === "PING") {
+        if (msg.type === "PING") { //an empty message, serves as a heartbeat
             if (this.alive){
                 send(this.id, msg.from, "PONG")
             }
         }
-        if (msg.type === "PONG") {
+        if (msg.type === "PONG") { // response to the heartbeat
             this.leaderIsAlive = true;
         }
-        if (msg.type === "ELECTION") {
+        if (msg.type === "ELECTION") { // sent when the leader is discovered dead
             if (this.alive) {
                 this.leaderIsAlive = false
                 send(this.id, msg.from, "REPLY")
                 this.startElection()
             }
         }
-        if (msg.type === "REPLY") {
+        if (msg.type === "REPLY") { // reply to an election message
             this.leaderIsAlive = true;
             if (this.leader === null || this.leader < msg.from) {
                 this.leader = msg.from
             }
         }
-        if (msg.type === "KILL") {
+        if (msg.type === "COORDINATE") {
+            this.leader = msg.from
+        }
+        if (msg.type === "KILL") { // allows us to "kill" a node
             this.alive = false;
         }
-        if (msg.type === "LIVE") {
+        if (msg.type === "LIVE") { // allows us to revive a node
             this.alive = true;
         }
 
@@ -56,8 +59,22 @@
             for (let i = this.id + 1; i < getActors(); i++) {
                 send(this.id, i, "ELECTION");
             }
+            timeout(this, 50, this.coordinate);
+
+        }
+    }
+    coordinate(){
+        if (this.leader === this.id && this.coordinationSent === false){
+            for (let i = 0; i < getActors(); i++) {
+                send(this.id, i, "COORDINATE");
+            }
+            this.coordinationSent = true;
+            timeout(this, 30, finishCoordinate);
         }
 
+    }
+    finishCoordinate(){
+        this.coordinationSent = false;
     }
 }
 

@@ -164,7 +164,7 @@
                 {
                     selector: 'node',
                     style: {
-                        'background-color': '#1d4ed8',
+                        'background-color': 'data(color)',
                         label: 'data(id)',
                         color: '#fff',
                         'text-valign': 'center',
@@ -244,7 +244,7 @@
         const targetPosThisStepX = source.x + ((target.x - source.x) * message.elapsedSteps) / message.transitSteps
         const targetPosThisStepY = source.y + ((target.y - source.y) * message.elapsedSteps) / message.transitSteps
 
-        //Create the message node in graph, if it does not exists.
+        //Create the message node in graph, if it does not exist.
         let msg = cyInstance.getElementById(message.id)
         if (msg.empty()) {
             msg = cyInstance.add({
@@ -264,10 +264,8 @@
             queue: false,
             complete: () => {
                 if (message.elapsedSteps >= message.transitSteps) {
-                    // remove message node from graph
+                    // remove message node from graph & array
                     cyInstance.remove(msg);
-                    //remove the message from array
-                    //console.log("Removed message", msg);
                     graphMessages.splice(graphMessages.indexOf(msg), 1);
 
                 }
