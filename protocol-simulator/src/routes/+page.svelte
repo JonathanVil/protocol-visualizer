@@ -1,9 +1,14 @@
 <script>
     import MonacoEditer from "$lib/MonacoEditer.svelte";
+    import SettingsPanel from "$lib/SettingsPanel.svelte";
+    import NavigationBar from "$lib/NavigationBar.svelte";
+    import ControlsPanel from "$lib/ControlsPanel.svelte";
     import Graph  from "$lib/Graph.svelte";
     import {Queue} from '$lib/Queue.js';
     import ManualMessageComponent from "$lib/ManualMessageComponent.svelte";
-    import {getTransitTime, setTransitbounds, getNextMessageId, parseProtocolCode, getStepSize, setStepSize} from "$lib/protocolUtils.js";
+    import {getTransitTime, getNextMessageId, parseProtocolCode, getStepSize} from "$lib/protocolUtils.js";
+    import Icon from '@iconify/svelte';
+    import {onMount} from "svelte";
 
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
@@ -13,11 +18,7 @@
     /**@type {{ protocols: { name: string; content: string }[] }}*/
     export let data; // props from +page.server.js
     let predefinedProtocols = data.protocols;
-    /**
-	 * @type {{ name: string; content: string; } | null}
-	 */
-    let selectedProtocol = null;
-    
+
     let sourceCode = "// Write your code here...";
 
     //reference to graph instance
@@ -34,11 +35,6 @@
     /** @type number */
     let intervalId;
 
-    // the actual values of these is not stored here, so these are not important until updated by user
-    let transitLowerInput = 8
-    let transitUpperInput = 12
-
-    let stepSizeInput = getStepSize();
     let stepSizeUpdated = false;
     let paused = true;
 
@@ -88,14 +84,7 @@
         paused = true;
     }
 
-    function setStepSizeInput() {
-        setStepSize(stepSizeInput);
-        stepSizeUpdated = true;
-    }
 
-    function setTransitTimeInput() {
-        setTransitbounds(transitUpperInput, transitLowerInput);
-    }
 
     function resetSimulation() {
         clearInterval(intervalId);
@@ -210,74 +199,103 @@
         });
     }
 
+    //Frontend functions & variables'
+    /** @type {HTMLElement | null} */
+    let codepanel;
+
+    onMount(() => {
+        /** @type {HTMLElement | null} */
+        const codeButton = document.getElementById("btn-code");
+
+        codepanel = document.getElementById("codepanel")
+
+        if (codepanel != null){ //toggle code block by default
+            codepanel.classList.toggle("hidden");
+        }
+
+        /** @type {HTMLElement | null} */
+        const settingsButton = document.getElementById("btn-settings");
+        /** @type {HTMLElement | null} */
+        const settingspanel = document.getElementById("settingspanel");
+
+        if (codeButton && codepanel) {
+            codeButton.addEventListener("click", () => { codepanel?.classList.toggle("hidden"); });
+        }
+        if (settingspanel && settingsButton) {
+            settingsButton.addEventListener("click", () => { settingspanel.classList.toggle("hidden"); });
+        }
+    })
 </script>
 
-<h1 class="text-5xl font-bold mb-6">Protocol Simulator</h1>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
-<select class="mb-4 p-2 border border-gray-300 rounded" bind:value={selectedProtocol}>
-    {#each predefinedProtocols as protocol}
-        <option value={protocol}>{protocol.name}</option>
-    {/each}
-</select>
+<!--Top navigation bar-->
+<NavigationBar
+        bind:predefinedProtocols={predefinedProtocols}
+        bind:codepanel={codepanel}
+        bind:sourceCode={sourceCode}
+></NavigationBar>
 
-<button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" on:click={() => sourceCode = selectedProtocol?.content ?? ""}>Load</button>
+<!--Dotted graph (background)-->
+<div class="cy-wrapper">
+    <Graph bind:this={graphRef} nodes={actors} />
+</div>
 
-<!--Connect to the MonacoEditor and gets the written sourceCode-->
-<MonacoEditer bind:sourceCode={sourceCode} />
 
-<div class="mt-4 flex-row space-x-2 pt-2">
-    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            on:click={spawnActor}>
-        Spawn actor
-    </button>
+<!--Code block-->
+<div id="codepanel" class="hidden absolute top-22 left-1 rounded-lg w-9/20 h-4/5">
+    <MonacoEditer bind:sourceCode={sourceCode} />
+</div>
 
-    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            on:click={resetSimulation}>
-        Reset simulation
-    </button>
+<!--Send actor button-->
+<button class="absolute bottom-2 left-120 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center"
+        on:click={spawnActor}>
+    Spawn actor
+</button>
 
-    {#if paused}
-        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 inline-flex items-center"
-                on:click={startSimulation}>
-            <svg class="fill-current w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M320-200v-560l440 280-440 280Z"/></svg>
-            <span>Start Simulator</span>
-        </button>
-    {:else}
-        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 inline-flex items-center"
-                on:click={pauseSimulation}>
-            <svg class="fill-current w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#1f1f1f"><path d="M560-200v-560h160v560H560Zm-320 0v-560h160v560H240Z"/></svg>
-            <span>Pause Simulator</span>
-        </button>
-    {/if}
-
-    <input
-        type="number"
-        bind:value={stepSizeInput}
-        placeholder="100"
-    />
-
-    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            on:click={setStepSizeInput}>
-        Set step size (ms)
-    </button>
-
-    <input
-            type="number"
-            bind:value={transitUpperInput}
-            placeholder="12"
-    />
-    <input
-            type="number"
-            bind:value={transitLowerInput}
-            placeholder="8"
-    />
-
-    <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            on:click={setTransitTimeInput}>
-        Set transit time interval
+<!--Burger menu's-->
+<div class="flex flex-col absolute top-14 ">
+    <button id="btn-code" class="p-1 rounded-lg hover:bg-blue-200">
+        <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
     </button>
 </div>
 
-<ManualMessageComponent messages={messages} />
+<div class="flex flex-col absolute top-14 right-5 ">
 
-<Graph bind:this={graphRef} nodes={actors}/>
+    <button id="btn-settings" class="p-1 rounded-lg hover:bg-blue-200">
+        <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
+    </button>
+</div>
+
+
+<!--Settings block-->
+<SettingsPanel bind:stepSizeUpdated={stepSizeUpdated}></SettingsPanel>
+
+<!--Message block-->
+<ManualMessageComponent  messages={messages} />
+
+<!-- 🔹 Bottom Right Buttons -->
+<ControlsPanel
+        paused={paused}
+        startSimulation={startSimulation}
+        pauseSimulation={pauseSimulation}
+        resetSimulation={resetSimulation}
+/>
+
+<style>
+    .cy-wrapper {
+        width: 100vw;
+        height: 95vh;
+
+        /* dots*/
+        background-color: #ffffff;
+        background-image: radial-gradient(#d1d5db 1px, transparent 1px);
+        background-size: 30px 30px;
+    }
+
+    /* Sørg for at komponenten indeni rent faktisk fylder wrapperen - google AI */
+    :global(.cy-wrapper > *) {
+        width: 100% !important;
+        height: 100% !important;
+    }
+</style>
