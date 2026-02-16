@@ -1,6 +1,7 @@
 <script>
     import MonacoEditer from "$lib/MonacoEditer.svelte";
     import SettingsPanel from "$lib/SettingsPanel.svelte";
+    import NavigationBar from "$lib/NavigationBar.svelte";
     import Graph  from "$lib/Graph.svelte";
     import {Queue} from '$lib/Queue.js';
     import ManualMessageComponent from "$lib/ManualMessageComponent.svelte";
@@ -16,10 +17,6 @@
     /**@type {{ protocols: { name: string; content: string }[] }}*/
     export let data; // props from +page.server.js
     let predefinedProtocols = data.protocols;
-    /**
-	 * @type {{ name: string; content: string; } | null}
-	 */
-    let selectedProtocol = null;
 
     let sourceCode = "// Write your code here...";
 
@@ -204,11 +201,6 @@
     //Frontend functions & variables'
     /** @type {HTMLElement | null} */
     let codepanel;
-    function enableCodeEditor() {
-        if (codepanel != null && (codepanel.classList.contains("hidden"))){
-            codepanel.classList.toggle("hidden");
-        }
-    }
 
     onMount(() => {
         /** @type {HTMLElement | null} */
@@ -235,27 +227,13 @@
 </script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
 <!--Top navigation bar-->
-<header class="h-14 bg-white shadow flex items-center justify-between px-6">
-    <div class="flex items-center gap-3">
-        <div class="w-6 h-6 bg-gray-300 rounded"></div>
-        <h1 class="text-lg font-semibold">Protocol Simulator</h1>
-    </div>
-    <div class="flex items-center justify-center gap-1">
-
-        <select class=" p-2 border border-gray-300 rounded w-fit" bind:value={selectedProtocol}>
-            {#each predefinedProtocols as protocol}
-                <option value={protocol}>{protocol.name}</option>
-            {/each}
-        </select>
-
-        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" on:click={() => {enableCodeEditor(); sourceCode = selectedProtocol?.content ?? ""}}>Load</button>
-    </div>
-
-    <a href="https://github.com/JonathanVil/protocol-visualizer" aria-label="GitHub">
-        <i class="fa fa-github" style="font-size:36px"></i>
-    </a>
-</header>
+<NavigationBar
+        bind:predefinedProtocols={predefinedProtocols}
+        bind:codepanel={codepanel}
+        bind:sourceCode={sourceCode}
+></NavigationBar>
 
 <!--Dotted graph (background)-->
 <div class="cy-wrapper">
