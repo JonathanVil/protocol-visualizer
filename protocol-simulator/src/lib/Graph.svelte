@@ -1,5 +1,5 @@
 ﻿<script>
-    import {mount, onMount} from 'svelte';
+    import {mount, unmount, onMount, onDestroy} from 'svelte';
     import {getStepSize} from "$lib/protocolUtils.js";
     import cytoscape from 'cytoscape';
     import cytoscapePopper from 'cytoscape-popper';
@@ -30,6 +30,55 @@
     /** @type {any} */
     let cyInstance;
 
+    /** @typedef {import('svelte/store').Writable<Actor>} ActorStore */
+    /**
+     * @type {Map<number, {
+     *   popper: any,
+     *   actorStore: ActorStore,
+     *   el: HTMLElement,
+     *   component: any,
+     *   node: any,
+     *   update: () => void
+     * }>}
+     */
+    const poppers = new Map();
+
+    /**
+     * @param {number} id
+     */
+    function removeActorStatePopper(id) {
+        const entry = poppers.get(id);
+        if (!entry) return;
+
+        // Remove event listeners (must match original handler references)
+        entry.node?.off?.('position', entry.update);
+        cyInstance?.off?.('pan zoom resize', entry.update);
+
+        // If popper implementation supports destroy, call it (guarded)
+        try {
+            entry.popper?.destroy?.();
+        } catch {
+            // ignore
+        }
+
+        // Unmount Svelte component + remove its container
+        try {
+            unmount(entry.component);
+        } catch {
+            // ignore
+        }
+        entry.el?.remove();
+
+        poppers.delete(id);
+    }
+
+    function removeAllPoppers() {
+        for (const id of poppers.keys()) {
+            removeActorStatePopper(id);
+        }
+        poppers.clear();
+    }
+
     /**
      * Used to reset the visuals in the graph
      */
@@ -37,6 +86,9 @@
         nodes = [];
         graphMessages = [];
         edges = [];
+
+        cyInstance.elements().remove(); // remove all nodes and edges
+        removeAllPoppers();            // remove all poppers + unmount components
     }
 
     // Helper: convert Actor → cytoscape node
@@ -87,10 +139,6 @@
         return true;
     }
 
-    /** @typedef {import('svelte/store').Writable<Actor>} ActorStore */
-    /** @type {Map<number, { popper: any, actorStore: ActorStore }>} */
-    const poppers = new Map();
-
     // Helper: adds or updates a "popper" displaying the actor state to cytoscape nodes
     /**
      * @param {Actor} actor
@@ -107,7 +155,7 @@
 
             const actorStore = writable(actor);
 
-            mount(ActorStatePopper, {
+            const component = mount(ActorStatePopper, {
                 target: el,
                 props: { store: actorStore }
             });
@@ -120,7 +168,7 @@
             node.on('position', update);
             cyInstance.on('pan zoom resize', update);
 
-            entry = { popper, actorStore };
+            entry = { popper, actorStore, el, component, node, update };
             poppers.set(id, entry);
         } else {
             entry.actorStore.set(actor);
@@ -203,8 +251,16 @@
         });
     });
 
+    onDestroy(() => {
+        // If Graph component is removed, ensure poppers/components don’t leak
+        removeAllPoppers();
+    });
+
     //Adding Nodes (incrementally)
     $: if (cyInstance) {
+
+        console.log("Updating graph");
+
         // Only add what’s new; do NOT remove existing nodes/edges/messages
         cyInstance.batch(() => {
             let addedSomething = false;
