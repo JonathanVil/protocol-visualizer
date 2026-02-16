@@ -163,11 +163,11 @@
     function watchActor(actor) {
         return new Proxy(actor, {
             set(target, prop, value) {
-                const prev = target[prop];
-                target[prop] = value;
+                const prev = Reflect.get(target, prop);
+                const success = Reflect.set(target, prop, value);
 
-                if (prev !== value) {
-                    console.log(`Actor ${target.id}: ${String(prop)} changed`, { prev, next: value });
+                if (success && prev !== value) {
+                    console.log(`Actor ${target.id}: ${String(prop)} changed from ${prev} to ${value}`,);
                     graphRef.updateActorStatePopper(target);
                 }
                 return true;
