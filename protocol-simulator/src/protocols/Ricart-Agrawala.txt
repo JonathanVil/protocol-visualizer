@@ -1,0 +1,78 @@
+﻿class Actor {
+    constructor(id) {
+        this.id = id;
+        this.nodeColor = '#1d4ed8';
+        this.timestamp = 0;
+        this.requestTimestamp = 0; //timestamp of my request, if i am requesting
+        this.recievedTimestamp = 0;
+        this.inCS = false;
+        this.wantsCS = false;
+        this.messageQueue = createQueue()
+        this.approvalCount = 0;
+    }
+
+    receive(msg) {
+        if (msg.type === "REQUEST") {
+            this.recievedTimestamp = msg.data;
+            this.coordinateTS(); // ensure correct timestamps
+            if ((this.wantsCS && ((this.requestTimestamp < msg.data) || (this.requestTimestamp === msg.data && this.id < msg.from))) || this.inCS) { //crazy conditional
+                this.messageQueue.push(msg.from) //DENIED
+            } else {
+                send(this.id, msg.from, "REPLY", this.timestamp) //approved :)
+            }
+        }
+        if (msg.type === "REPLY") {
+            this.recievedTimestamp = msg.data;
+            this.coordinateTS(); // ensure correct timestamps
+            this.approvalCount++;
+            if (this.approvalCount === getActors() - 1){ //if everyone has approved, access the CS
+                this.accessCS()
+            }
+        }
+        if (msg.type === "DESIRECS") { //makes a node desire the CS
+            this.wantsCS = true;
+            this.requestCS()
+        }
+        if (msg.type === "INCREASETS") { //increments the clock of the receiver, for playing around
+            this.timestamp++;
+        }
+    }
+
+    requestCS(){
+        this.requestTimestamp = this.timestamp;
+        this.timestamp++;
+        for (let i = 0; i < getActors(); i++) {
+            if (i === this.id) {
+                continue
+            }
+            send(this.id, i, "REQUEST", this.requestTimestamp);
+        }
+    }
+
+    accessCS(){
+        this.inCS = true;
+        this.timestamp++;
+        console.log("Accessing CS");
+        timeout(this, 20, this.exitCS)
+    }
+    exitCS(){
+        console.log("Exiting CS");
+        this.timestamp++;
+        while (this.messageQueue.length > 0) {
+            let id = this.messageQueue.pop()
+            send(this.id, id, "REPLY");
+        }
+        this.wantsCS = false;
+        this.inCS = false;
+        this.approvalCount = 0;
+    }
+    coordinateTS(){
+        if (this.timestamp >= this.recievedTimestamp) {
+            this.timestamp++;
+        } else {
+            this.timestamp = this.recievedTimestamp + 1;
+        }
+    }
+}
+
+return Actor;
