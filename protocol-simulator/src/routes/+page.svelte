@@ -200,14 +200,24 @@
         });
     }
 
-
+    //Frontend functions & variables'
+    /** @type {HTMLElement | null} */
+    let codepanel;
+    function enableCodeEditor() {
+        if (codepanel != null){
+            codepanel.classList.toggle("hidden");
+        }
+    }
 
     onMount(() => {
-        //Frontend functions & variables'
         /** @type {HTMLElement | null} */
         const codeButton = document.getElementById("btn-code");
-        /** @type {HTMLElement | null} */
-        const codepanel = document.getElementById("codepanel")
+
+        codepanel = document.getElementById("codepanel")
+
+        if (codepanel != null){ //toggle code block by default
+            codepanel.classList.toggle("hidden");
+        }
 
         /** @type {HTMLElement | null} */
         const settingsButton = document.getElementById("btn-settings");
@@ -215,12 +225,11 @@
         const settingspanel = document.getElementById("settingspanel");
 
         if (codeButton && codepanel) {
-            codeButton.addEventListener("click", () => { codepanel.classList.toggle("hidden"); });
+            codeButton.addEventListener("click", () => { codepanel?.classList.toggle("hidden"); });
         }
         if (settingspanel && settingsButton) {
             settingsButton.addEventListener("click", () => { settingspanel.classList.toggle("hidden"); });
         }
-
     })
 </script>
 
@@ -239,7 +248,7 @@
             {/each}
         </select>
 
-        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" on:click={() => sourceCode = selectedProtocol?.content ?? ""}>Load</button>
+        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" on:click={() => {enableCodeEditor(); sourceCode = selectedProtocol?.content ?? ""}}>Load</button>
     </div>
 
     <a href="https://github.com/JonathanVil/protocol-visualizer" aria-label="GitHub profile" target="_blank">
