@@ -204,7 +204,7 @@
     /** @type {HTMLElement | null} */
     let codepanel;
     function enableCodeEditor() {
-        if (codepanel != null){
+        if (codepanel != null && (codepanel.classList.contains("hidden"))){
             codepanel.classList.toggle("hidden");
         }
     }
