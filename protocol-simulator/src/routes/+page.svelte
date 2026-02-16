@@ -231,8 +231,9 @@
         <div class="w-6 h-6 bg-gray-300 rounded"></div>
         <h1 class="text-lg font-semibold">Protocol Simulator</h1>
     </div>
-    <div class="items-center">
-        <select class="mb-4 p-2 border border-gray-300 rounded" bind:value={selectedProtocol}>
+    <div class="flex items-center justify-center gap-1">
+
+        <select class=" p-2 border border-gray-300 rounded w-fit" bind:value={selectedProtocol}>
             {#each predefinedProtocols as protocol}
                 <option value={protocol}>{protocol.name}</option>
             {/each}
@@ -256,7 +257,7 @@
 
 
 <!--Code block-->
-<div id="codepanel" class="hidden absolute top-22 left-1 rounded-lg w-2/5 h-4/5">
+<div id="codepanel" class="hidden absolute top-22 left-1 rounded-lg w-9/20 h-4/5">
     <MonacoEditer bind:sourceCode={sourceCode} />
     <button class="absolute bottom-6 right-2 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 w-20 text-xs"
             on:click={spawnActor}>
@@ -317,7 +318,7 @@
 
 
 <!-- 🔹 Bottom Right Buttons -->
-<div class="absolute bottom-5 right-6 flex flex-col gap-3">
+<div class="absolute bottom-5 right-6 flex flex-col gap-3 text-xs">
     {#if paused}
         <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 inline-flex items-center"
                 on:click={startSimulation}>
