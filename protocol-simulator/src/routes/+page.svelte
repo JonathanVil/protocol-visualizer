@@ -268,12 +268,13 @@
 <!--Code block-->
 <div id="codepanel" class="hidden absolute top-22 left-1 rounded-lg w-9/20 h-4/5">
     <MonacoEditer bind:sourceCode={sourceCode} />
-    <button class="absolute bottom-6 right-2 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 w-20 text-xs"
-            on:click={spawnActor}>
-        Spawn actor
-    </button>
 </div>
 
+<!--Send actor button-->
+<button class="absolute bottom-2 left-120 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center"
+        on:click={spawnActor}>
+    Spawn actor
+</button>
 
 <!--Burger menu's-->
 <div class="flex flex-col absolute top-14 ">
