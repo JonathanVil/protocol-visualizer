@@ -56,7 +56,9 @@
 	],
 	"dependencies": {
 		"@iconify/svelte": "^5.2.1",
+		"@floating-ui/dom": "^1.7.5",
 		"cytoscape": "^3.33.1",
+		"cytoscape-popper": "^4.0.1",
 		"monaco-editor": "^0.55.1"
 	}
 }

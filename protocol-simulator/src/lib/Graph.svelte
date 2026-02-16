@@ -1,7 +1,16 @@
 ﻿<script>
-    import { onMount } from 'svelte';
-    import cytoscape from 'cytoscape';
+    import {mount, unmount, onMount, onDestroy} from 'svelte';
     import {getStepSize} from "$lib/protocolUtils.js";
+    import cytoscape from 'cytoscape';
+    import cytoscapePopper from 'cytoscape-popper';
+    import {
+        computePosition,
+        flip,
+        shift,
+        limitShift,
+    } from '@floating-ui/dom';
+    import ActorStatePopper from "$lib/ActorStatePopper.svelte";
+    import {writable} from "svelte/store";
 
     /** @typedef {import('$lib/types.js').Actor} Actor */
     /** @typedef {import('$lib/types.js').Message} Message */
@@ -21,6 +30,55 @@
     /** @type {any} */
     let cyInstance;
 
+    /** @typedef {import('svelte/store').Writable<Actor>} ActorStore */
+    /**
+     * @type {Map<number, {
+     *   popper: any,
+     *   actorStore: ActorStore,
+     *   el: HTMLElement,
+     *   component: any,
+     *   node: any,
+     *   update: () => void
+     * }>}
+     */
+    const poppers = new Map();
+
+    /**
+     * @param {number} id
+     */
+    function removeActorStatePopper(id) {
+        const entry = poppers.get(id);
+        if (!entry) return;
+
+        // Remove event listeners (must match original handler references)
+        entry.node?.off?.('position', entry.update);
+        cyInstance?.off?.('pan zoom resize', entry.update);
+
+        // If popper implementation supports destroy, call it (guarded)
+        try {
+            entry.popper?.destroy?.();
+        } catch {
+            // ignore
+        }
+
+        // Unmount Svelte component + remove its container
+        try {
+            unmount(entry.component);
+        } catch {
+            // ignore
+        }
+        entry.el?.remove();
+
+        poppers.delete(id);
+    }
+
+    function removeAllPoppers() {
+        for (const id of poppers.keys()) {
+            removeActorStatePopper(id);
+        }
+        poppers.clear();
+    }
+
     /**
      * Used to reset the visuals in the graph
      */
@@ -28,6 +86,9 @@
         nodes = [];
         graphMessages = [];
         edges = [];
+
+        cyInstance.elements().remove(); // remove all nodes and edges
+        removeAllPoppers();            // remove all poppers + unmount components
     }
 
     // Helper: convert Actor → cytoscape node
@@ -35,10 +96,117 @@
      * @param {Actor} actor
      */
     function actorToNode(actor) {
+        //Check if color contains opacity & is hex
+        let color = actor.nodeColor ?? '#1d4ed8';
+        if (color.includes("#")) {color = color.slice(0, 7);}
+
         return {
-            data: { id: String(actor.id) } // cytoscape needs string IDs
+            data: { id: String(actor.id), color: color } // cytoscape needs string IDs
         };
     }
+
+    // Helper: ensure an actor node exists
+    /** @param {Actor} actor */
+    function ensureActorNode(actor) {
+        const id = String(actor.id);
+        const existing = cyInstance.getElementById(id);
+        if (!existing.empty()) return { added: false, id };
+
+        cyInstance.add(actorToNode(actor));
+
+        // add popper
+        updateActorStatePopper(actor);
+
+        return { added: true, id };
+    }
+
+    // Helper: ensure an edge exists
+    /**
+     * @param {{ source: number, target: number, label: string }} e
+     */
+    function ensureEdge(e) {
+        const source = String(e.source);
+        const target = String(e.target);
+        const edgeId = `${source}->${target}`; // deterministic id prevents duplicates
+
+        const existing = cyInstance.getElementById(edgeId);
+        if (!existing.empty()) return false;
+
+        cyInstance.add({
+            group: 'edges',
+            data: { id: edgeId, source, target, label: e.label ?? "" }
+        });
+        return true;
+    }
+
+    // Helper: adds or updates a "popper" displaying the actor state to cytoscape nodes
+    /**
+     * @param {Actor} actor
+     */
+    export function updateActorStatePopper(actor) {
+        const id = actor.id;
+        let entry = poppers.get(id);
+        const node = cyInstance.getElementById(String(id));
+
+        if (!entry) { // if no popper exists yet, we create one
+            const el = document.createElement('div');
+            el.style.position = 'absolute'; // critical
+            cyContainer.appendChild(el);
+
+            const actorStore = writable(actor);
+
+            const component = mount(ActorStatePopper, {
+                target: el,
+                props: { store: actorStore }
+            });
+
+            const popper = node.popper({
+                content: () => el
+            });
+
+            const update = () => popper.update();
+            node.on('position', update);
+            cyInstance.on('pan zoom resize', update);
+
+            entry = { popper, actorStore, el, component, node, update };
+            poppers.set(id, entry);
+        } else {
+            entry.actorStore.set(actor);
+        }
+
+        entry.popper.update();
+    }
+
+    /**
+     * @param {cytoscapePopper.RefElement} ref
+     * @param {HTMLElement} content
+     * @param {cytoscapePopper.PopperOptions|undefined} options
+     */
+    function popperFactory(ref, content, options) {
+        // see https://floating-ui.com/docs/computePosition#options
+        const popperOptions = {
+            // matching the default behaviour from Popper@2
+            // https://floating-ui.com/docs/migration#configure-middleware
+            middleware: [
+                flip(),
+                shift({limiter: limitShift()})
+            ],
+            ...options,
+        }
+
+        function update() {
+            computePosition(ref, content, popperOptions).then(({x, y}) => {
+                Object.assign(content.style, {
+                    left: `${x}px`,
+                    top: `${y}px`,
+                });
+            });
+        }
+        update();
+        return { update };
+    }
+
+    cytoscape.use(cytoscapePopper(popperFactory));
 
     onMount(() => {
         cyInstance = cytoscape({
@@ -83,55 +251,55 @@
         });
     });
 
-    //Adding Nodes
+    onDestroy(() => {
+        // If Graph component is removed, ensure poppers/components don’t leak
+        removeAllPoppers();
+    });
+
+    //Adding Nodes (incrementally)
     $: if (cyInstance) {
-        cyInstance.elements().remove();
-        //convert our nodes to cytoscape elements
-        cyInstance.add([
-            ...nodes.map(n => {
 
-                //Check if color contains opacity & is hex
-                let color = n.nodeColor ?? '#1d4ed8';
-                if (color.includes("#")) {color = color.slice(0, 7);}
-                return {
-                    data: {
-                        id: n.id,
-                        color: color
+        console.log("Updating graph");
+
+        // Only add what’s new; do NOT remove existing nodes/edges/messages
+        cyInstance.batch(() => {
+            let addedSomething = false;
+
+            // 1) Ensure all actor nodes exist
+            for (const actor of nodes) {
+                const { added } = ensureActorNode(actor);
+                if (added) addedSomething = true;
+            }
+
+            // 2) Keep your “connect everyone to newest node” behavior,
+            //    but only create missing edges (no duplicates)
+            if (nodes.length >= 2) {
+                const newest = nodes[nodes.length - 1];
+                for (let i = 0; i < nodes.length - 1; i++) {
+                    const nodeA = nodes[i];
+                    const newEdge = { source: nodeA.id, target: newest.id, label: "" };
+
+                    // keep your local edges array updated (optional but consistent)
+                    // and ensure the edge exists in Cytoscape
+                    const edgeAdded = ensureEdge(newEdge);
+                    if (edgeAdded) {
+                        edges = [...edges, newEdge];
+                        addedSomething = true;
                     }
-                };
-            })
-        ]);
+                }
+            }
 
-        for (let i = 0; i < nodes.length - 1; i++) {
-            const nodeA = nodes[i];
-            const nodeB = nodes[nodes.length - 1];
-            edges = [ ...edges, { source: nodeA.id, target: nodeB.id, label: "" } ];
-        }
-        cyInstance.add([
-            ...edges.map(e => ({ data: { source: e.source, target: e.target, label: e.label } })),
-        ])
-
-
-        //run it again
-        cyInstance.layout({name: 'circle', radius: 120, avoidOverlap: true, fit: true}).run();
-
-        //Add messages back
-        cyInstance.add(
-            graphMessages.map(e => ({
-                group: 'nodes',
-                data: {id: e.id(), type: e.data('type')},
-                position: e.position(),
-                classes: 'message'
-            }))
-        )
+            // 3) Only re-run layout when we actually added nodes/edges
+            if (addedSomething) {
+                cyInstance.layout({name: 'circle', radius: 120, avoidOverlap: true, fit: true}).run();
+            }
+        });
     }
 
     /** @param {Message} message */
     export function animateMessage(message) {
-
         const source = cyInstance.getElementById(message.source).position();
         const target = cyInstance.getElementById(message.destination).position();
-
 
         const targetPosThisStepX = source.x + ((target.x - source.x) * message.elapsedSteps) / message.transitSteps
         const targetPosThisStepY = source.y + ((target.y - source.y) * message.elapsedSteps) / message.transitSteps
@@ -165,7 +333,6 @@
         });
 
     }
-
 </script>
 
-<div bind:this={cyContainer} class="w-full h-96 border border-gray-300 rounded-md"></div>
+<div bind:this={cyContainer} class="w-full h-96 border border-gray-300 rounded-md relative overflow-hidden"></div>
