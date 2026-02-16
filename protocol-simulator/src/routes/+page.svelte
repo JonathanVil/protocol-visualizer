@@ -19,7 +19,7 @@
 	 * @type {{ name: string; content: string; } | null}
 	 */
     let selectedProtocol = null;
-    
+
     let sourceCode = "// Write your code here...";
 
     //reference to graph instance
@@ -251,7 +251,7 @@
         <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" on:click={() => {enableCodeEditor(); sourceCode = selectedProtocol?.content ?? ""}}>Load</button>
     </div>
 
-    <a href="https://github.com/JonathanVil/protocol-visualizer" aria-label="GitHub profile" target="_blank">
+    <a href="https://github.com/JonathanVil/protocol-visualizer" aria-label="GitHub">
         <i class="fa fa-github" style="font-size:36px"></i>
     </a>
 
@@ -321,8 +321,8 @@
 </div>
 
 <!--Message block-->
-<div class="absolute bottom-2 left-1 rounded-lg w-2/5 h-1/12 bg-white border">
-    <ManualMessageComponent messages={messages} />
+<div >
+    <ManualMessageComponent  messages={messages} />
 </div>
 
 
