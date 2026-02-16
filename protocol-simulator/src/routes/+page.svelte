@@ -224,7 +224,7 @@
     })
 </script>
 
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 <!--Top navigation bar-->
 <header class="h-14 bg-white shadow flex items-center justify-between px-6">
     <div class="flex items-center gap-3">
@@ -240,7 +240,12 @@
 
         <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" on:click={() => sourceCode = selectedProtocol?.content ?? ""}>Load</button>
     </div>
-    <div class="w-8 h-8 bg-gray-300 rounded-full"></div>
+
+    <a href="https://github.com/JonathanVil/protocol-visualizer" aria-label="GitHub profile" target="_blank">
+        <i class="fa fa-github" style="font-size:36px"></i>
+    </a>
+
+
 
 </header>
 
@@ -253,7 +258,7 @@
 <!--Code block-->
 <div id="codepanel" class="hidden absolute top-22 left-1 rounded-lg w-2/5 h-4/5">
     <MonacoEditer bind:sourceCode={sourceCode} />
-    <button class="absolute bottom-6 right-2 py-3 bg-blue-600 text-white rounded hover:bg-blue-700"
+    <button class="absolute bottom-6 right-2 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 w-20 text-xs"
             on:click={spawnActor}>
         Spawn actor
     </button>
@@ -306,13 +311,13 @@
 </div>
 
 <!--Message block-->
-<div class="absolute bottom-5 left-1 rounded-lg w-2/5 h-1/12 bg-white border">
+<div class="absolute bottom-2 left-1 rounded-lg w-2/5 h-1/12 bg-white border">
     <ManualMessageComponent messages={messages} />
 </div>
 
 
 <!-- 🔹 Bottom Right Buttons -->
-<div class="absolute bottom-6 right-6 flex flex-col gap-3">
+<div class="absolute bottom-5 right-6 flex flex-col gap-3">
     {#if paused}
         <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 inline-flex items-center"
                 on:click={startSimulation}>
