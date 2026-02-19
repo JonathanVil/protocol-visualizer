@@ -49,6 +49,7 @@
 
     let collapsed = false;
 
+    /** @param {event} event */
     function toggleCollapsed(event) {
         event?.stopPropagation?.();
         collapsed = !collapsed;

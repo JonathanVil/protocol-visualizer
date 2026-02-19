@@ -7,7 +7,7 @@
  * @param {function} getActors
  * @param {function} createQueue
  * @param {function} timeout
- * @returns {ActorConstructor}
+ * @returns {ActorConstructor|null}
  */
 export function parseProtocolCode(codeString, send, getActors, createQueue, timeout) {
 
@@ -30,7 +30,9 @@ export function parseProtocolCode(codeString, send, getActors, createQueue, time
 let transitTimeUpperBound = 12;
 let transitTimeLowerBound = 8;
 
-
+/**
+ * @return {number} The transit time in steps
+ */
 export function getTransitTime() {
     return Math.floor(Math.random() * (transitTimeUpperBound - transitTimeLowerBound + 1)) + transitTimeLowerBound;
 }
@@ -54,6 +56,9 @@ export function setStepSize(value) {
 /** @type {number} */
 let id_messages = -1;
 
+/**
+ * @return {number} The next message id
+ */
 export function getNextMessageId() {
     if (id_messages < -1000) {id_messages = -1}
     return id_messages--;
