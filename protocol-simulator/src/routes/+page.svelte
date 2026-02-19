@@ -9,6 +9,7 @@
     import {getTransitTime, getNextMessageId, parseProtocolCode, getStepSize} from "$lib/protocolUtils.js";
     import Icon from '@iconify/svelte';
     import {onMount} from "svelte";
+    import EventLog from "$lib/EventLog.svelte";
 
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
@@ -28,7 +29,7 @@
     /** @type {Actor[]} */
     let actors = [];
     /** @type {string[]} */
-    let tickLog = ["0"];
+    let tickLog = ["tick 0"];
 
     /** @type {string[][]} */
     let eventLog = []
@@ -120,8 +121,6 @@
 
         //handle log -- this should be the last step
         logStep()
-        console.log(tickLog)
-        console.log(eventLog)
 
         //handle updating stepsize
         if (stepSizeUpdated) { // We need to reboot the simulation loop in order to update stepsize
@@ -133,9 +132,9 @@
 
     function logStep() {
         if (tickLog.length > 1) {
-            eventLog.push([... tickLog])
+            eventLog = ([... eventLog, [... tickLog]])
         }
-        tickLog = [`${tick}`]
+        tickLog = [`tick ${tick}`]
     }
 
     function messageStep() {
@@ -274,6 +273,13 @@
 <div id="codepanel" class="hidden absolute top-22 left-1 rounded-lg w-9/20 h-4/5">
     <MonacoEditer bind:sourceCode={sourceCode} />
 </div>
+
+<!--Log block-->
+<div id="logpanel" class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
+    <EventLog bind:eventLog={eventLog} />
+</div>
+
+
 
 <!--Send actor button-->
 <button class="absolute bottom-2 left-120 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center"
