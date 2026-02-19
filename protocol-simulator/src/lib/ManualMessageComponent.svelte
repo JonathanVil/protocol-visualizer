@@ -12,14 +12,17 @@
 
 
     export let messages = new Queue();
+    /** @type {string[]} */
+    export let tickLog = [];
 
     function sendMessageManual(){
+        let logEntry = `Manually sent: Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
+        console.log(logEntry);
+        tickLog.push(logEntry);
         let transitTime = getTransitTime();
         /** @type {Message} */
         let message = {id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0, data: data}
         messages.push(message);
-        console.log("Sending message manually");
-        console.log(messages);
     }
 </script>
 

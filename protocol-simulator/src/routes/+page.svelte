@@ -27,11 +27,16 @@
 
     /** @type {Actor[]} */
     let actors = [];
+    /** @type {string[]} */
+    let tickLog = ["0"];
+
+    /** @type {string[][]} */
+    let eventLog = []
 
     let messages = new Queue();
     let timeouts = new Queue();
     let id = 0;
-
+    let tick = 0;
     /** @type number */
     let intervalId;
 
@@ -51,8 +56,9 @@
         /** @type {Actor} */
         let actor = watchActor(new actorClass(id++));
         actors = [...actors, actor];
-        console.log("Adding actor");
-        console.log(actors);
+        let logEntry = "Adding actor"
+        console.log(logEntry);
+        tickLog.push(logEntry);
     }
 
 
@@ -61,6 +67,9 @@
      * @param {Message} message
      */
     function deliverMessage(message) {
+        let logEntry = `Actor ${message.destination} recieved msg ${message.type} with data ${message.data} from Actor ${message.source}`
+        console.log(logEntry);
+        tickLog.push(logEntry);
         let actor = actors[message.destination];
         let msg = {type: message.type, from: message.source, data: message.data};
         actor.receive(msg)
@@ -92,6 +101,7 @@
         timeouts = new Queue();
         actors = [];
         id = 0;
+        tick = 0;
         stepSizeUpdated = false;
         paused = true;
         graphRef.resetGraph();
@@ -101,17 +111,31 @@
         if (paused) {
             return
         }
+        tick++;
         //handle messages
         messageStep()
 
         //handle timeouts
         timeoutStep()
 
+        //handle log -- this should be the last step
+        logStep()
+        console.log(tickLog)
+        console.log(eventLog)
+
         //handle updating stepsize
         if (stepSizeUpdated) { // We need to reboot the simulation loop in order to update stepsize
             paused = true;
             startSimulation();
         }
+
+    }
+
+    function logStep() {
+        if (tickLog.length > 1) {
+            eventLog.push([... tickLog])
+        }
+        tickLog = [`${tick}`]
     }
 
     function messageStep() {
@@ -156,7 +180,9 @@
                 const success = Reflect.set(target, prop, value);
 
                 if (success && prev !== value) {
-                    console.log(`Actor ${target.id}: ${String(prop)} changed from ${prev} to ${value}`,);
+                    let logEntry = `Actor field ${target.id} ${String(prop)} changed from ${prev} to ${value}`
+                    console.log(logEntry);
+                    tickLog.push(logEntry);
                     graphRef.updateActorStatePopper(target);
                 }
                 return true;
@@ -173,7 +199,9 @@
      *  @param {string} type
      * */
     function send(from, to, type, data) { //Example of use: send(this.id, from.id, "PING", "Hello")
-        console.log(from, "send to", to);
+        let logEntry = `Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
+        console.log(logEntry);
+        tickLog.push(logEntry);
         let transitTime = getTransitTime();
         messages.push({id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0, data: data})
     }
@@ -272,7 +300,10 @@
 <SettingsPanel bind:stepSizeUpdated={stepSizeUpdated}></SettingsPanel>
 
 <!--Message block-->
-<ManualMessageComponent  messages={messages} />
+<ManualMessageComponent
+        messages={messages}
+        bind:tickLog={tickLog}
+/>
 
 <!-- 🔹 Bottom Right Buttons -->
 <ControlsPanel
