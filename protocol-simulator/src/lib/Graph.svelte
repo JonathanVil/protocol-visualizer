@@ -191,12 +191,15 @@
         entry.popper.update();
     }
 
-    /**
-     * @param {Message} msg
-     */
-    function showMessagePopper(msg) {
-        const id = msg.id();
 
+    /**
+     * @param {import('cytoscape').NodeSingular} msgNode
+     */
+    function showMessagePopper(msgNode) {
+        const id = msgNode.id();
+        console.log("id:", id)
+
+        //If the popper already exists for this message
         if (messagePopper != null && messagePopper.node.id === id) {
             return;
         }
@@ -212,7 +215,7 @@
             return;
         }
 
-        const messageData = msg.data();
+        const messageData = msgNode.data();
 
         const component = mount(MessagePopper, {
             target: el,
