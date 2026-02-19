@@ -249,6 +249,17 @@
             ],
             layout: { name: 'circle', animate: true}
         });
+
+        //Event listener for messages - show alert with message details when tapped
+        /** @param {any} evt */
+        cyInstance.on('tap', '.message', (evt) => {
+            const node_msg = evt.target;
+            if (node_msg.hasClass('message')) {
+
+                alert(`Message ${node_msg.data('id')}\nType: ${node_msg.data('type')}\nFrom: ${node_msg.source}\nTo: ${node_msg.destination}\nData: ${JSON.stringify(node_msg.data)}`);
+            }
+        })
+
     });
 
     onDestroy(() => {
@@ -289,16 +300,6 @@
                 }
             }
 
-
-            //Event listener for messages - show alert with message details when tapped
-            /** @param {any} evt */
-            cyInstance.on('tap', '.message', (evt) => {
-                const node_msg = evt.target;
-                if (node_msg.hasClass('message')) {
-
-                    alert(`Message ${node_msg.data('id')}\nType: ${node_msg.data('type')}\nFrom: ${node_msg.source}\nTo: ${node_msg.destination}\nData: ${JSON.stringify(node_msg.data)}`);
-                }
-            })
 
             // 3) Only re-run layout when we actually added nodes/edges
             if (addedSomething) {
