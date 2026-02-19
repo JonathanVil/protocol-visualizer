@@ -11,6 +11,7 @@
     } from '@floating-ui/dom';
     import ActorStatePopper from "$lib/ActorStatePopper.svelte";
     import {writable} from "svelte/store";
+    import MessagePopper from "$lib/MessagePopper.svelte";
 
     /** @typedef {import('$lib/types.js').Actor} Actor */
     /** @typedef {import('$lib/types.js').Message} Message */
@@ -20,6 +21,19 @@
 
     /** @type {{ source: number, target: number, label: string }[]} */
     export let edges = [];
+
+
+    /** @typedef {{
+     *   el: HTMLElement,
+     *   component: any,
+     *   popper: any,
+     *   node: any,
+     *   update: () => void
+     * }} MessagePopperEntry
+     */
+
+    /** @type {MessagePopperEntry | null} */
+    let messagePopper = null;
 
     /** @type {import('cytoscape').NodeSingular[]} */
     let graphMessages = [];
@@ -178,6 +192,46 @@
     }
 
     /**
+     * @param {Message} msg
+     */
+    function showMessagePopper(msg) {
+        const id = msg.id();
+
+        if (messagePopper != null && messagePopper.node.id === id) {
+            return;
+        }
+
+        const el = document.createElement('div');
+        el.style.position = 'absolute';
+        cyContainer.appendChild(el);
+
+        const node = cyInstance.getElementById(String(id));
+
+        if (node.empty()) {
+            console.warn("Message node does not exist, cannot create popper:", id);
+            return;
+        }
+
+        const messageData = msg.data();
+
+        const component = mount(MessagePopper, {
+            target: el,
+            props: { message: messageData }
+        });
+
+        const popper = node.popper({
+            content: () => el
+        });
+
+        const update = () => popper.update();
+        node.on('position', update);
+        cyInstance.on('pan zoom resize', update);
+
+        popper.update();
+    }
+
+
+    /**
      * @param {cytoscapePopper.RefElement} ref
      * @param {HTMLElement} content
      * @param {cytoscapePopper.PopperOptions|undefined} options
@@ -255,8 +309,7 @@
         cyInstance.on('tap', '.message', (evt) => {
             const node_msg = evt.target;
             if (node_msg.hasClass('message')) {
-
-                alert(`Message ${node_msg.data('id')}\nType: ${node_msg.data('type')}\nFrom: ${node_msg.source}\nTo: ${node_msg.destination}\nData: ${JSON.stringify(node_msg.data)}`);
+                showMessagePopper(node_msg)
             }
         })
 
