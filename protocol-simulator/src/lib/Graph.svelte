@@ -32,9 +32,6 @@
      * }} MessagePopperEntry
      */
 
-    /** @type {MessagePopperEntry | null} */
-    let messagePopper = null;
-
     /** @type {import('cytoscape').NodeSingular[]} */
     let graphMessages = [];
 
@@ -47,8 +44,9 @@
     /** @typedef {import('svelte/store').Writable<Actor>} ActorStore */
     /**
      * @type {Map<number, {
+     *   type: string,
      *   popper: any,
-     *   actorStore: ActorStore,
+     *   actorStore?: ActorStore,
      *   el: HTMLElement,
      *   component: any,
      *   node: any,
@@ -60,7 +58,7 @@
     /**
      * @param {number} id
      */
-    function removeActorStatePopper(id) {
+    function removePopper(id) {
         const entry = poppers.get(id);
         if (!entry) return;
 
@@ -88,7 +86,7 @@
 
     function removeAllPoppers() {
         for (const id of poppers.keys()) {
-            removeActorStatePopper(id);
+            removePopper(id);
         }
         poppers.clear();
     }
@@ -182,10 +180,13 @@
             node.on('position', update);
             cyInstance.on('pan zoom resize', update);
 
-            entry = { popper, actorStore, el, component, node, update };
+            entry = {type: "actor", popper, actorStore, el, component, node, update };
             poppers.set(id, entry);
         } else {
-            entry.actorStore.set(actor);
+            if (entry.actorStore) {
+                entry.actorStore.set(actor);
+            }
+
         }
 
         entry.popper.update();
@@ -195,18 +196,25 @@
     /**
      * @param {import('cytoscape').NodeSingular} msgNode
      */
-    function showMessagePopper(msgNode) {
+    function addMessagePopper(msgNode) {
         const id = msgNode.id();
         console.log("id:", id)
 
         //If the popper already exists for this message
-        if (messagePopper != null && messagePopper.node.id === id) {
+        if (poppers.has(Number(id))) {
+            console.log("Message popper already exists");
             return;
         }
 
         const el = document.createElement('div');
         el.style.position = 'absolute';
         cyContainer.appendChild(el);
+
+        const component = mount(MessagePopper, {
+            target: el,
+            props: { message: msgNode.data() }
+        });
+
 
         const node = cyInstance.getElementById(String(id));
 
@@ -215,20 +223,23 @@
             return;
         }
 
-        const messageData = msgNode.data();
-
-        const component = mount(MessagePopper, {
-            target: el,
-            props: { message: messageData }
-        });
-
         const popper = node.popper({
             content: () => el
         });
 
+
         const update = () => popper.update();
         node.on('position', update);
         cyInstance.on('pan zoom resize', update);
+
+        poppers.set(Number(id), {
+            type: 'message',
+            popper,
+            component: component,
+            el,
+            node,
+            update
+        })
 
         popper.update();
     }
@@ -312,7 +323,7 @@
         cyInstance.on('tap', '.message', (evt) => {
             const node_msg = evt.target;
             if (node_msg.hasClass('message')) {
-                showMessagePopper(node_msg)
+                addMessagePopper(node_msg)
             }
         })
 
@@ -394,9 +405,14 @@
             queue: false,
             complete: () => {
                 if (message.elapsedSteps >= message.transitSteps) {
+                    //delete popper if it exists
+                    if (poppers.has(Number(msg.id()))) {
+                        removePopper(Number(msg.id()));
+                    }
                     // remove message node from graph & array
                     cyInstance.remove(msg);
                     graphMessages.splice(graphMessages.indexOf(msg), 1);
+
 
                 }
             }
