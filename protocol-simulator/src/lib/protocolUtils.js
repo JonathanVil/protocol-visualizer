@@ -27,8 +27,8 @@ export function parseProtocolCode(codeString, send, getActors, createQueue, time
     }
 }
 
-let transitTimeUpperBound = 12;
-let transitTimeLowerBound = 8;
+let transitTimeUpperBound = 20;
+let transitTimeLowerBound = 20;
 
 /**
  * @return {number} The transit time in ticks
@@ -37,9 +37,8 @@ export function getTransitTime() {
     return Math.floor(Math.random() * (transitTimeUpperBound - transitTimeLowerBound + 1)) + transitTimeLowerBound;
 }
 
-export function setTransitbounds(highBound, lowBound) {
+export function setTransitbounds(highBound) {
     transitTimeUpperBound = highBound;
-    transitTimeLowerBound = lowBound;
 }
 
 

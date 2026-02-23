@@ -3,8 +3,8 @@
 
 
     // the actual values of these is not stored here, so these are not important until updated by user
-    let transitLowerInput = 8
-    let transitUpperInput = 12
+    let transitLowerInput = 20
+    let transitUpperInput = 20
 
     let tickSpeedInput = getTickSpeed();
     export let tickSpeedUpdated = false;
@@ -14,7 +14,7 @@
     }
 
     function setTransitTimeInput() {
-        setTransitbounds(transitUpperInput, transitLowerInput);
+        setTransitbounds(transitUpperInput);
     }
 </script>
 
@@ -31,17 +31,15 @@
             <p>Transit time</p>
         </div>
         <div class="flex">
-            <div class="flex flex-col">
+            <div class=" w-2/7">
                 <p>Min</p>
-                <input type="range" class="w-1/2" min="1" max="{transitUpperInput - 1}" bind:value={transitLowerInput} on:input={setTransitTimeInput}>
-                <p>{transitLowerInput}</p>
+                <p>20</p>
             </div>
             <div>
                 <p>Max</p>
                 <input type="range" class="w-1/2" min="{transitLowerInput}" max="50" bind:value={transitUpperInput} on:input={setTransitTimeInput}>
                 <p>{transitUpperInput}</p>
             </div>
-
         </div>
     </div>
 </div>
