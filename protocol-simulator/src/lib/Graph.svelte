@@ -1,6 +1,6 @@
 ﻿<script>
     import {mount, unmount, onMount, onDestroy} from 'svelte';
-    import {getStepSize} from "$lib/protocolUtils.js";
+    import {getTickSize} from "$lib/protocolUtils.js";
     import cytoscape from 'cytoscape';
     import cytoscapePopper from 'cytoscape-popper';
     import {
@@ -301,8 +301,8 @@
         const source = cyInstance.getElementById(message.source).position();
         const target = cyInstance.getElementById(message.destination).position();
 
-        const targetPosThisStepX = source.x + ((target.x - source.x) * message.elapsedSteps) / message.transitSteps
-        const targetPosThisStepY = source.y + ((target.y - source.y) * message.elapsedSteps) / message.transitSteps
+        const targetPosThisTickX = source.x + ((target.x - source.x) * message.elapsedTicks) / message.transitTicks
+        const targetPosThisTickY = source.y + ((target.y - source.y) * message.elapsedTicks) / message.transitTicks
 
         //Create the message node in graph, if it does not exist.
         let msg = cyInstance.getElementById(message.id)
@@ -317,13 +317,13 @@
         }
 
         msg.animate({
-            position: {x: targetPosThisStepX, y: targetPosThisStepY}
+            position: {x: targetPosThisTickX, y: targetPosThisTickY}
         }, {
-            duration: getStepSize(),
+            duration: getTickSize(),
             easing: 'linear',
             queue: false,
             complete: () => {
-                if (message.elapsedSteps >= message.transitSteps) {
+                if (message.elapsedTicks >= message.transitTicks) {
                     // remove message node from graph & array
                     cyInstance.remove(msg);
                     graphMessages.splice(graphMessages.indexOf(msg), 1);

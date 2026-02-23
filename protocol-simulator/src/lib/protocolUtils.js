@@ -31,7 +31,7 @@ let transitTimeUpperBound = 12;
 let transitTimeLowerBound = 8;
 
 /**
- * @return {number} The transit time in steps
+ * @return {number} The transit time in ticks
  */
 export function getTransitTime() {
     return Math.floor(Math.random() * (transitTimeUpperBound - transitTimeLowerBound + 1)) + transitTimeLowerBound;
@@ -43,14 +43,23 @@ export function setTransitbounds(highBound, lowBound) {
 }
 
 
-let stepSize = 100;
-export function getStepSize() {
-    return stepSize;
+let tickSize = 100;
+export function getTickSize() {
+    return tickSize;
 }
 
-export function setStepSize(value) {
-    stepSize = value;
+export function setTickSize(value) {
+    tickSize = value;
 }
+
+export function getTickSpeed() {
+    return 1000 / tickSize;
+}
+
+export function setTickSpeed(value) {
+    tickSize = 1000 / value;
+}
+
 
 // id's for messages
 /** @type {number} */
