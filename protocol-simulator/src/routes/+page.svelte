@@ -116,7 +116,6 @@
         graphRef.resetGraph();
     }
 
-
     function tickByOne() {
         if (paused){
             paused = false;
@@ -137,17 +136,16 @@
         handleTimeouts()
 
         //handle log -- this should be the last step
-        logStep()
+        handleLog()
         //handle updating tickspeed
         if (tickSpeedUpdated) { // We need to reboot the simulation loop in order to update tickspeed
-
             paused = true;
             startSimulation();
         }
 
     }
 
-    function logStep() {
+    function handleLog() {
         if (tickLog.length > 1) {
             eventLog = ([... eventLog, [... tickLog]])
         }
@@ -191,15 +189,15 @@
     /** @param {Actor} actor */
     function watchActor(actor) {
         return new Proxy(actor, {
-            set(target, prop, value) {
+            set(target, prop, value, receiver) {
                 const prev = Reflect.get(target, prop);
                 const success = Reflect.set(target, prop, value);
 
                 if (success && prev !== value) {
-                    let logEntry = `Actor field ${target.id} ${String(prop)} changed from ${prev} to ${value}`
+                    let logEntry = `Actor${target.id}: ${String(prop)} changed from ${prev} to ${value}`,);
                     console.log(logEntry);
                     tickLog.push(logEntry);
-                    graphRef.updateActorStatePopper(target);
+                    graphRef.updateActorStatePopper(receiver);
                 }
                 return true;
             }
