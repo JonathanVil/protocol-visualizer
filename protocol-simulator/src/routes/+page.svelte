@@ -33,11 +33,9 @@
 
     /** @type {Actor[]} */
     let actors = [];
-    /** @type {string[]} */
-    let tickLog = ["tick 0"];
 
-    /** @type {string[][]} */
-    let eventLog = []
+    /** @type {{ tick: number, lines: string[] }[]} */
+    let eventLog = [{ tick: 0, lines: []}]
 
     let messages = new Queue();
     let timeouts = new Queue();
@@ -64,7 +62,7 @@
         actors = [...actors, actor];
         let logEntry = "Adding actor"
         console.log(logEntry);
-        tickLog.push(logEntry);
+        addLogEntry(logEntry);
     }
 
 
@@ -78,7 +76,7 @@
             logEntry = `Actor ${message.destination} recieved msg ${message.type} with data ${message.data} from Actor ${message.source}`
         }
         console.log(logEntry);
-        tickLog.push(logEntry);
+        addLogEntry(logEntry);
         let actor = actors[message.destination];
         let msg = {type: message.type, from: message.source, data: message.data};
         actor.receive(msg)
@@ -106,7 +104,6 @@
         clearInterval(intervalId);
         messages = new Queue();
         timeouts = new Queue();
-        tickLog = ["tick 0"];
         eventLog = [];
         actors = [];
         id = 0;
@@ -129,14 +126,13 @@
             return
         }
         tick++
+
         //update messages by one tick
         handleMessages()
 
         //update timeouts by one tick
         handleTimeouts()
 
-        //handle log -- this should be the last step
-        handleLog()
         //handle updating tickspeed
         if (tickSpeedUpdated) { // We need to reboot the simulation loop in order to update tickspeed
             paused = true;
@@ -145,11 +141,16 @@
 
     }
 
-    function handleLog() {
-        if (tickLog.length > 1) {
-            eventLog = ([... eventLog, [... tickLog]])
+    /**
+     * @param {string} line
+     */
+    export function addLogEntry(line) {
+        const entry = eventLog.find(e => e.tick === tick);
+        if (!entry) {
+            eventLog = [...eventLog, {tick, lines: [line]}];
+        } else {
+            entry.lines = [...entry.lines, line];
         }
-        tickLog = [`tick ${tick}`]
     }
 
     function handleMessages() {
@@ -196,7 +197,7 @@
                 if (success && prev !== value) {
                     let logEntry = `Actor${target.id}: ${String(prop)} changed from ${prev} to ${value}`;
                     console.log(logEntry);
-                    tickLog.push(logEntry);
+                    addLogEntry(logEntry);
                     graphRef.updateActorStatePopper(receiver);
                 }
                 return true;
@@ -218,7 +219,7 @@
             logEntry = `Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
         }
         console.log(logEntry);
-        tickLog.push(logEntry);
+        addLogEntry(logEntry);
         let transitTime = getTransitTime();
         messages.push({id: getNextMessageId(), source: from, destination: to, type: type, transitTicks: transitTime, elapsedTicks: 0, data: data})
     }
@@ -276,7 +277,7 @@
 
 {#if leftPanel === LeftPanelOptions.CODE}
     <!--Code block-->
-    <div class="absolute top-22 left-1 rounded-lg w-9/20 h-4/5">
+    <div class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
         <MonacoEditer bind:sourceCode={sourceCode} />
     </div>
 {:else if leftPanel === LeftPanelOptions.LOG}
@@ -331,7 +332,7 @@
 <!--Message block-->
 <ManualMessageComponent
         messages={messages}
-        bind:tickLog={tickLog}
+        addLogEntry={addLogEntry}
 />
 
 <!-- 🔹 Bottom Right Buttons -->

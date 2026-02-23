@@ -1,16 +1,19 @@
 ﻿<script>
-    /** @type {string[][]} */
+    /** @type {{ tick: number, lines: string[] }[]} */
     export let eventLog = [];
 </script>
 
 
-{#each [...eventLog].reverse() as tick}
-    <div class="row">
-        {#each tick as line}
-            <p>{line}</p>
-        {/each}
-    </div>
-{/each}
+<div class="overflow-scroll max-h-[calc(100vh-20rem)] shadow-xl p-2 rounded-md">
+    {#each [...eventLog].reverse() as tick}
+        <div class="row">
+            <p>{tick.tick}</p>
+            {#each tick.lines as line}
+                <p>{line}</p>
+            {/each}
+        </div>
+    {/each}
+</div>
 
 
 <style>
