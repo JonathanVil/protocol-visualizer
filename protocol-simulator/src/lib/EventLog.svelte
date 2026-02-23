@@ -5,11 +5,11 @@
 
 
 <div class="overflow-scroll max-h-[calc(100vh-20rem)] shadow-xl p-2 rounded-md">
-    {#each [...eventLog].reverse() as tick}
+    {#each [...eventLog].toReversed() as tick}
         <div class="row flex flex-row gap-x-2">
             <p>{tick.tick}</p>
             <div>
-                {#each tick.lines.reverse() as line}
+                {#each tick.lines.toReversed() as line}
                     <p>{line}</p>
                 {/each}
             </div>
