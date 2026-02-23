@@ -106,11 +106,11 @@
         if (paused) {
             return
         }
-        //handle messages
-        messageStep()
+        //update messages by one tick
+        handleMessages()
 
-        //handle timeouts
-        timeoutStep()
+        //update timeouts by one tick
+        handleTimeouts()
 
         //handle updating tickspeed
         if (tickSpeedUpdated) { // We need to reboot the simulation loop in order to update tickspeed
@@ -119,7 +119,7 @@
         }
     }
 
-    function messageStep() {
+    function handleMessages() {
         let n = messages.length;
         for (let i = 0; i < n; i++) {
             let message = messages.pop()
@@ -137,7 +137,7 @@
         }
     }
 
-    function timeoutStep() {
+    function handleTimeouts() {
         let n = timeouts.length;
         for (let i = 0; i < n; i++) {
             let timer = timeouts.pop()
