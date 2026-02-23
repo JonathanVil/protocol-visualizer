@@ -151,13 +151,13 @@
     /** @param {Actor} actor */
     function watchActor(actor) {
         return new Proxy(actor, {
-            set(target, prop, value) {
+            set(target, prop, value, receiver) {
                 const prev = Reflect.get(target, prop);
                 const success = Reflect.set(target, prop, value);
 
                 if (success && prev !== value) {
                     console.log(`Actor ${target.id}: ${String(prop)} changed from ${prev} to ${value}`,);
-                    graphRef.updateActorStatePopper(target);
+                    graphRef.updateActorStatePopper(receiver);
                 }
                 return true;
             }
@@ -228,6 +228,10 @@
 </script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<button on:click={() => console.log(actors)} class="py-3 bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center">
+    Print actors
+</button>
 
 <!--Top navigation bar-->
 <NavigationBar
