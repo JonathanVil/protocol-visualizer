@@ -16,8 +16,10 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.PAT }}
       - name: Build Docker image
+        working-directory: protocol-simulator
         run: |
           docker build -t ghcr.io/jonathanvil/protocol-visualizer:latest .
       - name: Push Docker image
+        working-directory: protocol-simulator
         run: |
           docker push ghcr.io/jonathanvil/protocol-visualizer:latest
