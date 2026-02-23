@@ -1,0 +1,9 @@
+node_modules
+.bun
+.svelte-kit
+dist
+.git
+.gitignore
+Dockerfile
+README.md
+.env
