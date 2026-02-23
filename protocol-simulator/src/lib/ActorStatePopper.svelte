@@ -2,11 +2,13 @@
     /** @typedef {import('$lib/types.js').Actor} Actor */
     /** @typedef {import('svelte/store').Readable<Actor>} ActorReadable */
 
+    import EditActorState from "$lib/EditActorState.svelte";
+
     /** @type {ActorReadable} */
     export let store;
 
     /** @param {any} v */
-    function formatValue(v) {
+    export function formatValue(v) {
         if (v === null) return 'null';
         if (v === undefined) return 'undefined';
         if (typeof v === 'string') return JSON.stringify(v);
@@ -49,10 +51,39 @@
 
     let collapsed = false;
 
-    /** @param {event} event */
+    /**
+     * @param {event} event
+     */
     function toggleCollapsed(event) {
         event?.stopPropagation?.();
         collapsed = !collapsed;
+    }
+
+    /** @type {string | null} */
+    let editingKey = null;
+
+    /** @type {string} */
+    let editText = '';
+
+    /** @type {any} */
+    let editOriginalValue;
+
+    /** @param {event} event
+     *  @param {string} key
+     * */
+    function openEdit(event, key) {
+        event?.stopPropagation?.();
+        editingKey = key;
+        const value = Reflect.get(actor, key);
+        editText = typeof value === 'string' ? value : formatValue(value);
+        editOriginalValue = value;
+    }
+
+    /** @param {any} newValue */
+    function saveEdit(newValue) {
+        if (!actor || !editingKey) return;
+        Reflect.set(actor, editingKey, newValue);
+        console.log(`Saving ${editingKey} = ${newValue}`);
     }
 </script>
 
@@ -91,13 +122,31 @@
                 <div class="font-mono opacity-95"><span class="opacity-90">Actor</span>: <span>null</span></div>
             {:else}
                 {#each entries as [key, value] (key)}
-                    <div class="font-mono opacity-95">
+                    <div class="font-mono opacity-95 flex items-center gap-1">
                         <span class="opacity-90">{key}</span>:
                         {#key versionByKey.get(key) ?? 0}
                             <span class="flash">{formatValue(value)}</span>
                         {/key}
+
+                        <button
+                            type="button"
+                            class="ml-1 inline-flex h-5 w-5 items-center justify-center rounded text-white/70 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                            aria-label={"Edit " + key}
+                            title={"Edit " + key}
+                            on:click={(e) => openEdit(e, key)}
+                        >
+                            <!-- pencil icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9" />
+                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                            </svg>
+                        </button>
                     </div>
                 {/each}
+
+                {#if editingKey}
+                    <EditActorState save={v => saveEdit(v)} bind:editingKey={editingKey} bind:editText={editText} bind:editOriginalValue={editOriginalValue} />
+                {/if}
             {/if}
         {/if}
     </div>
