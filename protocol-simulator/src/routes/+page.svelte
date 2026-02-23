@@ -73,7 +73,10 @@
      * @param {Message} message
      */
     function deliverMessage(message) {
-        let logEntry = `Actor ${message.destination} recieved msg ${message.type} with data ${message.data} from Actor ${message.source}`
+        let logEntry = `Actor ${message.destination} recieved msg ${message.type} from Actor ${message.source}`
+        if (message.data) {
+            logEntry = `Actor ${message.destination} recieved msg ${message.type} with data ${message.data} from Actor ${message.source}`
+        }
         console.log(logEntry);
         tickLog.push(logEntry);
         let actor = actors[message.destination];
@@ -91,7 +94,7 @@
         paused = false;
         clearInterval(intervalId);
         tickSpeedUpdated = false;
-        intervalId = setInterval(tick, getTickSize()); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
+        intervalId = setInterval(handleTick, getTickSize()); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
     }
 
     function pauseSimulation() {
@@ -113,7 +116,7 @@
         graphRef.resetGraph();
     }
 
-    function tick() {
+    function handleTick() {
         if (paused) {
             return
         }
@@ -203,7 +206,10 @@
      *  @param {string} type
      * */
     function send(from, to, type, data) { //Example of use: send(this.id, from.id, "PING", "Hello")
-        let logEntry = `Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
+        let logEntry = `Actor ${from} sent msg ${type} to Actor ${to}`
+        if (data){
+            logEntry = `Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
+        }
         console.log(logEntry);
         tickLog.push(logEntry);
         let transitTime = getTransitTime();

@@ -8,7 +8,7 @@
     let type = "";
 
     /** @type {any} */
-    let data = "";
+    let data = null;
 
 
     export let messages = new Queue();
@@ -16,7 +16,10 @@
     export let tickLog = [];
 
     function sendMessageManual(){
-        let logEntry = `Manually sent: Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
+        let logEntry = `Manually sent: Actor ${from} sent msg ${type} to Actor ${to}`
+        if (data) {
+            logEntry = `Manually sent: Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
+        }
         console.log(logEntry);
         tickLog.push(logEntry);
         let transitTime = getTransitTime();
