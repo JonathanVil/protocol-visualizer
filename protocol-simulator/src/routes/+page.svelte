@@ -229,10 +229,6 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
-<button on:click={() => console.log(actors)} class="py-3 bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center">
-    Print actors
-</button>
-
 <!--Top navigation bar-->
 <NavigationBar
         bind:predefinedProtocols={predefinedProtocols}
