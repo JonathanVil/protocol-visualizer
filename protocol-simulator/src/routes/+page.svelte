@@ -14,6 +14,7 @@
     } from "$lib/protocolUtils.js";
     import Icon from '@iconify/svelte';
     import {onMount} from "svelte";
+    import EventLog from "$lib/EventLog.svelte";
 
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
@@ -33,10 +34,13 @@
     /** @type {Actor[]} */
     let actors = [];
 
+    /** @type {{ tick: number, lines: string[] }[]} */
+    let eventLog = [{ tick: 0, lines: []}]
+
     let messages = new Queue();
     let timeouts = new Queue();
     let id = 0;
-
+    let tick = 0;
     /** @type number */
     let intervalId;
 
@@ -56,8 +60,9 @@
         /** @type {Actor} */
         let actor = watchActor(new actorClass(id++));
         actors = [...actors, actor];
-        console.log("Adding actor");
-        console.log(actors);
+        let logEntry = "Adding actor"
+        console.log(logEntry);
+        addLogEntry(logEntry);
     }
 
 
@@ -66,6 +71,12 @@
      * @param {Message} message
      */
     function deliverMessage(message) {
+        let logEntry = `Actor ${message.destination} recieved msg ${message.type} from Actor ${message.source}`
+        if (message.data) {
+            logEntry = `Actor ${message.destination} recieved msg ${message.type} with data ${message.data} from Actor ${message.source}`
+        }
+        console.log(logEntry);
+        addLogEntry(logEntry);
         let actor = actors[message.destination];
         let msg = {type: message.type, from: message.source, data: message.data};
         actor.receive(msg)
@@ -81,7 +92,7 @@
         paused = false;
         clearInterval(intervalId);
         tickSpeedUpdated = false;
-        intervalId = setInterval(tick, getTickSize()); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
+        intervalId = setInterval(handleTick, getTickSize()); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
     }
 
     function pauseSimulation() {
@@ -93,9 +104,11 @@
         clearInterval(intervalId);
         messages = new Queue();
         timeouts = new Queue();
+        eventLog = [];
         actors = [];
         id = 0;
-        tickSpeedUpdated     = false;
+        tickSpeedUpdated = false;
+        tick = 0;
         paused = true;
         graphRef.resetGraph();
     }
@@ -103,15 +116,17 @@
     function tickByOne() {
         if (paused){
             paused = false;
-            tick();
+            handleTick();
             paused = true;
         }
     }
 
-    function tick() {
+    function handleTick() {
         if (paused) {
             return
         }
+        tick++
+
         //update messages by one tick
         handleMessages()
 
@@ -122,6 +137,20 @@
         if (tickSpeedUpdated) { // We need to reboot the simulation loop in order to update tickspeed
             paused = true;
             startSimulation();
+        }
+
+    }
+
+    /**
+     * @param {string} line
+     */
+    export function addLogEntry(line) {
+        const entry = eventLog.find(e => e.tick === tick);
+        if (!entry) {
+            eventLog = [...eventLog, {tick, lines: [line]}];
+        } else {
+            entry.lines = [...entry.lines, line];
+            eventLog = [...eventLog.slice(0, eventLog.length - 1), entry]
         }
     }
 
@@ -167,7 +196,9 @@
                 const success = Reflect.set(target, prop, value);
 
                 if (success && prev !== value) {
-                    console.log(`Actor ${target.id}: ${String(prop)} changed from ${prev} to ${value}`,);
+                    let logEntry = `Actor ${target.id} ${String(prop)} changed from ${prev} to ${value}`;
+                    console.log(logEntry);
+                    addLogEntry(logEntry);
                     graphRef.updateActorStatePopper(receiver);
                 }
                 return true;
@@ -184,7 +215,12 @@
      *  @param {string} type
      * */
     function send(from, to, type, data) { //Example of use: send(this.id, from.id, "PING", "Hello")
-        console.log(from, "send to", to);
+        let logEntry = `Actor ${from} sent msg ${type} to Actor ${to}`
+        if (data){
+            logEntry = `Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
+        }
+        console.log(logEntry);
+        addLogEntry(logEntry);
         let transitTime = getTransitTime();
         messages.push({id: getNextMessageId(), source: from, destination: to, type: type, transitTicks: transitTime, elapsedTicks: 0, data: data})
     }
@@ -210,32 +246,19 @@
         });
     }
 
-    //Frontend functions & variables'
-    /** @type {HTMLElement | null} */
-    let codepanel;
+    let settingsPanelOpen = false;
 
-    onMount(() => {
-        /** @type {HTMLElement | null} */
-        const codeButton = document.getElementById("btn-code");
+    export const LeftPanelOptions = {
+        CODE: "code",
+        LOG: "log",
+        NONE: "none"
+    };
+    let leftPanel = LeftPanelOptions.CODE;
 
-        codepanel = document.getElementById("codepanel")
-
-        if (codepanel != null){ //toggle code block by default
-            codepanel.classList.toggle("hidden");
-        }
-
-        /** @type {HTMLElement | null} */
-        const settingsButton = document.getElementById("btn-settings");
-        /** @type {HTMLElement | null} */
-        const settingspanel = document.getElementById("settingspanel");
-
-        if (codeButton && codepanel) {
-            codeButton.addEventListener("click", () => { codepanel?.classList.toggle("hidden"); });
-        }
-        if (settingspanel && settingsButton) {
-            settingsButton.addEventListener("click", () => { settingspanel.classList.toggle("hidden"); });
-        }
-    })
+    /** @param {string} panel */
+    function toggleLeftPanel(panel) {
+        leftPanel = leftPanel === panel ? LeftPanelOptions.NONE : panel;
+    }
 </script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -243,7 +266,7 @@
 <!--Top navigation bar-->
 <NavigationBar
         bind:predefinedProtocols={predefinedProtocols}
-        bind:codepanel={codepanel}
+        bind:leftPanel={leftPanel}
         bind:sourceCode={sourceCode}
 ></NavigationBar>
 
@@ -253,10 +276,18 @@
 </div>
 
 
-<!--Code block-->
-<div id="codepanel" class="hidden absolute top-22 left-1 rounded-lg w-9/20 h-4/5">
-    <MonacoEditer bind:sourceCode={sourceCode} />
-</div>
+{#if leftPanel === LeftPanelOptions.CODE}
+    <!--Code block-->
+    <div class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
+        <MonacoEditer bind:sourceCode={sourceCode} />
+    </div>
+{:else if leftPanel === LeftPanelOptions.LOG}
+    <!--Log block-->
+    <div class="absolute top-24 left-1 rounded-lg w-9/20">
+        <EventLog bind:eventLog={eventLog} />
+    </div>
+{/if}
+
 
 <!--Send actor button-->
 <button class="absolute bottom-2 left-120 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center"
@@ -264,26 +295,46 @@
     Spawn actor
 </button>
 
-<!--Burger menu's-->
-<div class="flex flex-col absolute top-14 ">
-    <button id="btn-code" class="p-1 rounded-lg hover:bg-blue-200">
-        <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
+<!--Left panel selector-->
+<div class="absolute top-14 left-5 flex items-center gap-1 rounded-lg bg-white/80 backdrop-blur p-1 shadow">
+    <button
+            type="button"
+            class="p-1 rounded-md hover:bg-blue-200 aria-[pressed=true]:bg-blue-200"
+            aria-label="Toggle Source Code panel"
+            title="Source Code"
+            aria-pressed={leftPanel === LeftPanelOptions.CODE}
+            on:click={() => toggleLeftPanel(LeftPanelOptions.CODE)}
+    >
+        <Icon icon="mdi:code-tags" class="w-6 h-6 text-black" />
+    </button>
+
+    <button
+            type="button"
+            class="p-1 rounded-md hover:bg-blue-200 aria-[pressed=true]:bg-blue-200"
+            aria-label="Toggle Log panel"
+            title="Log"
+            aria-pressed={leftPanel === LeftPanelOptions.LOG}
+            on:click={() => toggleLeftPanel(LeftPanelOptions.LOG)}
+    >
+        <Icon icon="mdi:clipboard-text-outline" class="w-6 h-6 text-black" />
     </button>
 </div>
 
-<div class="flex flex-col absolute top-14 right-5 ">
-
-    <button id="btn-settings" class="p-1 rounded-lg hover:bg-blue-200">
-        <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
-    </button>
-</div>
+<button on:click={() => settingsPanelOpen = !settingsPanelOpen} class="absolute top-14 right-5 p-1 rounded-lg hover:bg-blue-200">
+    <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
+</button>
 
 
-<!--Settings block-->
-<SettingsPanel bind:tickSpeedUpdated={tickSpeedUpdated}></SettingsPanel>
+{#if settingsPanelOpen}
+    <!--Settings block-->
+    <SettingsPanel bind:tickSpeedUpdated={tickSpeedUpdated}></SettingsPanel>
+{/if}
 
 <!--Message block-->
-<ManualMessageComponent  messages={messages} />
+<ManualMessageComponent
+        messages={messages}
+        addLogEntry={addLogEntry}
+/>
 
 <!-- 🔹 Bottom Right Buttons -->
 <ControlsPanel

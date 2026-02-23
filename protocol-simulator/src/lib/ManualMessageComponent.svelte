@@ -8,18 +8,27 @@
     let type = "";
 
     /** @type {any} */
-    let data = "";
+    let data = null;
 
+    /** @type {(entry: string) => void} */
+    export let addLogEntry;
 
     export let messages = new Queue();
 
     function sendMessageManual(){
+        let logEntry = `Manually sent: Actor ${from} sent msg ${type} to Actor ${to}`
+        if (data) {
+            logEntry = `Manually sent: Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
+        }
+        console.log(logEntry);
+
+        // call parent's addLogEntry
+        addLogEntry(logEntry);
+
         let transitTime = getTransitTime();
         /** @type {Message} */
         let message = {id: getNextMessageId(), source: from, destination: to, type: type, transitTicks: transitTime, elapsedTicks: 0, data: data}
         messages.push(message);
-        console.log("Sending message manually");
-        console.log(messages);
     }
 </script>
 
