@@ -9,7 +9,7 @@
         <div class="row flex flex-row gap-x-2">
             <p>{tick.tick}</p>
             <div>
-                {#each tick.lines as line}
+                {#each tick.lines.reverse() as line}
                     <p>{line}</p>
                 {/each}
             </div>
