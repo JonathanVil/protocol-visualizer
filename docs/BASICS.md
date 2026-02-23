@@ -1,12 +1,13 @@
 ﻿# System Basics
 
-## Steps
-The simulator is built on a "step" system.
-A step is executed every x seconds, where x is the stepsize, which can be modified through the UI.
+## Ticks
+The simulator is built on a "tick" system.
+A tick is executed every x milliseconds, where x is the ticksize.
+The ticksize can be determined through the UI, by modifying tickspeed (ticks / second) 
 
 ## Messages
-Every step, moves each message currently in transit one step closer to its recipient.
-The amount of steps in transit depends on the transit time, which may be modified through the UI.
+Every tick, moves each message currently in transit one tick closer to its recipient.
+The amount of ticks in transit depends on the transit time, which may be modified through the UI.
 The actual transit time of any message will be some random value between the `MIN` and `MAX`.
 Once a message reaches its target, the `receive` method of the target will be called.
 
@@ -68,10 +69,10 @@ returns an empty linked list queue
 - `queue.pop()` allows you tot pop one element from the front of the queue.
 - `queue.length` gives the amount of elements in the queue.
 
-## `timeout(actor, steps, reaction)`
-This function allows calling a method after a set amount of steps.
+## `timeout(actor, ticks, reaction)`
+This function allows calling a method after a set amount of ticks.
 
 It takes three arguments:
 - `actor` should always be `this`. This is important to ensure the method can access state.
-- `steps` is the number of steps the timer waits before executing the reaction.
+- `ticks` is the number of ticks the timer waits before executing the reaction.
 - `reaction` is a reference to the method to be called when the timer finishes. This method must take no arguments.

@@ -27,30 +27,34 @@ export function parseProtocolCode(codeString, send, getActors, createQueue, time
     }
 }
 
-let transitTimeUpperBound = 12;
-let transitTimeLowerBound = 8;
+let transitTimeUpperBound = 20;
+let transitTimeLowerBound = 20;
 
 /**
- * @return {number} The transit time in steps
+ * @return {number} The transit time in ticks
  */
 export function getTransitTime() {
     return Math.floor(Math.random() * (transitTimeUpperBound - transitTimeLowerBound + 1)) + transitTimeLowerBound;
 }
 
-export function setTransitbounds(highBound, lowBound) {
+export function setTransitbounds(highBound) {
     transitTimeUpperBound = highBound;
-    transitTimeLowerBound = lowBound;
 }
 
 
-let stepSize = 100;
-export function getStepSize() {
-    return stepSize;
+let tickSize = 100;
+export function getTickSize() {
+    return tickSize;
 }
 
-export function setStepSize(value) {
-    stepSize = value;
+export function getTickSpeed() {
+    return 1000 / tickSize;
 }
+
+export function setTickSpeed(value) {
+    tickSize = 1000 / value;
+}
+
 
 // id's for messages
 /** @type {number} */

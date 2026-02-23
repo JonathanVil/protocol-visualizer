@@ -6,7 +6,12 @@
     import Graph  from "$lib/Graph.svelte";
     import {Queue} from '$lib/Queue.js';
     import ManualMessageComponent from "$lib/ManualMessageComponent.svelte";
-    import {getTransitTime, getNextMessageId, parseProtocolCode, getStepSize} from "$lib/protocolUtils.js";
+    import {
+        getTransitTime,
+        getNextMessageId,
+        parseProtocolCode,
+        getTickSize
+    } from "$lib/protocolUtils.js";
     import Icon from '@iconify/svelte';
     import {onMount} from "svelte";
 
@@ -35,7 +40,7 @@
     /** @type number */
     let intervalId;
 
-    let stepSizeUpdated = false;
+    let tickSpeedUpdated = false;
     let paused = true;
 
     function spawnActor() {
@@ -67,16 +72,16 @@
     }
 
     function startSimulation() {
-        if (stepSizeUpdated) {
-            console.log("Updating simulation step size");
+        if (tickSpeedUpdated) {
+            console.log("Updating simulation tickspeed");
         } else {
             console.log("Starting simulation");
         }
 
         paused = false;
         clearInterval(intervalId);
-        stepSizeUpdated = false;
-        intervalId = setInterval(step, getStepSize());
+        tickSpeedUpdated = false;
+        intervalId = setInterval(tick, getTickSize()); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
     }
 
     function pauseSimulation() {
@@ -92,38 +97,38 @@
         timeouts = new Queue();
         actors = [];
         id = 0;
-        stepSizeUpdated = false;
+        tickSpeedUpdated     = false;
         paused = true;
         graphRef.resetGraph();
     }
 
-    function step() {
+    function tick() {
         if (paused) {
             return
         }
-        //handle messages
-        messageStep()
+        //update messages by one tick
+        handleMessages()
 
-        //handle timeouts
-        timeoutStep()
+        //update timeouts by one tick
+        handleTimeouts()
 
-        //handle updating stepsize
-        if (stepSizeUpdated) { // We need to reboot the simulation loop in order to update stepsize
+        //handle updating tickspeed
+        if (tickSpeedUpdated) { // We need to reboot the simulation loop in order to update tickspeed
             paused = true;
             startSimulation();
         }
     }
 
-    function messageStep() {
+    function handleMessages() {
         let n = messages.length;
         for (let i = 0; i < n; i++) {
             let message = messages.pop()
             if (message != null){
-                message.elapsedSteps++
+                message.elapsedTicks++
                 //Animate messages
                 graphRef.animateMessage(message);
 
-                if (message.elapsedSteps === message.transitSteps){
+                if (message.elapsedTicks=== message.transitTicks){
                     deliverMessage(message)
                 } else {
                     messages.push(message)
@@ -132,15 +137,15 @@
         }
     }
 
-    function timeoutStep() {
+    function handleTimeouts() {
         let n = timeouts.length;
         for (let i = 0; i < n; i++) {
             let timer = timeouts.pop()
             if (timer != null){
-                if (timer.steps === 0){
+                if (timer.ticks === 0){
                     timer.reaction()
                 } else {
-                    timer.steps -= 1
+                    timer.ticks -= 1
                     timeouts.push(timer);
                 }
 
@@ -175,7 +180,7 @@
     function send(from, to, type, data) { //Example of use: send(this.id, from.id, "PING", "Hello")
         console.log(from, "send to", to);
         let transitTime = getTransitTime();
-        messages.push({id: getNextMessageId(), source: from, destination: to, type: type, transitSteps: transitTime, elapsedSteps: 0, data: data})
+        messages.push({id: getNextMessageId(), source: from, destination: to, type: type, transitTicks: transitTime, elapsedTicks: 0, data: data})
     }
 
 
@@ -189,12 +194,12 @@
 
     /**
      * @param {Actor} actor
-     * @param {number} steps
+     * @param {number} ticks
      * @param {function} reaction
      */
-    function timeout(actor, steps, reaction) { //Example of use: timeout(this, 10, fart); function fart() { console.log("fart") }
+    function timeout(actor, ticks, reaction) { //Example of use: timeout(this, 10, fart); function fart() { console.log("fart") }
         timeouts.push({
-            steps,
+            ticks,
             reaction: reaction.bind(actor)
         });
     }
@@ -269,7 +274,7 @@
 
 
 <!--Settings block-->
-<SettingsPanel bind:stepSizeUpdated={stepSizeUpdated}></SettingsPanel>
+<SettingsPanel bind:tickSpeedUpdated={tickSpeedUpdated}></SettingsPanel>
 
 <!--Message block-->
 <ManualMessageComponent  messages={messages} />
