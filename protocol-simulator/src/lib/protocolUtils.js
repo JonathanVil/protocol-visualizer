@@ -47,10 +47,6 @@ export function getTickSize() {
     return tickSize;
 }
 
-export function setTickSize(value) {
-    tickSize = value;
-}
-
 export function getTickSpeed() {
     return 1000 / tickSize;
 }
