@@ -24,7 +24,7 @@
             <p class="">Ticks / Second</p>
         </div>
         <div>
-            <input type="range" class="w-3/4" min="1" max="100" bind:value={tickSpeedInput} on:input={setTickSpeedInput}>
+            <input type="range" class="w-3/4" min="1" max="40" bind:value={tickSpeedInput} on:input={setTickSpeedInput}>
             <p>{tickSpeedInput}</p>
         </div>
         <div class="font-medium">
