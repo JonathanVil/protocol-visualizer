@@ -245,7 +245,18 @@
     }
 
     let settingsPanelOpen = false;
-    let codePanelOpen = true;
+
+    export const LeftPanelOptions = {
+        CODE: "code",
+        LOG: "log",
+        NONE: "none"
+    };
+    let leftPanel = LeftPanelOptions.CODE;
+
+    /** @param {string} panel */
+    function toggleLeftPanel(panel) {
+        leftPanel = leftPanel === panel ? LeftPanelOptions.NONE : panel;
+    }
 </script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -253,7 +264,7 @@
 <!--Top navigation bar-->
 <NavigationBar
         bind:predefinedProtocols={predefinedProtocols}
-        bind:codePanelOpen={codePanelOpen}
+        bind:leftPanel={leftPanel}
         bind:sourceCode={sourceCode}
 ></NavigationBar>
 
@@ -263,17 +274,17 @@
 </div>
 
 
-{#if codePanelOpen}
+{#if leftPanel === LeftPanelOptions.CODE}
     <!--Code block-->
     <div class="absolute top-22 left-1 rounded-lg w-9/20 h-4/5">
         <MonacoEditer bind:sourceCode={sourceCode} />
     </div>
+{:else if leftPanel === LeftPanelOptions.LOG}
+    <!--Log block-->
+    <div class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
+        <EventLog bind:eventLog={eventLog} />
+    </div>
 {/if}
-
-<!--Log block-->
-<div class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
-    <EventLog bind:eventLog={eventLog} />
-</div>
 
 
 <!--Send actor button-->
@@ -282,10 +293,30 @@
     Spawn actor
 </button>
 
-<!--Burger menu's-->
-<button on:click={() => codePanelOpen = !codePanelOpen} class="absolute top-14 p-1 rounded-lg hover:bg-blue-200">
-    <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
-</button>
+<!--Left panel selector-->
+<div class="absolute top-14 left-5 flex items-center gap-1 rounded-lg bg-white/80 backdrop-blur p-1 shadow">
+    <button
+            type="button"
+            class="p-1 rounded-md hover:bg-blue-200 aria-[pressed=true]:bg-blue-200"
+            aria-label="Toggle Source Code panel"
+            title="Source Code"
+            aria-pressed={leftPanel === LeftPanelOptions.CODE}
+            on:click={() => toggleLeftPanel(LeftPanelOptions.CODE)}
+    >
+        <Icon icon="mdi:code-tags" class="w-6 h-6 text-black" />
+    </button>
+
+    <button
+            type="button"
+            class="p-1 rounded-md hover:bg-blue-200 aria-[pressed=true]:bg-blue-200"
+            aria-label="Toggle Log panel"
+            title="Log"
+            aria-pressed={leftPanel === LeftPanelOptions.LOG}
+            on:click={() => toggleLeftPanel(LeftPanelOptions.LOG)}
+    >
+        <Icon icon="mdi:clipboard-text-outline" class="w-6 h-6 text-black" />
+    </button>
+</div>
 
 <button on:click={() => settingsPanelOpen = !settingsPanelOpen} class="absolute top-14 right-5 p-1 rounded-lg hover:bg-blue-200">
     <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
