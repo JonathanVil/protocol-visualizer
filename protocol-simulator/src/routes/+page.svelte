@@ -150,6 +150,7 @@
             eventLog = [...eventLog, {tick, lines: [line]}];
         } else {
             entry.lines = [...entry.lines, line];
+            eventLog = [...eventLog.slice(0, eventLog.length - 1), entry]
         }
     }
 
@@ -282,7 +283,7 @@
     </div>
 {:else if leftPanel === LeftPanelOptions.LOG}
     <!--Log block-->
-    <div class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
+    <div class="absolute top-24 left-1 rounded-lg w-9/20">
         <EventLog bind:eventLog={eventLog} />
     </div>
 {/if}
