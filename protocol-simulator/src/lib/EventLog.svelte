@@ -6,11 +6,13 @@
 
 <div class="overflow-scroll max-h-[calc(100vh-20rem)] shadow-xl p-2 rounded-md">
     {#each [...eventLog].reverse() as tick}
-        <div class="row">
+        <div class="row flex flex-row gap-x-2">
             <p>{tick.tick}</p>
-            {#each tick.lines as line}
-                <p>{line}</p>
-            {/each}
+            <div>
+                {#each tick.lines as line}
+                    <p>{line}</p>
+                {/each}
+            </div>
         </div>
     {/each}
 </div>
