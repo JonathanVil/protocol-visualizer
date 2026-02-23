@@ -194,7 +194,7 @@
                 const success = Reflect.set(target, prop, value);
 
                 if (success && prev !== value) {
-                    let logEntry = `Actor${target.id}: ${String(prop)} changed from ${prev} to ${value}`,);
+                    let logEntry = `Actor${target.id}: ${String(prop)} changed from ${prev} to ${value}`;
                     console.log(logEntry);
                     tickLog.push(logEntry);
                     graphRef.updateActorStatePopper(receiver);
