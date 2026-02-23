@@ -89,8 +89,6 @@
         paused = true;
     }
 
-
-
     function resetSimulation() {
         clearInterval(intervalId);
         messages = new Queue();
@@ -100,6 +98,14 @@
         tickSpeedUpdated     = false;
         paused = true;
         graphRef.resetGraph();
+    }
+
+    function tickByOne() {
+        if (paused){
+            paused = false;
+            tick();
+            paused = true;
+        }
     }
 
     function tick() {
@@ -283,6 +289,7 @@
 <ControlsPanel
         paused={paused}
         startSimulation={startSimulation}
+        tickByOne={tickByOne}
         pauseSimulation={pauseSimulation}
         resetSimulation={resetSimulation}
 />
