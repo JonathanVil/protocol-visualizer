@@ -6,15 +6,9 @@
      */
     let selectedProtocol = null;
 
-    /** @type {HTMLElement | null} */
-    export let codepanel;
     export let sourceCode;
 
-    function enableCodeEditor() {
-        if (codepanel != null && (codepanel.classList.contains("hidden"))){
-            codepanel.classList.toggle("hidden");
-        }
-    }
+    export let codePanelOpen;
 
 </script>
 
@@ -31,7 +25,7 @@
             {/each}
         </select>
 
-        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" on:click={() => {enableCodeEditor(); sourceCode = selectedProtocol?.content ?? ""}}>Load</button>
+        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" on:click={() => {codePanelOpen = true; sourceCode = selectedProtocol?.content ?? ""}}>Load</button>
     </div>
 
     <a href="https://github.com/JonathanVil/protocol-visualizer" aria-label="GitHub">

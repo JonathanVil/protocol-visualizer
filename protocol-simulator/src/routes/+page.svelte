@@ -244,32 +244,8 @@
         });
     }
 
-    //Frontend functions & variables'
-    /** @type {HTMLElement | null} */
-    let codepanel;
-
-    onMount(() => {
-        /** @type {HTMLElement | null} */
-        const codeButton = document.getElementById("btn-code");
-
-        codepanel = document.getElementById("codepanel")
-
-        if (codepanel != null){ //toggle code block by default
-            codepanel.classList.toggle("hidden");
-        }
-
-        /** @type {HTMLElement | null} */
-        const settingsButton = document.getElementById("btn-settings");
-        /** @type {HTMLElement | null} */
-        const settingspanel = document.getElementById("settingspanel");
-
-        if (codeButton && codepanel) {
-            codeButton.addEventListener("click", () => { codepanel?.classList.toggle("hidden"); });
-        }
-        if (settingspanel && settingsButton) {
-            settingsButton.addEventListener("click", () => { settingspanel.classList.toggle("hidden"); });
-        }
-    })
+    let settingsPanelOpen = false;
+    let codePanelOpen = true;
 </script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -277,7 +253,7 @@
 <!--Top navigation bar-->
 <NavigationBar
         bind:predefinedProtocols={predefinedProtocols}
-        bind:codepanel={codepanel}
+        bind:codePanelOpen={codePanelOpen}
         bind:sourceCode={sourceCode}
 ></NavigationBar>
 
@@ -287,13 +263,15 @@
 </div>
 
 
-<!--Code block-->
-<div id="codepanel" class="hidden absolute top-22 left-1 rounded-lg w-9/20 h-4/5">
-    <MonacoEditer bind:sourceCode={sourceCode} />
-</div>
+{#if codePanelOpen}
+    <!--Code block-->
+    <div class="absolute top-22 left-1 rounded-lg w-9/20 h-4/5">
+        <MonacoEditer bind:sourceCode={sourceCode} />
+    </div>
+{/if}
 
 <!--Log block-->
-<div id="logpanel" class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
+<div class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
     <EventLog bind:eventLog={eventLog} />
 </div>
 
@@ -305,22 +283,19 @@
 </button>
 
 <!--Burger menu's-->
-<div class="flex flex-col absolute top-14 ">
-    <button id="btn-code" class="p-1 rounded-lg hover:bg-blue-200">
-        <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
-    </button>
-</div>
+<button on:click={() => codePanelOpen = !codePanelOpen} class="absolute top-14 p-1 rounded-lg hover:bg-blue-200">
+    <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
+</button>
 
-<div class="flex flex-col absolute top-14 right-5 ">
-
-    <button id="btn-settings" class="p-1 rounded-lg hover:bg-blue-200">
-        <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
-    </button>
-</div>
+<button on:click={() => settingsPanelOpen = !settingsPanelOpen} class="absolute top-14 right-5 p-1 rounded-lg hover:bg-blue-200">
+    <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
+</button>
 
 
-<!--Settings block-->
-<SettingsPanel bind:tickSpeedUpdated={tickSpeedUpdated}></SettingsPanel>
+{#if settingsPanelOpen}
+    <!--Settings block-->
+    <SettingsPanel bind:tickSpeedUpdated={tickSpeedUpdated}></SettingsPanel>
+{/if}
 
 <!--Message block-->
 <ManualMessageComponent

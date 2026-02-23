@@ -18,7 +18,7 @@
     }
 </script>
 
-<div id="settingspanel" class="hidden absolute top-22 right-1 rounded-lg w-1/7 h-2/5 bg-[#91B7C7]/16 border">
+<div class="absolute top-22 right-1 rounded-lg w-1/7 h-2/5 bg-[#91B7C7]/16 border">
     <div class="flex flex-col gap-3">
         <div class="font-medium">
             <p class="">Ticks / Second</p>
