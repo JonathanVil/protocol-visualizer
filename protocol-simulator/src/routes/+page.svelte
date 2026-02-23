@@ -106,6 +106,8 @@
         clearInterval(intervalId);
         messages = new Queue();
         timeouts = new Queue();
+        tickLog = ["tick 0"];
+        eventLog = [];
         actors = [];
         id = 0;
         tickSpeedUpdated = false;
@@ -114,16 +116,16 @@
         graphRef.resetGraph();
     }
 
-    function handleTick() {
+
     function tickByOne() {
         if (paused){
             paused = false;
-            tick();
+            handleTick();
             paused = true;
         }
     }
 
-    function tick() {
+    function handleTick() {
         if (paused) {
             return
         }
