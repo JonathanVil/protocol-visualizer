@@ -10,6 +10,8 @@
     } from '@floating-ui/dom';
     import ActorStatePopper from "$lib/components/ActorStatePopper.svelte";
     import {writable} from "svelte/store";
+    import MessagePopper from "$lib/components/MessagePopper.svelte";
+    import {createPopper} from "@popperjs/core";
 
     /** @typedef {import('$lib/types.js').Actor} Actor */
     /** @typedef {import('$lib/types.js').Message} Message */
@@ -32,7 +34,8 @@
     /** @type {any} */
     let cyInstance;
 
-    let currentOpenMessagePopper;
+    /** @type {import('cytoscape').NodeSingular | null} */
+    let currentOpenMessagePopper = null;
 
     /** @typedef {import('svelte/store').Writable<Actor>} ActorStore */
     /**
@@ -254,16 +257,8 @@
         });
 
         $cyInstance.on('tap', '.message',
-            /**
-             * @param {import('cytoscape').EventObject} evt - The Cytoscape event object
-             */
             (evt) => {
-                const node_msg = evt.target;
-                if (node_msg.hasClass('message')) {
-                    const id = node_msg.id
-                    //const messageObj = messages.find( /** @param {Message} m */ m => Number(m.id) === id ); // find the message that matches this graph node
-                    //createMessagePopper(messageObj)
-                }
+                createMessagerPopper(evt);
             })
     });
 
@@ -271,6 +266,48 @@
         // If Graph component is removed, ensure poppers/components don’t leak
         removeAllPoppers();
     });
+
+
+    /**
+     * @param {import('cytoscape').EventObject} evt - The Cytoscape event object
+     */
+    function createMessagerPopper(evt) {
+        const messageNode = evt.target;
+
+        let messagePopUp = messageNode.scratch('messagePopup');
+
+        //If the popup does not already exists
+        if (!messagePopUp) {
+            const container = document.createElement('div');
+            cyContainer.appendChild(container);
+
+            //We then mount a new svelte component (MessagePopper) to the DOM
+            const component = new MessagePopper({
+                target: container,
+                props: {
+                    //  sender: node.data('sender'),
+                    //  text: node.data('text'),
+                    //  time: node.data('time')
+                }
+            });
+
+
+            //Anchor / reference for messageNode, that the popper can use for position
+            const popperReference = messageNode.popperRef();
+
+            const messagePopper = createPopper(popperReference, container, {
+                placement: 'right',
+            });
+
+            //Bundle the "Popper": popper instance, svelte component and DOM element
+            messagePopUp = {messagePopper, component, container};
+
+            //Save it in the scratch of the node.
+            messageNode.scratch('messagePopup', messagePopUp);
+        }
+    }
+
+
 
     //Adding Nodes (incrementally)
     $: if (cyInstance) {
