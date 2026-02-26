@@ -17,14 +17,14 @@
     /** @type {Actor[]} */
     export let actors = [];
 
-    /** @type {{ source: number, target: number, label: string }[]} */
-    export let edges = [];
-
     /** @type {number} */
     export let tickSize;
 
+    /** @type {{ source: number, target: number, label: string }[]} */
+    let edges = [];
+
     /** @type {import('cytoscape').NodeSingular[]} */
-    let graphMessages = [];
+    let graphMessageNodes = [];
 
     /** @type {HTMLElement} */
     let cyContainer;
@@ -85,8 +85,7 @@
      * Used to reset the visuals in the graph
      */
     export function resetGraph() {
-        actors = [];
-        graphMessages = [];
+        graphMessageNodes = [];
         edges = [];
 
         cyInstance.elements().remove(); // remove all nodes and edges
@@ -315,7 +314,7 @@
                 position: {x: source.x, y: source.y},
                 classes: 'message'
             });
-            graphMessages.push(msg);
+            graphMessageNodes.push(msg);
         }
 
         console.log(tickSize);
@@ -329,7 +328,7 @@
                 if (message.elapsedTicks >= message.transitTicks) {
                     // remove message node from graph & array
                     cyInstance.remove(msg);
-                    graphMessages.splice(graphMessages.indexOf(msg), 1);
+                    graphMessageNodes.splice(graphMessageNodes.indexOf(msg), 1);
 
                 }
             }
