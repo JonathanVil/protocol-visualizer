@@ -2,7 +2,7 @@
     /** @typedef {import('$lib/types.js').Actor} Actor */
     /** @typedef {import('svelte/store').Readable<Actor>} ActorReadable */
 
-    import EditActorState from "$lib/EditActorState.svelte";
+    import EditActorState from "$lib/components/EditActorState.svelte";
 
     /** @type {ActorReadable} */
     export let store;

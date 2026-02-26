@@ -1,20 +1,13 @@
 <script>
-    import MonacoEditer from "$lib/MonacoEditer.svelte";
-    import SettingsPanel from "$lib/SettingsPanel.svelte";
-    import NavigationBar from "$lib/NavigationBar.svelte";
-    import ControlsPanel from "$lib/ControlsPanel.svelte";
-    import Graph  from "$lib/Graph.svelte";
-    import {Queue} from '$lib/Queue.js';
-    import ManualMessageComponent from "$lib/ManualMessageComponent.svelte";
-    import {
-        getTransitTime,
-        getNextMessageId,
-        parseProtocolCode,
-        getTickSize
-    } from "$lib/protocolUtils.js";
+    import MonacoEditor from "$lib/components/MonacoEditor.svelte";
+    import SettingsPanel from "$lib/components/SettingsPanel.svelte";
+    import NavigationBar from "$lib/components/NavigationBar.svelte";
+    import ControlsPanel from "$lib/components/ControlsPanel.svelte";
+    import Graph  from "$lib/components/Graph.svelte";
+    import {Queue} from '$lib/datastructures/Queue.js';
+    import ManualMessageComponent from "$lib/components/ManualMessageComponent.svelte";
     import Icon from '@iconify/svelte';
-    import {onMount} from "svelte";
-    import EventLog from "$lib/EventLog.svelte";
+    import EventLog from "$lib/components/EventLog.svelte";
 
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
@@ -26,10 +19,6 @@
     let predefinedProtocols = data.protocols;
 
     let sourceCode = "// Write your code here...";
-
-    //reference to graph instance
-    /** @type {import('$lib/Graph.svelte').default} */
-    let graphRef;
 
     /** @type {Actor[]} */
     let actors = [];
@@ -48,7 +37,7 @@
     let paused = true;
 
     function spawnActor() {
-        /** @type {ActorConstructor} */
+        /** @type {ActorConstructor|null} */
         const actorClass = parseProtocolCode(sourceCode, send, getActors, createQueue, timeout); // we need to give send here so the actor "knows" it
 
         if (actorClass == null) {
@@ -92,13 +81,16 @@
         paused = false;
         clearInterval(intervalId);
         tickSpeedUpdated = false;
-        intervalId = setInterval(handleTick, getTickSize()); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
+        intervalId = setInterval(handleTick, tickSize); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
     }
 
     function pauseSimulation() {
         console.log("Pausing simulation");
         paused = true;
     }
+
+    /** @type {() => void} */
+    let resetGraph;
 
     function resetSimulation() {
         clearInterval(intervalId);
@@ -110,7 +102,7 @@
         tickSpeedUpdated = false;
         tick = 0;
         paused = true;
-        graphRef.resetGraph();
+        resetGraph();
     }
 
     function tickByOne() {
@@ -138,7 +130,6 @@
             paused = true;
             startSimulation();
         }
-
     }
 
     /**
@@ -154,6 +145,8 @@
         }
     }
 
+    /** @type {(msg: Message) => void} */
+    let animateMessage;
     function handleMessages() {
         let n = messages.length;
         for (let i = 0; i < n; i++) {
@@ -161,7 +154,7 @@
             if (message != null){
                 message.elapsedTicks++
                 //Animate messages
-                graphRef.animateMessage(message);
+                animateMessage(message);
 
                 if (message.elapsedTicks=== message.transitTicks){
                     deliverMessage(message)
@@ -188,6 +181,9 @@
         }
     }
 
+    /** @type {(actor: Actor) => void} */
+    let updateActorStatePopper;
+
     /** @param {Actor} actor */
     function watchActor(actor) {
         return new Proxy(actor, {
@@ -199,7 +195,7 @@
                     let logEntry = `Actor ${target.id} ${String(prop)} changed from ${prev} to ${value}`;
                     console.log(logEntry);
                     addLogEntry(logEntry);
-                    graphRef.updateActorStatePopper(receiver);
+                    updateActorStatePopper(receiver);
                 }
                 return true;
             }
@@ -220,6 +216,7 @@
             logEntry = `Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
         }
         console.log(logEntry);
+        console.log(tickSize);
         addLogEntry(logEntry);
         let transitTime = getTransitTime();
         messages.push({id: getNextMessageId(), source: from, destination: to, type: type, transitTicks: transitTime, elapsedTicks: 0, data: data})
@@ -259,6 +256,58 @@
     function toggleLeftPanel(panel) {
         leftPanel = leftPanel === panel ? LeftPanelOptions.NONE : panel;
     }
+
+
+    /** PROTOCOL UTILS */
+    /**
+     * @param {string} codeString
+     * @param {function} send
+     * @param {function} getActors
+     * @param {function} createQueue
+     * @param {function} timeout
+     * @returns {ActorConstructor|null}
+     */
+    export function parseProtocolCode(codeString, send, getActors, createQueue, timeout) {
+
+        try {
+
+            return new Function(
+                "send",
+                "getActors",
+                "createQueue",
+                "timeout",
+                codeString
+            )(send, getActors, createQueue, timeout);
+
+        } catch (e) {
+            console.error('Error parsing code:', e);
+            return null;
+        }
+    }
+
+    let transitTimeUpperBound = 20;
+    let transitTimeLowerBound = 20;
+
+    /**
+     * @return {number} The transit time in ticks
+     */
+    export function getTransitTime() {
+        return Math.floor(Math.random() * (transitTimeUpperBound - transitTimeLowerBound + 1)) + transitTimeLowerBound;
+    }
+
+    let tickSize = 100;
+
+    // id's for messages
+    /** @type {number} */
+    let id_messages = -1;
+
+    /**
+     * @return {number} The next message id
+     */
+    export function getNextMessageId() {
+        if (id_messages < -1000) {id_messages = -1}
+        return id_messages--;
+    }
 </script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -272,19 +321,25 @@
 
 <!--Dotted graph (background)-->
 <div class="cy-wrapper">
-    <Graph bind:this={graphRef} nodes={actors} />
+    <Graph
+            bind:resetGraph={resetGraph}
+            bind:animateMessage={animateMessage}
+            bind:updateActorStatePopper={updateActorStatePopper}
+            actors={actors}
+            tickSize={tickSize}
+    />
 </div>
 
 
 {#if leftPanel === LeftPanelOptions.CODE}
     <!--Code block-->
     <div class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
-        <MonacoEditer bind:sourceCode={sourceCode} />
+        <MonacoEditor bind:sourceCode={sourceCode} />
     </div>
 {:else if leftPanel === LeftPanelOptions.LOG}
     <!--Log block-->
     <div class="absolute top-24 left-1 rounded-lg w-9/20">
-        <EventLog bind:eventLog={eventLog} />
+        <EventLog eventLog={eventLog} />
     </div>
 {/if}
 
@@ -327,13 +382,21 @@
 
 {#if settingsPanelOpen}
     <!--Settings block-->
-    <SettingsPanel bind:tickSpeedUpdated={tickSpeedUpdated}></SettingsPanel>
+    <SettingsPanel bind:tickSpeed={
+        () => Math.floor(1000 / tickSize),
+        (v) => {
+            tickSize = Math.floor(1000 / v);
+            tickSpeedUpdated = true;
+        }}
+
+       bind:transitLower={transitTimeLowerBound}
+       bind:transitUpper={transitTimeUpperBound}>
+    </SettingsPanel>
 {/if}
 
 <!--Message block-->
 <ManualMessageComponent
-        messages={messages}
-        addLogEntry={addLogEntry}
+        send={send}
 />
 
 <!-- 🔹 Bottom Right Buttons -->

@@ -1,8 +1,4 @@
 ﻿<script>
-    import {Queue} from '$lib/Queue.js';
-    import {getNextMessageId, getTransitTime} from "$lib/protocolUtils.js";
-
-    /** @typedef {import('$lib/types.js').Message} Message */
     let to = 0;
     let from = 0;
     let type = "";
@@ -10,25 +6,11 @@
     /** @type {any} */
     let data = null;
 
-    /** @type {(entry: string) => void} */
-    export let addLogEntry;
+    /** @type {(from: number, to: number, data: any, type: string) => void} */
+    export let send;
 
-    export let messages = new Queue();
-
-    function sendMessageManual(){
-        let logEntry = `Manually sent: Actor ${from} sent msg ${type} to Actor ${to}`
-        if (data) {
-            logEntry = `Manually sent: Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
-        }
-        console.log(logEntry);
-
-        // call parent's addLogEntry
-        addLogEntry(logEntry);
-
-        let transitTime = getTransitTime();
-        /** @type {Message} */
-        let message = {id: getNextMessageId(), source: from, destination: to, type: type, transitTicks: transitTime, elapsedTicks: 0, data: data}
-        messages.push(message);
+    function submit() {
+        send(from, to, type, data);
     }
 </script>
 
@@ -60,7 +42,7 @@
     </div>
 
     <button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            on:click={sendMessageManual}>
+            on:click={submit}>
         Send
     </button>
 

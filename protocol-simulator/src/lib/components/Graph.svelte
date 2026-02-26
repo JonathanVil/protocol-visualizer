@@ -1,6 +1,5 @@
 ﻿<script>
     import {mount, unmount, onMount, onDestroy} from 'svelte';
-    import {getTickSize} from "$lib/protocolUtils.js";
     import cytoscape from 'cytoscape';
     import cytoscapePopper from 'cytoscape-popper';
     import {
@@ -9,20 +8,23 @@
         shift,
         limitShift,
     } from '@floating-ui/dom';
-    import ActorStatePopper from "$lib/ActorStatePopper.svelte";
+    import ActorStatePopper from "$lib/components/ActorStatePopper.svelte";
     import {writable} from "svelte/store";
 
     /** @typedef {import('$lib/types.js').Actor} Actor */
     /** @typedef {import('$lib/types.js').Message} Message */
 
     /** @type {Actor[]} */
-    export let nodes = [];
+    export let actors = [];
+
+    /** @type {number} */
+    export let tickSize;
 
     /** @type {{ source: number, target: number, label: string }[]} */
-    export let edges = [];
+    let edges = [];
 
     /** @type {import('cytoscape').NodeSingular[]} */
-    let graphMessages = [];
+    let graphMessageNodes = [];
 
     /** @type {HTMLElement} */
     let cyContainer;
@@ -83,8 +85,7 @@
      * Used to reset the visuals in the graph
      */
     export function resetGraph() {
-        nodes = [];
-        graphMessages = [];
+        graphMessageNodes = [];
         edges = [];
 
         cyInstance.elements().remove(); // remove all nodes and edges
@@ -266,17 +267,17 @@
             let addedSomething = false;
 
             // 1) Ensure all actor nodes exist
-            for (const actor of nodes) {
+            for (const actor of actors) {
                 const { added } = ensureActorNode(actor);
                 if (added) addedSomething = true;
             }
 
             // 2) Keep your “connect everyone to newest node” behavior,
             //    but only create missing edges (no duplicates)
-            if (nodes.length >= 2) {
-                const newest = nodes[nodes.length - 1];
-                for (let i = 0; i < nodes.length - 1; i++) {
-                    const nodeA = nodes[i];
+            if (actors.length >= 2) {
+                const newest = actors[actors.length - 1];
+                for (let i = 0; i < actors.length - 1; i++) {
+                    const nodeA = actors[i];
                     const newEdge = { source: nodeA.id, target: newest.id, label: "" };
 
                     // keep your local edges array updated (optional but consistent)
@@ -313,20 +314,20 @@
                 position: {x: source.x, y: source.y},
                 classes: 'message'
             });
-            graphMessages.push(msg);
+            graphMessageNodes.push(msg);
         }
 
         msg.animate({
             position: {x: targetPosThisTickX, y: targetPosThisTickY}
         }, {
-            duration: getTickSize(),
+            duration: tickSize,
             easing: 'linear',
             queue: false,
             complete: () => {
                 if (message.elapsedTicks >= message.transitTicks) {
                     // remove message node from graph & array
                     cyInstance.remove(msg);
-                    graphMessages.splice(graphMessages.indexOf(msg), 1);
+                    graphMessageNodes.splice(graphMessageNodes.indexOf(msg), 1);
 
                 }
             }
