@@ -20,10 +20,6 @@
 
     let sourceCode = "// Write your code here...";
 
-    //reference to graph instance
-    /** @type {import('$lib/components/Graph.svelte').default} */
-    let graphRef;
-
     /** @type {Actor[]} */
     let actors = [];
 
@@ -93,6 +89,9 @@
         paused = true;
     }
 
+    /** @type {() => void} */
+    let resetGraph;
+
     function resetSimulation() {
         clearInterval(intervalId);
         messages = new Queue();
@@ -103,7 +102,7 @@
         tickSpeedUpdated = false;
         tick = 0;
         paused = true;
-        graphRef.resetGraph();
+        resetGraph();
     }
 
     function tickByOne() {
@@ -146,6 +145,8 @@
         }
     }
 
+    /** @type {(msg: Message) => void} */
+    let animateMessage;
     function handleMessages() {
         let n = messages.length;
         for (let i = 0; i < n; i++) {
@@ -153,7 +154,7 @@
             if (message != null){
                 message.elapsedTicks++
                 //Animate messages
-                graphRef.animateMessage(message);
+                animateMessage(message);
 
                 if (message.elapsedTicks=== message.transitTicks){
                     deliverMessage(message)
@@ -180,6 +181,9 @@
         }
     }
 
+    /** @type {(actor: Actor) => void} */
+    let updateActorStatePopper;
+
     /** @param {Actor} actor */
     function watchActor(actor) {
         return new Proxy(actor, {
@@ -191,7 +195,7 @@
                     let logEntry = `Actor ${target.id} ${String(prop)} changed from ${prev} to ${value}`;
                     console.log(logEntry);
                     addLogEntry(logEntry);
-                    graphRef.updateActorStatePopper(receiver);
+                    updateActorStatePopper(receiver);
                 }
                 return true;
             }
@@ -317,7 +321,13 @@
 
 <!--Dotted graph (background)-->
 <div class="cy-wrapper">
-    <Graph bind:this={graphRef} actors={actors} tickSize={tickSize} />
+    <Graph
+            bind:resetGraph={resetGraph}
+            bind:animateMessage={animateMessage}
+            bind:updateActorStatePopper={updateActorStatePopper}
+            actors={actors}
+            tickSize={tickSize}
+    />
 </div>
 
 
