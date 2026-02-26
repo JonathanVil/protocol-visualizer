@@ -284,7 +284,7 @@
             cyContainer.appendChild(container);
 
             //We then mount a new svelte component (MessagePopper) to the DOM
-            const component = new MessagePopper({
+            const component = mount(MessagePopper, {
                 target: container,
                 props: {
                     //  sender: node.data('sender'),
@@ -293,13 +293,17 @@
                 }
             });
 
-
             //Anchor / reference for messageNode, that the popper can use for position
             const popperReference = messageNode.popperRef();
 
             const messagePopper = createPopper(popperReference, container, {
                 placement: 'right',
             });
+
+            //Update postion off popper when the message node change positon or zoom
+            const update = () => messagePopper.update();
+            messageNode.on('position', update);
+            cyInstance.on('pan zoom resize', update);
 
             //Bundle the "Popper": popper instance, svelte component and DOM element
             messagePopUp = {messagePopper, component, container};
