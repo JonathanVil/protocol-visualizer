@@ -32,18 +32,18 @@
     <!-- Methods -->
     <div class="flex flex-row gap-2 items-center text-center">
         <button class=" bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center"
-                on:click={deliverMessage(message)}>
+                on:click={() => deliverMessage(message)}>
             Deliver
         </button>
         <button class=" bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center"
-                on:click={dropMessage(message)}>
+                on:click={() => dropMessage(message)}>
             Drop
         </button>
     </div>
 
     <div class="mt-2 flex flex-row items-center text-center gap-2">
         <button class="bg-blue-600 text-white rounded hover:bg-blue-800 w-25 h-10 text-base flex text-center justify-center items-center"
-                on:click={delayMessage(message, delay)}>
+                on:click={() => delayMessage(message, delay)}>
             Delay
         </button>
         <input class="border p-1 h-10 w-12 rounded relative z-9999 bg-blue-800" id="from" bind:value={delay} placeholder="ID" />
