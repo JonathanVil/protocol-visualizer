@@ -324,7 +324,7 @@
     }
 
     /** @param {import('cytoscape').NodeSingular} messageNode */
-    function removePopper(messageNode) {
+    function removeMessagePopper(messageNode) {
         const messagePopUp = messageNode.scratch('messagePopup')
 
         // Remove event listeners (must match original handler references)
@@ -355,7 +355,7 @@
 
         //remove messageNode (and popper) from graph
         if (messageNode) {
-            removePopper(messageNode)
+            removeMessagePopper(messageNode)
             cyInstance.remove(messageNode);
             graphMessageNodes.splice(graphMessageNodes.indexOf(messageNode), 1);
         }
@@ -459,7 +459,7 @@
                     // remove message node from graph & array
 
                     if (msg.scratch('messagePopup')) {
-                        removePopper(msg);
+                        removeMessagePopper(msg);
                     }
                     cyInstance.remove(msg);
                     graphMessageNodes.splice(graphMessageNodes.indexOf(msg), 1);
