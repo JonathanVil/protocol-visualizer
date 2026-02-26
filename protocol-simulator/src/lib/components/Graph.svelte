@@ -376,6 +376,7 @@
         messages.remove(/** @param {Message} m */ m => m.id === message.id)
         message.transitTicks = message.transitTicks + delay;
         messages.push(message)
+        animateMessage(message)
     }
 
     /** @type {(msg: Message) => void} */
