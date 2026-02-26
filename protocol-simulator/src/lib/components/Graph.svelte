@@ -287,6 +287,10 @@
         //If the popup does not already exists
         if (!messagePopUp) {
             const container = document.createElement('div');
+            container.style.position = 'absolute';
+            container.style.zIndex = '9999';
+            container.style.pointerEvents = 'auto';
+
             cyContainer.appendChild(container);
 
             const messageObject = messages.find( /** @param {Message} m */ m => String(m.id) === messageNode.id() ); // find the message that matches this graph node
@@ -364,9 +368,14 @@
         console.log("Dropped message", messageNode)
     }
 
-    /** @param {Message} message - The Cytoscape event object */
-    export function delayMessage(message) {
-
+    /**
+     * @param {Message} message - The Cytoscape event object
+     * @param {Number} delay
+     * */
+    export function delayMessage(message, delay) {
+        messages.remove(/** @param {Message} m */ m => m.id === message.id)
+        message.transitTicks = message.transitTicks + delay;
+        messages.push(message)
     }
 
     /** @type {(msg: Message) => void} */

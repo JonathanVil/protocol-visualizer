@@ -6,7 +6,7 @@
     /** @type {Message} */
     export let message;
 
-    let delay = 0;
+    let delay = 100;
 
     export let dropMessage;
 
@@ -43,7 +43,7 @@
 
     <div class="mt-2 flex flex-row items-center text-center gap-2">
         <button class="bg-blue-600 text-white rounded hover:bg-blue-800 w-25 h-10 text-base flex text-center justify-center items-center"
-                on:click={delayMessage(message)}>
+                on:click={delayMessage(message, delay)}>
             Delay
         </button>
         <input class="border p-1 h-10 w-12 rounded relative z-9999 bg-blue-800" id="from" bind:value={delay} placeholder="ID" />
