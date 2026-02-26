@@ -279,7 +279,7 @@
      */
     function createMessagerPopper(evt) {
 
-        /** @type {import('cytoscape').NodeSingular} - The Cytoscape event object*/
+        /** @type {import('cytoscape').NodeSingular} */
         const messageNode = evt.target;
 
         let messagePopUp = messageNode.scratch('messagePopup');
@@ -326,7 +326,7 @@
         }
     }
 
-    /** @param {import('cytoscape').NodeSingular} messageNode - The Cytoscape event object */
+    /** @param {import('cytoscape').NodeSingular} messageNode */
     function removePopper(messageNode) {
         const messagePopUp = messageNode.scratch('messagePopup')
 
@@ -344,14 +344,14 @@
         // Unmount Svelte component + remove its container
         try {
             unmount(messagePopUp.component);
-        } catch {
-            // ignore
+        } catch (e) {
+            console.error(e);
         }
         messagePopUp.container?.remove();
 
     }
 
-    /** @param {Message} message - The Cytoscape event object */
+    /** @param {Message} message  */
     export function dropMessage(message) {
         const id = message.id;
         const messageNode = graphMessageNodes.find(/** @param {import('cytoscape').NodeSingular} node */ node => Number(node.id()) === id );
@@ -369,7 +369,7 @@
     }
 
     /**
-     * @param {Message} message - The Cytoscape event object
+     * @param {Message} message
      * @param {Number} delay
      * */
     export function delayMessage(message, delay) {
