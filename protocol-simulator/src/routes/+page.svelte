@@ -329,7 +329,7 @@
 {:else if leftPanel === LeftPanelOptions.LOG}
     <!--Log block-->
     <div class="absolute top-24 left-1 rounded-lg w-9/20">
-        <EventLog bind:eventLog={eventLog} />
+        <EventLog eventLog={eventLog} />
     </div>
 {/if}
 
