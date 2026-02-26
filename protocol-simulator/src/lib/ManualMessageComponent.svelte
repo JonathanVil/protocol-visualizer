@@ -1,5 +1,5 @@
 ﻿<script>
-    import {Queue} from '$lib/Queue.js';
+    import {Queue} from '$lib/datastructures/Queue.js';
     import {getNextMessageId, getTransitTime} from "$lib/protocolUtils.js";
 
     /** @typedef {import('$lib/types.js').Message} Message */

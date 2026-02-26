@@ -4,7 +4,7 @@
     import NavigationBar from "$lib/NavigationBar.svelte";
     import ControlsPanel from "$lib/ControlsPanel.svelte";
     import Graph  from "$lib/Graph.svelte";
-    import {Queue} from '$lib/Queue.js';
+    import {Queue} from '$lib/datastructures/Queue.js';
     import ManualMessageComponent from "$lib/ManualMessageComponent.svelte";
     import {
         getTransitTime,
