@@ -6,14 +6,7 @@
     import Graph  from "$lib/components/Graph.svelte";
     import {Queue} from '$lib/datastructures/Queue.js';
     import ManualMessageComponent from "$lib/components/ManualMessageComponent.svelte";
-    import {
-        getTransitTime,
-        getNextMessageId,
-        parseProtocolCode,
-        getTickSize
-    } from "$lib/protocolUtils.js";
     import Icon from '@iconify/svelte';
-    import {onMount} from "svelte";
     import EventLog from "$lib/components/EventLog.svelte";
 
     /** @typedef {import('$lib/types.js').Message} Message */
@@ -48,7 +41,7 @@
     let paused = true;
 
     function spawnActor() {
-        /** @type {ActorConstructor} */
+        /** @type {ActorConstructor|null} */
         const actorClass = parseProtocolCode(sourceCode, send, getActors, createQueue, timeout); // we need to give send here so the actor "knows" it
 
         if (actorClass == null) {
@@ -92,7 +85,7 @@
         paused = false;
         clearInterval(intervalId);
         tickSpeedUpdated = false;
-        intervalId = setInterval(handleTick, getTickSize()); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
+        intervalId = setInterval(handleTick, tickSize); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
     }
 
     function pauseSimulation() {
@@ -138,7 +131,6 @@
             paused = true;
             startSimulation();
         }
-
     }
 
     /**
@@ -220,6 +212,7 @@
             logEntry = `Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
         }
         console.log(logEntry);
+        console.log(tickSize);
         addLogEntry(logEntry);
         let transitTime = getTransitTime();
         messages.push({id: getNextMessageId(), source: from, destination: to, type: type, transitTicks: transitTime, elapsedTicks: 0, data: data})
@@ -259,6 +252,58 @@
     function toggleLeftPanel(panel) {
         leftPanel = leftPanel === panel ? LeftPanelOptions.NONE : panel;
     }
+
+
+    /** PROTOCOL UTILS */
+    /**
+     * @param {string} codeString
+     * @param {function} send
+     * @param {function} getActors
+     * @param {function} createQueue
+     * @param {function} timeout
+     * @returns {ActorConstructor|null}
+     */
+    export function parseProtocolCode(codeString, send, getActors, createQueue, timeout) {
+
+        try {
+
+            return new Function(
+                "send",
+                "getActors",
+                "createQueue",
+                "timeout",
+                codeString
+            )(send, getActors, createQueue, timeout);
+
+        } catch (e) {
+            console.error('Error parsing code:', e);
+            return null;
+        }
+    }
+
+    let transitTimeUpperBound = 20;
+    let transitTimeLowerBound = 20;
+
+    /**
+     * @return {number} The transit time in ticks
+     */
+    export function getTransitTime() {
+        return Math.floor(Math.random() * (transitTimeUpperBound - transitTimeLowerBound + 1)) + transitTimeLowerBound;
+    }
+
+    let tickSize = 100;
+
+    // id's for messages
+    /** @type {number} */
+    let id_messages = -1;
+
+    /**
+     * @return {number} The next message id
+     */
+    export function getNextMessageId() {
+        if (id_messages < -1000) {id_messages = -1}
+        return id_messages--;
+    }
 </script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -272,7 +317,7 @@
 
 <!--Dotted graph (background)-->
 <div class="cy-wrapper">
-    <Graph bind:this={graphRef} nodes={actors} />
+    <Graph bind:this={graphRef} nodes={actors} tickSize={tickSize} />
 </div>
 
 
@@ -327,7 +372,16 @@
 
 {#if settingsPanelOpen}
     <!--Settings block-->
-    <SettingsPanel bind:tickSpeedUpdated={tickSpeedUpdated}></SettingsPanel>
+    <SettingsPanel bind:tickSpeed={
+        () => Math.floor(1000 / tickSize),
+        (v) => {
+            tickSize = Math.floor(1000 / v);
+            tickSpeedUpdated = true;
+        }}
+
+       bind:transitLower={transitTimeLowerBound}
+       bind:transitUpper={transitTimeUpperBound}>
+    </SettingsPanel>
 {/if}
 
 <!--Message block-->

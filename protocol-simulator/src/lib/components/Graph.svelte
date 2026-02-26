@@ -1,6 +1,5 @@
 ﻿<script>
     import {mount, unmount, onMount, onDestroy} from 'svelte';
-    import {getTickSize} from "$lib/protocolUtils.js";
     import cytoscape from 'cytoscape';
     import cytoscapePopper from 'cytoscape-popper';
     import {
@@ -20,6 +19,9 @@
 
     /** @type {{ source: number, target: number, label: string }[]} */
     export let edges = [];
+
+    /** @type {number} */
+    export let tickSize;
 
     /** @type {import('cytoscape').NodeSingular[]} */
     let graphMessages = [];
@@ -316,10 +318,11 @@
             graphMessages.push(msg);
         }
 
+        console.log(tickSize);
         msg.animate({
             position: {x: targetPosThisTickX, y: targetPosThisTickY}
         }, {
-            duration: getTickSize(),
+            duration: tickSize,
             easing: 'linear',
             queue: false,
             complete: () => {
