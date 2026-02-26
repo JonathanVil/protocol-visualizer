@@ -15,7 +15,7 @@
     /** @typedef {import('$lib/types.js').Message} Message */
 
     /** @type {Actor[]} */
-    export let nodes = [];
+    export let actors = [];
 
     /** @type {{ source: number, target: number, label: string }[]} */
     export let edges = [];
@@ -85,7 +85,7 @@
      * Used to reset the visuals in the graph
      */
     export function resetGraph() {
-        nodes = [];
+        actors = [];
         graphMessages = [];
         edges = [];
 
@@ -268,17 +268,17 @@
             let addedSomething = false;
 
             // 1) Ensure all actor nodes exist
-            for (const actor of nodes) {
+            for (const actor of actors) {
                 const { added } = ensureActorNode(actor);
                 if (added) addedSomething = true;
             }
 
             // 2) Keep your “connect everyone to newest node” behavior,
             //    but only create missing edges (no duplicates)
-            if (nodes.length >= 2) {
-                const newest = nodes[nodes.length - 1];
-                for (let i = 0; i < nodes.length - 1; i++) {
-                    const nodeA = nodes[i];
+            if (actors.length >= 2) {
+                const newest = actors[actors.length - 1];
+                for (let i = 0; i < actors.length - 1; i++) {
+                    const nodeA = actors[i];
                     const newEdge = { source: nodeA.id, target: newest.id, label: "" };
 
                     // keep your local edges array updated (optional but consistent)

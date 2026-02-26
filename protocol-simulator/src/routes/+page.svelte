@@ -317,7 +317,7 @@
 
 <!--Dotted graph (background)-->
 <div class="cy-wrapper">
-    <Graph bind:this={graphRef} nodes={actors} tickSize={tickSize} />
+    <Graph bind:this={graphRef} actors={actors} tickSize={tickSize} />
 </div>
 
 
