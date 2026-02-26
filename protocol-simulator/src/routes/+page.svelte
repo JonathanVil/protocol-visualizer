@@ -326,6 +326,7 @@
             bind:animateMessage={animateMessage}
             bind:updateActorStatePopper={updateActorStatePopper}
             bind:messages={messages}
+            deliverMessage={deliverMessage}
             actors={actors}
             tickSize={tickSize}
     />

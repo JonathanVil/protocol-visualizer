@@ -297,7 +297,7 @@
                 props: {
                     message: messageObject,
                     delayMessage: delayMessage,
-                    deliverMessage: deliverMessage,
+                    deliverMessage: deliverGraphMessage,
                     dropMessage: dropMessage,
                 }
             });
@@ -369,9 +369,15 @@
 
     }
 
-    /** @param {Message} message - The Cytoscape event object */
-    export function deliverMessage(message) {
+    /** @type {(msg: Message) => void} */
+    export let deliverMessage;
 
+    /**
+     * //Wrapper function between parent and child to remove the message from logic and graph
+     * @param {Message} message */
+    function deliverGraphMessage(message) {
+        dropMessage(message);
+        deliverMessage(message);
     }
 
 
