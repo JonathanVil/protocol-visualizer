@@ -319,6 +319,31 @@
         }
     }
 
+    /** @param {import('cytoscape').NodeSingular} messageNode - The Cytoscape event object */
+    function removePopper(messageNode) {
+        const messagePopUp = messageNode.scratch('messagePopup')
+
+        // Remove event listeners (must match original handler references)
+        messageNode?.off?.('position', messagePopUp.update);
+        cyInstance?.off?.('pan zoom resize', messagePopUp.update);
+
+        // If popper implementation supports destroy, call it (guarded)
+        try {
+            messagePopUp.popper?.destroy?.();
+        } catch {
+            // ignore
+        }
+
+        // Unmount Svelte component + remove its container
+        try {
+            unmount(messagePopUp.component);
+        } catch {
+            // ignore
+        }
+        messagePopUp.container?.remove();
+
+    }
+
 
 
     //Adding Nodes (incrementally)
@@ -390,6 +415,10 @@
             complete: () => {
                 if (message.elapsedTicks >= message.transitTicks) {
                     // remove message node from graph & array
+
+                    if (msg.scratch('messagePopup')) {
+                        removePopper(msg);
+                    }
                     cyInstance.remove(msg);
                     graphMessageNodes.splice(graphMessageNodes.indexOf(msg), 1);
 
