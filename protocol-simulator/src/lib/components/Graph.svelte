@@ -296,6 +296,9 @@
                 target: container,
                 props: {
                     message: messageObject,
+                    delayMessage: delayMessage,
+                    deliverMessage: deliverMessage,
+                    dropMessage: dropMessage,
                 }
             });
 
@@ -344,6 +347,32 @@
 
     }
 
+    /** @param {Message} message - The Cytoscape event object */
+    export function dropMessage(message) {
+        const id = message.id;
+        const messageNode = graphMessageNodes.find(/** @param {import('cytoscape').NodeSingular} node */ node => Number(node.id()) === id );
+
+        //remove messageNode (and popper) from graph
+        if (messageNode) {
+            removePopper(messageNode)
+            cyInstance.remove(messageNode);
+            graphMessageNodes.splice(graphMessageNodes.indexOf(messageNode), 1);
+        }
+
+        //remove message from logic message
+        messages.remove(/** @param {Message} m */ m => m.id === id)
+        console.log("Dropped message", messageNode)
+    }
+
+    /** @param {Message} message - The Cytoscape event object */
+    export function delayMessage(message) {
+
+    }
+
+    /** @param {Message} message - The Cytoscape event object */
+    export function deliverMessage(message) {
+
+    }
 
 
     //Adding Nodes (incrementally)
