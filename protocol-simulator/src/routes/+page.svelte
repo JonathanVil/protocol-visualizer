@@ -1,5 +1,5 @@
 <script>
-    import MonacoEditer from "$lib/components/MonacoEditer.svelte";
+    import MonacoEditor from "$lib/components/MonacoEditor.svelte";
     import SettingsPanel from "$lib/components/SettingsPanel.svelte";
     import NavigationBar from "$lib/components/NavigationBar.svelte";
     import ControlsPanel from "$lib/components/ControlsPanel.svelte";
@@ -324,7 +324,7 @@
 {#if leftPanel === LeftPanelOptions.CODE}
     <!--Code block-->
     <div class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
-        <MonacoEditer bind:sourceCode={sourceCode} />
+        <MonacoEditor bind:sourceCode={sourceCode} />
     </div>
 {:else if leftPanel === LeftPanelOptions.LOG}
     <!--Log block-->
