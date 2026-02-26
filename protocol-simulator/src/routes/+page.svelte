@@ -1,11 +1,11 @@
 <script>
-    import MonacoEditer from "$lib/MonacoEditer.svelte";
-    import SettingsPanel from "$lib/SettingsPanel.svelte";
-    import NavigationBar from "$lib/NavigationBar.svelte";
-    import ControlsPanel from "$lib/ControlsPanel.svelte";
-    import Graph  from "$lib/Graph.svelte";
+    import MonacoEditer from "$lib/components/MonacoEditer.svelte";
+    import SettingsPanel from "$lib/components/SettingsPanel.svelte";
+    import NavigationBar from "$lib/components/NavigationBar.svelte";
+    import ControlsPanel from "$lib/components/ControlsPanel.svelte";
+    import Graph  from "$lib/components/Graph.svelte";
     import {Queue} from '$lib/datastructures/Queue.js';
-    import ManualMessageComponent from "$lib/ManualMessageComponent.svelte";
+    import ManualMessageComponent from "$lib/components/ManualMessageComponent.svelte";
     import {
         getTransitTime,
         getNextMessageId,
@@ -14,7 +14,7 @@
     } from "$lib/protocolUtils.js";
     import Icon from '@iconify/svelte';
     import {onMount} from "svelte";
-    import EventLog from "$lib/EventLog.svelte";
+    import EventLog from "$lib/components/EventLog.svelte";
 
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
@@ -28,7 +28,7 @@
     let sourceCode = "// Write your code here...";
 
     //reference to graph instance
-    /** @type {import('$lib/Graph.svelte').default} */
+    /** @type {import('$lib/components/Graph.svelte').default} */
     let graphRef;
 
     /** @type {Actor[]} */

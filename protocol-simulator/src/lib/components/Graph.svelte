@@ -9,7 +9,7 @@
         shift,
         limitShift,
     } from '@floating-ui/dom';
-    import ActorStatePopper from "$lib/ActorStatePopper.svelte";
+    import ActorStatePopper from "$lib/components/ActorStatePopper.svelte";
     import {writable} from "svelte/store";
 
     /** @typedef {import('$lib/types.js').Actor} Actor */
