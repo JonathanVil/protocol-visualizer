@@ -1,7 +1,4 @@
 <script>
-    // --- inline edit popup state ---
-    import ActorStatePopper from "$lib/components/ActorStatePopper.svelte";
-
     /** @type {string | null} */
     export let editingKey = null;
 
