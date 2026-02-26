@@ -317,7 +317,6 @@
             graphMessageNodes.push(msg);
         }
 
-        console.log(tickSize);
         msg.animate({
             position: {x: targetPosThisTickX, y: targetPosThisTickY}
         }, {
