@@ -12,6 +12,8 @@
     import {writable} from "svelte/store";
     import MessagePopper from "$lib/components/MessagePopper.svelte";
     import {createPopper} from "@popperjs/core";
+    import {Queue} from '$lib/datastructures/Queue.js';
+
 
     /** @typedef {import('$lib/types.js').Actor} Actor */
     /** @typedef {import('$lib/types.js').Message} Message */
@@ -22,6 +24,8 @@
     /** @type {number} */
     export let tickSize;
 
+    /** @type {Queue} */
+    export let messages = new Queue();
     /** @type {{ source: number, target: number, label: string }[]} */
     let edges = [];
 
@@ -274,6 +278,8 @@
      * @param {import('cytoscape').EventObject} evt - The Cytoscape event object
      */
     function createMessagerPopper(evt) {
+
+        /** @type {import('cytoscape').NodeSingular} - The Cytoscape event object*/
         const messageNode = evt.target;
 
         let messagePopUp = messageNode.scratch('messagePopup');
@@ -283,13 +289,13 @@
             const container = document.createElement('div');
             cyContainer.appendChild(container);
 
+            const messageObject = messages.find( /** @param {Message} m */ m => String(m.id) === messageNode.id() ); // find the message that matches this graph node
+
             //We then mount a new svelte component (MessagePopper) to the DOM
             const component = mount(MessagePopper, {
                 target: container,
                 props: {
-                    //  sender: node.data('sender'),
-                    //  text: node.data('text'),
-                    //  time: node.data('time')
+                    message: messageObject,
                 }
             });
 

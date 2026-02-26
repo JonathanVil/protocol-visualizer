@@ -325,6 +325,7 @@
             bind:resetGraph={resetGraph}
             bind:animateMessage={animateMessage}
             bind:updateActorStatePopper={updateActorStatePopper}
+            bind:messages={messages}
             actors={actors}
             tickSize={tickSize}
     />
