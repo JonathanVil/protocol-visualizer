@@ -32,6 +32,8 @@
     /** @type {any} */
     let cyInstance;
 
+    let currentOpenMessagePopper;
+
     /** @typedef {import('svelte/store').Writable<Actor>} ActorStore */
     /**
      * @type {Map<number, {
@@ -250,6 +252,19 @@
             ],
             layout: { name: 'circle', animate: true}
         });
+
+        $cyInstance.on('tap', '.message',
+            /**
+             * @param {import('cytoscape').EventObject} evt - The Cytoscape event object
+             */
+            (evt) => {
+                const node_msg = evt.target;
+                if (node_msg.hasClass('message')) {
+                    const id = node_msg.id
+                    //const messageObj = messages.find( /** @param {Message} m */ m => Number(m.id) === id ); // find the message that matches this graph node
+                    //createMessagePopper(messageObj)
+                }
+            })
     });
 
     onDestroy(() => {
