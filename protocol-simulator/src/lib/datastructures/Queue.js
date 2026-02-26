@@ -51,6 +51,42 @@ export class Queue {
         }
         return null
     }
+
+    find(predicate)
+    {
+        let current=this.head
+        while(current)
+        {
+            if(predicate(current.value))
+            {
+                return current.value
+            }
+            current=current.next
+        }
+        return null
+    }
+    remove(predicate){
+        let current = this.head
+        let prev = null;
+
+        while(current) {
+            if (predicate(current.value)) {
+                //If the node to remove is the head, we need to update the head pointer
+                if (prev === null) {
+                    this.head = current.next
+                } else {
+                    //If not head, we need to update the previous node's next pointer
+                    prev.next = current.next
+                }
+                this.length--
+                return current.value
+            } else {
+                prev = current;
+                current = current.next;
+            }
+        }
+        return null;
+    }
     printList(){
         let current=this.head
         let result=""
