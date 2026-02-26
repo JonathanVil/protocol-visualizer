@@ -38,9 +38,6 @@
     /** @type {any} */
     let cyInstance;
 
-    /** @type {import('cytoscape').NodeSingular | null} */
-    let currentOpenMessagePopper = null;
-
     /** @typedef {import('svelte/store').Writable<Actor>} ActorStore */
     /**
      * @type {Map<number, {
