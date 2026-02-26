@@ -256,7 +256,9 @@
             layout: { name: 'circle', animate: true}
         });
 
+        //Listen for clicks on message nodes
         $cyInstance.on('tap', '.message',
+            /** @param {import('cytoscape').EventObject} evt - The Cytoscape event object*/
             (evt) => {
                 createMessagerPopper(evt);
             })
