@@ -332,8 +332,7 @@
 
 <!--Message block-->
 <ManualMessageComponent
-        messages={messages}
-        addLogEntry={addLogEntry}
+        send={send}
 />
 
 <!-- 🔹 Bottom Right Buttons -->
