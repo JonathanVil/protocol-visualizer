@@ -38,6 +38,11 @@
     /** @type {any} */
     let cyInstance;
 
+    /** Map from message ID to corresponding message graph node
+     *  @type {Map<number, import('cytoscape').NodeSingular>} */
+    const messagesToNodes = new Map();
+
+
     /** @typedef {import('svelte/store').Writable<Actor>} ActorStore */
     /**
      * @type {Map<number, {
@@ -351,18 +356,22 @@
     /** @param {Message} message  */
     export function dropMessage(message) {
         const id = message.id;
-        const messageNode = graphMessageNodes.find(/** @param {import('cytoscape').NodeSingular} node */ node => Number(node.id()) === id );
+        const messageNode = messagesToNodes.get(id);
 
-        //remove messageNode (and popper) from graph
         if (messageNode) {
+            //remove messageNode (and popper) from graph
             removeMessagePopper(messageNode)
             cyInstance.remove(messageNode);
             graphMessageNodes.splice(graphMessageNodes.indexOf(messageNode), 1);
+            messagesToNodes.delete(id);
+
+            //remove message from logic message
+            messages.remove(/** @param {Message} m */ m => m.id === id)
+            console.log("Dropped message", messageNode)
+        } else {
+            console.log("Could not find message node to drop", messageNode)
         }
 
-        //remove message from logic message
-        messages.remove(/** @param {Message} m */ m => m.id === id)
-        console.log("Dropped message", messageNode)
     }
 
     /**
@@ -383,8 +392,8 @@
      * //Wrapper function between parent and child to remove the message from logic and graph
      * @param {Message} message */
     function deliverGraphMessage(message) {
-        dropMessage(message);
         deliverMessage(message);
+        dropMessage(message);
     }
 
 
@@ -446,6 +455,7 @@
                 classes: 'message'
             });
             graphMessageNodes.push(msg);
+            messagesToNodes.set(message.id, msg);
         }
 
         msg.animate({
@@ -461,6 +471,7 @@
                     if (msg.scratch('messagePopup')) {
                         removeMessagePopper(msg);
                     }
+                    messagesToNodes.delete(message.id);
                     cyInstance.remove(msg);
                     graphMessageNodes.splice(graphMessageNodes.indexOf(msg), 1);
 
