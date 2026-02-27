@@ -46,7 +46,14 @@
                 on:click={() => delayMessage(message, delay)}>
             Delay
         </button>
-        <input class="border p-1 h-10 w-12 rounded relative z-9999 bg-blue-800" id="from" bind:value={delay} placeholder="ID" />
+        <input
+                class="border p-1 h-10 w-12 rounded relative z-9999 bg-blue-800"
+                id="from"
+                bind:value={delay}
+                placeholder="ID"
+                on:pointerdown|stopPropagation
+                on:mousedown|stopPropagation
+        />
         <p>
             ticks
         </p>
