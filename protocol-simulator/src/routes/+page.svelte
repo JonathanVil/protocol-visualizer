@@ -394,7 +394,11 @@
 {:else if leftPanel === LeftPanelOptions.LOG}
     <!--Log block-->
     <div class="absolute top-24 left-1 rounded-lg w-9/20">
-        <EventLog eventLog={eventLog} />
+        <EventLog
+            eventLog={eventLog}
+            restoreState={restoreState}
+        />
+
     </div>
 {/if}
 

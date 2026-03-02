@@ -1,13 +1,17 @@
 ﻿<script>
     /** @type {{ tick: number, lines: string[] }[]} */
     export let eventLog = [];
+    export let restoreState;
 </script>
 
 
 <div class="overflow-scroll max-h-[calc(100vh-20rem)] shadow-xl p-2 rounded-md">
     {#each [...eventLog].toReversed() as tick}
-        <div class="row flex flex-row gap-x-2">
-            <p>{tick.tick}</p>
+        <div
+                class="row flex flex-row gap-x-2 cursor-pointer hover:bg-blue-100 transition-colors"
+                on:click={() => restoreState(tick.tick)}
+        >
+            <p class="font-semibold">{tick.tick}</p>
             <div>
                 {#each tick.lines.toReversed() as line}
                     <p>{line}</p>
