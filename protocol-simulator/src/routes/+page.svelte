@@ -23,8 +23,8 @@
     /** @type {Actor[]} */
     let actors = [];
 
-    /** @type {{ tick: number, lines: string[] }[]} */
-    let eventLog = [{ tick: 0, lines: []}]
+    /** @type {{ tick: number, lines: string[], state: any }[]} */
+    let eventLog = [{ tick: 0, lines: [], state: null}]
 
     let messages = new Queue();
     let timeouts = new Queue();
@@ -125,6 +125,13 @@
         //update timeouts by one tick
         handleTimeouts()
 
+        const entry = eventLog.find(e => e.tick === tick);
+        if (entry) {
+            saveState()
+            console.log(entry)
+
+        }
+
         //handle updating tickspeed
         if (tickSpeedUpdated) { // We need to reboot the simulation loop in order to update tickspeed
             paused = true;
@@ -138,11 +145,46 @@
     export function addLogEntry(line) {
         const entry = eventLog.find(e => e.tick === tick);
         if (!entry) {
-            eventLog = [...eventLog, {tick, lines: [line]}];
+            eventLog = [...eventLog, {tick, lines: [line], state: null}];
         } else {
             entry.lines = [...entry.lines, line];
             eventLog = [...eventLog.slice(0, eventLog.length - 1), entry]
         }
+    }
+
+    export function saveState() {
+        /*
+        let actorsState = []
+
+        for (let i = 0; i < actors.length; i++) {
+            let actor = Object.create(actors[i]);
+            actorsState.push(actor);
+        }
+        */
+        let messagesState = new Queue();
+        for (let i = 0; i < messages.length; i++) {
+            let message = messages.pop()
+            let messageCopy = JSON.parse(JSON.stringify(message))
+            messages.push(message)
+            messagesState.push(messageCopy);
+        }
+
+        let timeoutsState = new Queue();
+        for (let i = 0; i < timeouts.length; i++) {
+            let timeout = timeouts.pop()
+            let timeoutCopy = JSON.parse(JSON.stringify(timeout))
+            timeouts.push(timeout)
+            timeoutsState.push(timeoutCopy)
+        }
+
+        let state = {actorsState: null, messagesState: messagesState, timeoutsState: timeoutsState};
+
+        const entry = eventLog.find(e => e.tick === tick);
+        if (entry){
+            entry.state = state;
+            eventLog = [...eventLog.slice(0, eventLog.length - 1), entry]
+        }
+
     }
 
     /** @type {(msg: Message) => void} */
