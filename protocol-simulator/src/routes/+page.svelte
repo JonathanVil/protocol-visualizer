@@ -173,7 +173,8 @@
     let removeDeadMessageNodes;
     /** @param {number} restoredTick **/
     function restoreState(restoredTick) {
-                                            // TODO: we need to update graph correctly
+                                            // TODO: we need to update graph correctly to remove old nodes
+                                            // TODO: deal with discrepancies between current and earlier actors
         restoringState = true;
 
         const entry = eventLog.find(e => e.tick === restoredTick);
