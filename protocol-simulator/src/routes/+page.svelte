@@ -139,21 +139,29 @@
     }
 
     export function saveState() {
-        /*
-        let actorsState = []
+        let actorsState = actors.map(actor => {
+            /** @type {Record<string, any>} */ // we save the fields in a dict of field name to field value
+            let snapshot = {};
 
-        for (let i = 0; i < actors.length; i++) {
-            let actor = Object.create(actors[i]);
-            actorsState.push(actor);
-        }
-        */
+            /** @type {Record<string, any>} */ //this pattern basically just allows us to access fields and methods that are not in the actor definition
+            const actorObj = actor;
 
-        let messagesState = JSON.parse(JSON.stringify(messages))
+            for (let key of Object.keys(actorObj)) { //these are the properties of our actor
+                if (typeof actorObj[key] !== "function") {  //filter out functions
+                    snapshot[key] = structuredClone(actorObj[key]);
+                }
+            }
 
-        let timeoutsState = JSON.parse(JSON.stringify(timeouts));
+            return snapshot;
+        });
 
 
-        let state = {actorsState: null, messagesState: messagesState, timeoutsState: timeoutsState};
+        let messagesState = structuredClone(messages);
+
+        let timeoutsState = structuredClone(timeouts);
+
+
+        let state = {actorsState: actorsState, messagesState: messagesState, timeoutsState: timeoutsState};
 
         const entry = eventLog.find(e => e.tick === tick);
         if (entry){
@@ -189,7 +197,10 @@
             let timer = timeouts.pop()
             if (timer != null){
                 if (timer.ticks === 0){
-                    timer.reaction()
+                    /** @type {Record<string, any>} */
+                    const actor = actors[timer.actorId];
+
+                    actor[timer.method]();
                 } else {
                     timer.ticks -= 1
                     timeouts.push(timer);
@@ -253,10 +264,11 @@
      * @param {number} ticks
      * @param {function} reaction
      */
-    function timeout(actor, ticks, reaction) { //Example of use: timeout(this, 10, fart); function fart() { console.log("fart") }
+    function timeout(actor, ticks, reaction) { //Example of use: timeout(this, 10, this.fart); function fart() { console.log("fart") }
         timeouts.push({
             ticks,
-            reaction: reaction.bind(actor)
+            actorId: actor.id,
+            reaction: reaction.name
         });
     }
 
