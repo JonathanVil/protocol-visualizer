@@ -169,9 +169,11 @@
         }
 
     }
-
+    /** @type {(messages: Queue) => void} */
+    let removeDeadMessageNodes;
     /** @param {number} restoredTick **/
     function restoreState(restoredTick) {
+                                            // TODO: we need to update graph correctly
         restoringState = true;
 
         const entry = eventLog.find(e => e.tick === restoredTick);
@@ -188,12 +190,16 @@
                     actor[key] = structuredClone(saved[key]);
                 }
             }
+            for (let actor of actors) {
+                updateActorStatePopper(actor);
+            }
 
             // restore messages
             messages = new Queue();
             for (let m of entry.state.messagesState) { // we saved an array, now we make it a queue
                 messages.push(m);
             }
+            removeDeadMessageNodes(messages);
 
             // restore timeouts
             timeouts = new Queue();
@@ -206,6 +212,8 @@
             // clear eventlog entries that happened after where we restored to
             let index = eventLog.indexOf(entry)
             eventLog = eventLog.slice(0, index + 1);
+
+            saveState();
 
         }
         restoringState = false;
@@ -394,6 +402,7 @@
             bind:resetGraph={resetGraph}
             bind:animateMessage={animateMessage}
             bind:updateActorStatePopper={updateActorStatePopper}
+            bind:removeDeadMessageNodes={removeDeadMessageNodes}
             actors={actors}
             tickSize={tickSize}
     />

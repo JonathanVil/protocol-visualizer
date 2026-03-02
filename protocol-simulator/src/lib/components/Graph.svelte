@@ -334,6 +334,26 @@
         });
 
     }
+
+    /**
+     * Remove message nodes that no longer exist in the messages queue
+     * @param {import('$lib/datastructures/Queue.js').Queue} messages
+     */
+    export function removeDeadMessageNodes(messages) {
+
+        const existingMessageIds = new Set(messages.toArray().map(m => m.id));
+
+
+        for (let i = graphMessageNodes.length - 1; i >= 0; i--) {
+            const node = graphMessageNodes[i];
+            const nodeId = node.id(); // Cytoscape node id
+
+            if (!existingMessageIds.has(nodeId)) {
+                cyInstance.remove(node);                 // remove from Cytoscape
+                graphMessageNodes.splice(i, 1);         // remove from local array
+            }
+        }
+    }
 </script>
 
 <div bind:this={cyContainer} class="w-full h-96 border border-gray-300 rounded-md relative overflow-hidden"></div>
