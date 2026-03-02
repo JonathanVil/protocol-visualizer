@@ -156,9 +156,8 @@
             return snapshot;
         });
 
-        let messagesState = structuredClone(messages);
-
-        let timeoutsState = structuredClone(timeouts);
+        let messagesState = messages.toArray().map(m => structuredClone(m)); //we lose methods on clone, so we need an iterable copy in order to restore the queue
+        let timeoutsState = timeouts.toArray().map(t => structuredClone(t));
 
 
         let state = {actorsState: actorsState, messagesState: messagesState, timeoutsState: timeoutsState};
@@ -171,10 +170,11 @@
 
     }
 
-    /** @param {number} tick **/
-    function restoreState(tick) {
+    /** @param {number} restoredTick **/
+    function restoreState(restoredTick) {
         restoringState = true;
-        const entry = eventLog.find(e => e.tick === tick);
+
+        const entry = eventLog.find(e => e.tick === restoredTick);
         if (entry) {
 
             for (let i = 0; i < entry.state.actorsState.length; i++) {
@@ -189,10 +189,24 @@
                 }
             }
 
+            // restore messages
+            messages = new Queue();
+            for (let m of entry.state.messagesState) { // we saved an array, now we make it a queue
+                messages.push(m);
+            }
 
-            messages = entry.state.messagesState;
+            // restore timeouts
+            timeouts = new Queue();
+            for (let t of entry.state.timeoutsState) {
+                timeouts.push(t);
+            }
 
-            timeouts = entry.state.timeoutsState;
+            tick = restoredTick;
+
+            // clear eventlog entries that happened after where we restored to
+            let index = eventLog.indexOf(entry)
+            eventLog = eventLog.slice(0, index + 1);
+
         }
         restoringState = false;
     }
