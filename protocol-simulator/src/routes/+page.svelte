@@ -30,10 +30,7 @@
     let timeouts = new Queue();
     let id = 0;
     let tick = 0;
-    /** @type number */
-    let intervalId;
 
-    let tickSpeedUpdated = false;
     let paused = true;
 
     function spawnActor() {
@@ -72,16 +69,10 @@
     }
 
     function startSimulation() {
-        if (tickSpeedUpdated) {
-            console.log("Updating simulation tickspeed");
-        } else {
-            console.log("Starting simulation");
-        }
+        console.log("Starting simulation");
 
         paused = false;
-        clearInterval(intervalId);
-        tickSpeedUpdated = false;
-        intervalId = setInterval(handleTick, tickSize); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
+        handleTick();
     }
 
     function pauseSimulation() {
@@ -93,30 +84,23 @@
     let resetGraph;
 
     function resetSimulation() {
-        clearInterval(intervalId);
         messages = new Queue();
         timeouts = new Queue();
         eventLog = [];
         actors = [];
         id = 0;
-        tickSpeedUpdated = false;
         tick = 0;
         paused = true;
         resetGraph();
     }
 
     function tickByOne() {
-        if (paused){
-            paused = false;
-            handleTick();
-            paused = true;
-        }
+        handleTick();
+
     }
 
     function handleTick() {
-        if (paused) {
-            return
-        }
+        let startTime = Date.now()
         tick++
 
         //update messages by one tick
@@ -125,11 +109,14 @@
         //update timeouts by one tick
         handleTimeouts()
 
-        //handle updating tickspeed
-        if (tickSpeedUpdated) { // We need to reboot the simulation loop in order to update tickspeed
-            paused = true;
-            startSimulation();
+        if (!paused) {
+            let elapsedTime = Date.now() - startTime;
+            if (elapsedTime > tickSize) {
+                console.log(`--------------------TIME TO HANDLE TICK HIGHER THAN TICKSIZE--------------------`);
+            }
+            setTimeout(handleTick, tickSize - elapsedTime); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
         }
+
     }
 
     /**
@@ -216,7 +203,6 @@
             logEntry = `Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
         }
         console.log(logEntry);
-        console.log(tickSize);
         addLogEntry(logEntry);
         let transitTime = getTransitTime();
         messages.push({id: getNextMessageId(), source: from, destination: to, type: type, transitTicks: transitTime, elapsedTicks: 0, data: data})
@@ -386,7 +372,6 @@
         () => Math.floor(1000 / tickSize),
         (v) => {
             tickSize = Math.floor(1000 / v);
-            tickSpeedUpdated = true;
         }}
 
        bind:transitLower={transitTimeLowerBound}
