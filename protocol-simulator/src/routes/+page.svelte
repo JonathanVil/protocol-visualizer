@@ -147,21 +147,11 @@
             actorsState.push(actor);
         }
         */
-        let messagesState = new Queue();
-        for (let i = 0; i < messages.length; i++) {
-            let message = messages.pop()
-            let messageCopy = JSON.parse(JSON.stringify(message))
-            messages.push(message)
-            messagesState.push(messageCopy);
-        }
 
-        let timeoutsState = new Queue();
-        for (let i = 0; i < timeouts.length; i++) {
-            let timeout = timeouts.pop()
-            let timeoutCopy = JSON.parse(JSON.stringify(timeout))
-            timeouts.push(timeout)
-            timeoutsState.push(timeoutCopy)
-        }
+        let messagesState = JSON.parse(JSON.stringify(messages))
+
+        let timeoutsState = JSON.parse(JSON.stringify(timeouts));
+
 
         let state = {actorsState: null, messagesState: messagesState, timeoutsState: timeoutsState};
 
