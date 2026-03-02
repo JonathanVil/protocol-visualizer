@@ -109,12 +109,6 @@
         //update timeouts by one tick
         handleTimeouts()
 
-        if (!paused) {
-            let elapsedTime = Date.now() - startTime;
-            if (elapsedTime > tickSize) {
-                console.log(`--------------------TIME TO HANDLE TICK HIGHER THAN TICKSIZE--------------------`);
-            }
-            setTimeout(handleTick, tickSize - elapsedTime); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
         const entry = eventLog.find(e => e.tick === tick);
         if (entry) {
             saveState()
@@ -122,10 +116,12 @@
 
         }
 
-        //handle updating tickspeed
-        if (tickSpeedUpdated) { // We need to reboot the simulation loop in order to update tickspeed
-            paused = true;
-            startSimulation();
+        if (!paused) {
+            let elapsedTime = Date.now() - startTime;
+            if (elapsedTime > tickSize) {
+                console.log(`--------------------TIME TO HANDLE TICK HIGHER THAN TICKSIZE--------------------`);
+            }
+            setTimeout(handleTick, tickSize - elapsedTime); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
         }
     }
 
