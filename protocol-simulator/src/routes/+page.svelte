@@ -31,6 +31,7 @@
     let id = 0;
     let tick = 0;
 
+    let restoringState = false;
     let paused = true;
 
     function spawnActor() {
@@ -138,7 +139,7 @@
         }
     }
 
-    export function saveState() {
+    function saveState() {
         let actorsState = actors.map(actor => {
             /** @type {Record<string, any>} */ // we save the fields in a dict of field name to field value
             let snapshot = {};
@@ -155,7 +156,6 @@
             return snapshot;
         });
 
-
         let messagesState = structuredClone(messages);
 
         let timeoutsState = structuredClone(timeouts);
@@ -169,6 +169,32 @@
             eventLog = [...eventLog.slice(0, eventLog.length - 1), entry]
         }
 
+    }
+
+    /** @param {number} tick **/
+    function restoreState(tick) {
+        restoringState = true;
+        const entry = eventLog.find(e => e.tick === tick);
+        if (entry) {
+
+            for (let i = 0; i < entry.state.actorsState.length; i++) {
+                const saved = entry.state.actorsState[i];
+                /** @type {Record<string, any>} */
+                const actor = actors[i];
+
+
+                // Restore saved properties
+                for (let key of Object.keys(saved)) {
+                    actor[key] = structuredClone(saved[key]);
+                }
+            }
+
+
+            messages = entry.state.messagesState;
+
+            timeouts = entry.state.timeoutsState;
+        }
+        restoringState = false;
     }
 
     /** @type {(msg: Message) => void} */
@@ -220,7 +246,7 @@
                 const prev = Reflect.get(target, prop);
                 const success = Reflect.set(target, prop, value);
 
-                if (success && prev !== value) {
+                if (success && prev !== value && !restoringState) { //make sure restoring state is false, so we dont log rewinding
                     let logEntry = `Actor ${target.id} ${String(prop)} changed from ${prev} to ${value}`;
                     console.log(logEntry);
                     addLogEntry(logEntry);
