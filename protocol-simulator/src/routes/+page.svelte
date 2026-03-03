@@ -156,7 +156,7 @@
                 //Animate messages
                 animateMessage(message);
 
-                if (message.elapsedTicks=== message.transitTicks){
+                if (message.elapsedTicks >= message.transitTicks){
                     deliverMessage(message)
                 } else {
                     messages.push(message)
