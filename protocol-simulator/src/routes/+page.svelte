@@ -263,8 +263,12 @@
      * @returns void
      * */
     function delayMessage(message, delay) {
-        message.transitTicks = Number(message.transitTicks) + Number(delay);
-        animateMessage(message);
+        if (message.transitTicks - message.elapsedTicks + delay <= 0) {
+            deliverMessage(message);
+        } else {
+            message.transitTicks = Number(message.transitTicks) + Number(delay);
+            animateMessage(message);
+        }
     }
 
 
