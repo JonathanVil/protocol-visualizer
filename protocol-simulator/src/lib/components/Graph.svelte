@@ -305,6 +305,7 @@
                     delayMessage: delayMessage,
                     deliverMessage: deliverGraphMessage,
                     dropMessage: dropMessage,
+                    closePopper: closePopper,
                 }
             });
 
@@ -323,14 +324,31 @@
             //Bundle the "Popper": popper instance, svelte component and DOM element
             messagePopUp = {messagePopper, component, container};
 
+            messagesToNodes.set(messageObject.id, messageNode);
+
             //Save it in the scratch of the node.
             messageNode.scratch('messagePopup', messagePopUp);
+        } else {
+            console.log("Message popper already exists");
         }
+    }
+
+    /** @param {Message} message */
+
+    function closePopper(message) {
+        const messageNode = messagesToNodes.get(message.id);
+        if (messageNode) {
+            removeMessagePopper(messageNode);
+        } else {
+            console.warn("Tried to close popper for message without graph node", message);
+        }
+        messagesToNodes.delete(message.id);
     }
 
     /** @param {import('cytoscape').NodeSingular} messageNode */
     function removeMessagePopper(messageNode) {
         const messagePopUp = messageNode.scratch('messagePopup')
+        messageNode.removeScratch('messagePopup');
 
         // Remove event listeners (must match original handler references)
         messageNode?.off?.('position', messagePopUp.update);
@@ -464,8 +482,8 @@
 
                     if (msg.scratch('messagePopup')) {
                         removeMessagePopper(msg);
+                        messagesToNodes.delete(message.id);
                     }
-                    messagesToNodes.delete(message.id);
                     cyInstance.remove(msg);
                     graphMessageNodes.splice(graphMessageNodes.indexOf(msg), 1);
 

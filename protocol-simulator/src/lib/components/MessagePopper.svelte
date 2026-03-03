@@ -3,8 +3,11 @@
 
 
 
+    import Icon from "@iconify/svelte";
+
     /** @type {Message} */
     export let message;
+
 
     let delay = 100;
 
@@ -14,6 +17,8 @@
 
     export let deliverMessage;
 
+    export let closePopper;
+
 
 </script>
 
@@ -22,6 +27,12 @@
     <!-- Message data -->
     <div class="flex flex-col items-center text-center">
         <p class="items-center font-bold">Message</p>
+
+        <button class=" absolute right-0 top-0 bg-white/20 rounded-full p-1 m-1 hover:bg-white/30"
+                on:click={() => closePopper(message)}>
+            <Icon icon="mdi:close" class="w-6 h-6 text-white" />
+        </button>
+
         <div>
             <div class="text-xs">ID: {message.id}</div>
             <div class="">{message.source} ⟶ {message.destination}</div>
