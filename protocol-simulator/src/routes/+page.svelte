@@ -102,6 +102,12 @@
 
     function handleTick() {
         let startTime = Date.now()
+        const entry = eventLog.find(e => e.tick === tick);
+        if (entry) {
+            saveState()
+            console.log(entry)
+        }
+
         tick++
 
         //update messages by one tick
@@ -110,12 +116,7 @@
         //update timeouts by one tick
         handleTimeouts()
 
-        const entry = eventLog.find(e => e.tick === tick);
-        if (entry) {
-            saveState()
-            console.log(entry)
 
-        }
 
         if (!paused) {
             let elapsedTime = Date.now() - startTime;
@@ -176,7 +177,9 @@
                                             // TODO: we need to update graph correctly to remove old nodes
                                             // TODO: deal with discrepancies between current and earlier actors
         restoringState = true;
-
+        if (tick === restoredTick) { //cant rewind to current tick
+            return
+        }
         const entry = eventLog.find(e => e.tick === restoredTick);
         if (entry) {
 
