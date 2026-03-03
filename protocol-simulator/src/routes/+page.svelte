@@ -257,6 +257,16 @@
         leftPanel = leftPanel === panel ? LeftPanelOptions.NONE : panel;
     }
 
+    /**
+     * @param {Message} message
+     * @param {Number} delay
+     * @returns void
+     * */
+    function delayMessage(message, delay) {
+        message.transitTicks = Number(message.transitTicks) + Number(delay);
+        animateMessage(message);
+    }
+
 
     /** PROTOCOL UTILS */
     /**
@@ -327,6 +337,7 @@
             bind:updateActorStatePopper={updateActorStatePopper}
             bind:messages={messages}
             deliverMessage={deliverMessage}
+            delayMessage={delayMessage}
             actors={actors}
             tickSize={tickSize}
     />

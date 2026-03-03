@@ -375,15 +375,9 @@
     }
 
     /**
-     * @param {Message} message
-     * @param {Number} delay
-     * */
-    export function delayMessage(message, delay) {
-        messages.remove(/** @param {Message} m */ m => m.id === message.id)
-        message.transitTicks = message.transitTicks + delay;
-        messages.push(message)
-        animateMessage(message)
-    }
+     * @type {(message: Message, delay: number) => void}
+     */
+    export let delayMessage;
 
     /** @type {(msg: Message) => void} */
     export let deliverMessage;
