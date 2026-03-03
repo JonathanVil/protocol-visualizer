@@ -347,6 +347,7 @@
     />
 </div>
 
+<div id="ui-layer"></div>
 
 {#if leftPanel === LeftPanelOptions.CODE}
     <!--Code block-->
