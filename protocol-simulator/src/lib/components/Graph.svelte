@@ -13,6 +13,8 @@
     import MessagePopper from "$lib/components/MessagePopper.svelte";
     import {createPopper} from "@popperjs/core";
     import {Queue} from '$lib/datastructures/Queue.js';
+    import EventLog from "$lib/components/EventLog.svelte";
+
 
 
     /** @typedef {import('$lib/types.js').Actor} Actor */
@@ -276,6 +278,9 @@
     });
 
 
+    /** @type {(logEntry: String) => void}  */
+    export let addLogEntry;
+
     /**
      * @param {import('cytoscape').EventObject} evt - The Cytoscape event object
      */
@@ -386,11 +391,14 @@
             graphMessageNodes.splice(graphMessageNodes.indexOf(messageNode), 1);
             messagesToNodes.delete(id);
 
+            let logEntry = `Dropped message ${message.type} from ${message.source} to ${message.destination}`;
+            console.log(logEntry);
+            addLogEntry(logEntry);
+
             //remove message from logic message
             messages.remove(/** @param {Message} m */ m => m.id === id)
-            console.log("Dropped message", messageNode)
         } else {
-            console.log("Could not find message node to drop", messageNode)
+            console.warn("Could not find message node to drop", messageNode)
         }
 
     }

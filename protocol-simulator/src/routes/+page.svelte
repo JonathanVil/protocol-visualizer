@@ -216,7 +216,6 @@
             logEntry = `Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
         }
         console.log(logEntry);
-        console.log(tickSize);
         addLogEntry(logEntry);
         let transitTime = getTransitTime();
         messages.push({id: getNextMessageId(), source: from, destination: to, type: type, transitTicks: transitTime, elapsedTicks: 0, data: data})
@@ -266,6 +265,9 @@
         if (message.transitTicks - message.elapsedTicks + delay <= 0) {
             deliverMessage(message);
         } else {
+            let logEntry = `Message ${message.type} delayed by ${delay} ticks`
+            console.log(logEntry);
+            addLogEntry(logEntry);
             message.transitTicks = Number(message.transitTicks) + Number(delay);
             animateMessage(message);
         }
@@ -342,6 +344,7 @@
             bind:messages={messages}
             deliverMessage={deliverMessage}
             delayMessage={delayMessage}
+            addLogEntry={addLogEntry}
             actors={actors}
             tickSize={tickSize}
     />
