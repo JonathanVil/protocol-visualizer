@@ -182,16 +182,21 @@
         }
         const entry = eventLog.find(e => e.tick === restoredTick);
         if (entry) {
+            let actorsState = entry.state.actorsState;
 
-            for (let i = 0; i < entry.state.actorsState.length; i++) {
-                const saved = entry.state.actorsState[i];
+            if (actorsState.length < actors.length) {
+                actors = actors.slice(0, actorsState.length);
+            }
+
+            for (let i = 0; i < actorsState.length; i++) {
+                const savedActor = actorsState[i];
                 /** @type {Record<string, any>} */
                 const actor = actors[i];
 
 
                 // Restore saved properties
-                for (let key of Object.keys(saved)) {
-                    actor[key] = structuredClone(saved[key]);
+                for (let key of Object.keys(savedActor)) {
+                    actor[key] = structuredClone(savedActor[key]);
                 }
             }
             for (let actor of actors) {
@@ -291,7 +296,9 @@
      *  @param {any} data
      *  @param {string} type
      * */
-    function send(from, to, type, data) { //Example of use: send(this.id, from.id, "PING", "Hello")
+    function send(from, to, type, data) { //Example of use: send(this.id, msg.id, "PING", "Hello")
+        if (actors.length - 1 < to) return; // cant send messages to freaks who are not real
+
         let logEntry = `Actor ${from} sent msg ${type} to Actor ${to}`
         if (data){
             logEntry = `Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
