@@ -322,7 +322,7 @@
             cyInstance.on('pan zoom resize', update);
 
             //Bundle the "Popper": popper instance, svelte component and DOM element
-            messagePopUp = {messagePopper, component, container};
+            messagePopUp = {messagePopper, component, container, update};
 
             messagesToNodes.set(messageObject.id, messageNode);
 
@@ -351,8 +351,11 @@
         messageNode.removeScratch('messagePopup');
 
         // Remove event listeners (must match original handler references)
-        messageNode?.off?.('position', messagePopUp.update);
-        cyInstance?.off?.('pan zoom resize', messagePopUp.update);
+        if (messagePopUp.update) {
+            messageNode?.off?.('position', messagePopUp.update);
+            cyInstance?.off?.('pan zoom resize', messagePopUp.update);
+        }
+
 
         // If popper implementation supports destroy, call it (guarded)
         try {
