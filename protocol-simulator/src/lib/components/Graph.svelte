@@ -10,6 +10,12 @@
     } from '@floating-ui/dom';
     import ActorStatePopper from "$lib/components/ActorStatePopper.svelte";
     import {writable} from "svelte/store";
+    import MessagePopper from "$lib/components/MessagePopper.svelte";
+    import {createPopper} from "@popperjs/core";
+    import {Queue} from '$lib/datastructures/Queue.js';
+    import EventLog from "$lib/components/EventLog.svelte";
+
+
 
     /** @typedef {import('$lib/types.js').Actor} Actor */
     /** @typedef {import('$lib/types.js').Message} Message */
@@ -20,6 +26,11 @@
     /** @type {number} */
     export let tickSize;
 
+    /** @type {(msg: Message) => void} */
+    export let removeMessage;
+
+    /** @type {Queue} */
+    export let messages = new Queue();
     /** @type {{ source: number, target: number, label: string }[]} */
     let edges = [];
 
@@ -31,6 +42,11 @@
 
     /** @type {any} */
     let cyInstance;
+
+    /** Map from message ID to corresponding message graph node
+     *  @type {Map<number, import('cytoscape').NodeSingular>} */
+    const messagesToNodes = new Map();
+
 
     /** @typedef {import('svelte/store').Writable<Actor>} ActorStore */
     /**
@@ -158,9 +174,16 @@
         const node = cyInstance.getElementById(String(id));
 
         if (!entry) { // if no popper exists yet, we create one
+
+            const uiLayer = document.getElementById("ui-layer");
+            if (!uiLayer) {
+                console.error("Could not find UI");
+                return;
+            }
+
             const el = document.createElement('div');
             el.style.position = 'absolute'; // critical
-            cyContainer.appendChild(el);
+            uiLayer.appendChild(el);
 
             const actorStore = writable(actor);
 
@@ -258,12 +281,166 @@
             ],
             layout: { name: 'circle', animate: true}
         });
+
+        //Listen for clicks on message nodes
+        cyInstance.on('tap', '.message',
+            /** @param {import('cytoscape').EventObject} evt - The Cytoscape event object*/
+            (evt) => {
+                createMessagerPopper(evt);
+            })
     });
 
     onDestroy(() => {
         // If Graph component is removed, ensure poppers/components don’t leak
         removeAllPoppers();
     });
+
+
+    /** @type {(logEntry: String) => void}  */
+    export let addLogEntry;
+
+    /**
+     * @param {import('cytoscape').EventObject} evt - The Cytoscape event object
+     */
+    function createMessagerPopper(evt) {
+
+        /** @type {import('cytoscape').NodeSingular} */
+        const messageNode = evt.target;
+
+        let messagePopUp = messageNode.scratch('messagePopup');
+
+        //If the popup does not already exists
+        if (!messagePopUp) {
+            const uiLayer = document.getElementById("ui-layer");
+            if (!uiLayer) {
+                console.error("Could not find UI");
+                return;
+            }
+
+            const messageObject = messages.find( /** @param {Message} m */ m => String(m.id) === messageNode.id() ); // find the message that matches this graph node
+
+            const popperContainer = document.createElement("div");
+            popperContainer.style.position = 'absolute';
+            uiLayer.appendChild(popperContainer);
+
+            //We then mount a new svelte component (MessagePopper) to the DOM
+            const component = mount(MessagePopper, {
+                target: popperContainer,
+                props: {
+                    message: messageObject,
+                    delayMessage: delayMessage,
+                    deliverMessage: deliverGraphMessage,
+                    dropMessage: dropMessage,
+                    closePopper: closePopper,
+                }
+            });
+
+
+            //Anchor / reference for messageNode, that the popper can use for position
+            const popperReference = messageNode.popperRef();
+
+            const messagePopper = createPopper(popperReference, popperContainer, {
+                placement: 'right',
+            });
+
+            //Update postion off popper when the message node change positon or zoom
+            const update = () => messagePopper.update();
+            messageNode.on('position', update);
+            cyInstance.on('pan zoom resize', update);
+
+            //Bundle the "Popper": popper instance, svelte component and DOM element
+            messagePopUp = {messagePopper, component, popperContainer, update};
+
+            messagesToNodes.set(messageObject.id, messageNode);
+
+            //Save it in the scratch of the node.
+            messageNode.scratch('messagePopup', messagePopUp);
+        } else {
+            console.log("Message popper already exists");
+        }
+    }
+
+    /** @param {Message} message */
+
+    function closePopper(message) {
+        const messageNode = messagesToNodes.get(message.id);
+        if (messageNode) {
+            removeMessagePopper(messageNode);
+        } else {
+            console.warn("Tried to close popper for message without graph node", message);
+        }
+        messagesToNodes.delete(message.id);
+    }
+
+    /** @param {import('cytoscape').NodeSingular} messageNode */
+    function removeMessagePopper(messageNode) {
+        const messagePopUp = messageNode.scratch('messagePopup')
+        messageNode.removeScratch('messagePopup');
+
+        // Remove event listeners (must match original handler references)
+        if (messagePopUp.update) {
+            messageNode?.off?.('position', messagePopUp.update);
+            cyInstance?.off?.('pan zoom resize', messagePopUp.update);
+        }
+
+
+        // If popper implementation supports destroy, call it (guarded)
+        try {
+            messagePopUp.popper?.destroy?.();
+        } catch {
+            // ignore
+        }
+
+        // Unmount Svelte component + remove its container
+        try {
+            unmount(messagePopUp.component);
+        } catch (e) {
+            console.error(e);
+        }
+        messagePopUp.container?.remove();
+
+    }
+
+    /** @param {Message} message  */
+    export function dropMessage(message) {
+        const id = message.id;
+        const messageNode = messagesToNodes.get(id);
+
+        if (messageNode) {
+            //remove messageNode (and popper) from graph
+            removeMessagePopper(messageNode)
+            cyInstance.remove(messageNode);
+            graphMessageNodes.splice(graphMessageNodes.indexOf(messageNode), 1);
+            messagesToNodes.delete(id);
+
+            let logEntry = `Dropped message ${message.type} from ${message.source} to ${message.destination}`;
+            console.log(logEntry);
+            addLogEntry(logEntry);
+
+            //remove message from logic message
+            removeMessage(message);
+        } else {
+            console.warn("Could not find message node to drop", messageNode)
+        }
+
+    }
+
+    /**
+     * @type {(message: Message, delay: number) => void}
+     */
+    export let delayMessage;
+
+    /** @type {(msg: Message) => void} */
+    export let deliverMessage;
+
+    /**
+     * //Wrapper function between parent and child to remove the message from logic and graph
+     * @param {Message} message */
+    function deliverGraphMessage(message) {
+        deliverMessage(message);
+        dropMessage(message);
+    }
+
 
     //Adding Nodes (incrementally)
     $: if (cyInstance) {
@@ -323,6 +500,7 @@
                 classes: 'message'
             });
             graphMessageNodes.push(msg);
+            messagesToNodes.set(message.id, msg);
         }
 
         msg.animate({
@@ -334,6 +512,11 @@
             complete: () => {
                 if (message.elapsedTicks >= message.transitTicks) {
                     // remove message node from graph & array
+
+                    if (msg.scratch('messagePopup')) {
+                        removeMessagePopper(msg);
+                        messagesToNodes.delete(message.id);
+                    }
                     cyInstance.remove(msg);
                     graphMessageNodes.splice(graphMessageNodes.indexOf(msg), 1);
 
