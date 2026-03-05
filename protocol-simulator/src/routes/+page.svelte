@@ -181,6 +181,11 @@
         }
     }
 
+    /** @param {Message} message */
+    function removeMessage(message) {
+        messages.remove(/** @param {Message} m */ m => m.id === message.id)
+    }
+
     /** @type {(actor: Actor) => void} */
     let updateActorStatePopper;
 
@@ -327,6 +332,7 @@
             bind:updateActorStatePopper={updateActorStatePopper}
             bind:messages={messages}
             deliverMessage={deliverMessage}
+            removeMessage={removeMessage}
             actors={actors}
             tickSize={tickSize}
     />

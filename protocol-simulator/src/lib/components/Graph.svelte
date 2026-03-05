@@ -24,6 +24,9 @@
     /** @type {number} */
     export let tickSize;
 
+    /** @type {(msg: Message) => void} */
+    export let removeMessage;
+
     /** @type {Queue} */
     export let messages = new Queue();
     /** @type {{ source: number, target: number, label: string }[]} */
@@ -379,7 +382,7 @@
      * @param {Number} delay
      * */
     export function delayMessage(message, delay) {
-        messages.remove(/** @param {Message} m */ m => m.id === message.id)
+        removeMessage(message);
         message.transitTicks = message.transitTicks + delay;
         messages.push(message)
         animateMessage(message)
