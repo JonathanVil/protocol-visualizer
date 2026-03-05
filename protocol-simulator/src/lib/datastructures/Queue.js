@@ -52,12 +52,12 @@ export class Queue {
         return null
     }
 
-    find(predicate)
+    find(value)
     {
         let current=this.head
         while(current)
         {
-            if(predicate(current.value))
+            if(value(current.value))
             {
                 return current.value
             }
@@ -65,12 +65,12 @@ export class Queue {
         }
         return null
     }
-    remove(predicate){
+    remove(value){
         let current = this.head
         let prev = null;
 
         while(current) {
-            if (predicate(current.value)) {
+            if (value(current.value)) {
                 //If the node to remove is the head, we need to update the head pointer
                 if (prev === null) {
                     this.head = current.next
