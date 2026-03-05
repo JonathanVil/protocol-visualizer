@@ -399,7 +399,7 @@
             addLogEntry(logEntry);
 
             //remove message from logic message
-            messages.remove(/** @param {Message} m */ m => m.id === id)
+            removeMessage(message);
         } else {
             console.warn("Could not find message node to drop", messageNode)
         }
