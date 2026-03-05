@@ -103,7 +103,7 @@
     function handleTick() {
         let startTime = Date.now()
         const entry = eventLog.find(e => e.tick === tick);
-        if (entry) {
+        if (entry) { //if last tick had an event, we save its state for rewinding
             saveState()
             console.log(entry)
         }
@@ -165,25 +165,25 @@
 
         const entry = eventLog.find(e => e.tick === tick);
         if (entry){
-            entry.state = state;
-            eventLog = [...eventLog.slice(0, eventLog.length - 1), entry]
+            entry.state = state; //add the saved state to the entry
+            eventLog = [...eventLog.slice(0, eventLog.length - 1), entry] //add the entry to the log
         }
 
     }
-    /** @type {(messages: Queue) => void} */
-    let removeDeadMessageNodes;
+    /** @type {(message: Message) => void} */
+    let removeMessageNode;
 
     /** @type {(actor: Actor) => void} */
     let removeActorNode;
     /** @param {number} restoredTick **/
     function restoreState(restoredTick) {
-                                            // TODO: we need to update graph correctly to remove old nodes
         restoringState = true;
         if (tick === restoredTick) { //cant rewind to current tick
             return
         }
         const entry = eventLog.find(e => e.tick === restoredTick);
         if (entry) {
+            // restore actors
             let actorsState = entry.state.actorsState;
 
             if (actorsState.length < actors.length) {
@@ -202,19 +202,29 @@
 
                 // Restore saved properties
                 for (let key of Object.keys(savedActor)) {
-                    actor[key] = structuredClone(savedActor[key]);
+                    actor[key] = structuredClone(savedActor[key]); //we copy again to ensure integrity of the saved state
                 }
             }
             for (let actor of actors) {
-                updateActorStatePopper(actor);
+                updateActorStatePopper(actor); // reflect the updated fields
             }
 
-            // restore messages
-            messages = new Queue();
+
+            // restore messages (note: we dont restore the nextMessageId)
+            let restoredMessages = new Queue();
             for (let m of entry.state.messagesState) { // we saved an array, now we make it a queue
-                messages.push(m);
+                restoredMessages.push(m);
+                animateMessage(m)
             }
-            removeDeadMessageNodes(messages);
+            for (let m of messages.toArray()) {
+                if (!restoredMessages.find(/** @param {Message} msg */ msg => msg.id === m.id)) {
+                    console.log(m.id)
+                    removeMessageNode(m);
+                }
+            }
+            messages = restoredMessages
+
+
 
             // restore timeouts
             timeouts = new Queue();
@@ -228,7 +238,7 @@
             let index = eventLog.indexOf(entry)
             eventLog = eventLog.slice(0, index + 1);
 
-            saveState();
+            saveState(); // ensure the copy of state is clean for next rewind
 
         }
         restoringState = false;
@@ -441,7 +451,7 @@
             bind:resetGraph={resetGraph}
             bind:animateMessage={animateMessage}
             bind:updateActorStatePopper={updateActorStatePopper}
-            bind:removeDeadMessageNodes={removeDeadMessageNodes}
+            bind:removeMessageNode={removeMessageNode}
             bind:removeActorNode={removeActorNode}
             bind:messages={messages}
             deliverMessage={deliverMessage}
