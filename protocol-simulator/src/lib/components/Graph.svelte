@@ -166,9 +166,16 @@
         const node = cyInstance.getElementById(String(id));
 
         if (!entry) { // if no popper exists yet, we create one
+
+            const uiLayer = document.getElementById("ui-layer");
+            if (!uiLayer) {
+                console.error("Could not find UI");
+                return;
+            }
+
             const el = document.createElement('div');
             el.style.position = 'absolute'; // critical
-            cyContainer.appendChild(el);
+            uiLayer.appendChild(el);
 
             const actorStore = writable(actor);
 
