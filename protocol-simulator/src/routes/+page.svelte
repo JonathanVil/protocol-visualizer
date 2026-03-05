@@ -143,7 +143,7 @@
                 //Animate messages
                 animateMessage(message);
 
-                if (message.elapsedTicks=== message.transitTicks){
+                if (message.elapsedTicks >= message.transitTicks){
                     deliverMessage(message)
                 } else {
                     messages.push(message)
@@ -166,6 +166,11 @@
 
             }
         }
+    }
+
+    /** @param {Message} message */
+    function removeMessage(message) {
+        messages.remove(/** @param {Message} m */ m => m.id === message.id)
     }
 
     /** @type {(actor: Actor) => void} */
@@ -243,6 +248,23 @@
         leftPanel = leftPanel === panel ? LeftPanelOptions.NONE : panel;
     }
 
+    /**
+     * @param {Message} message
+     * @param {Number} delay
+     * @returns void
+     * */
+    function delayMessage(message, delay) {
+        if (message.transitTicks - message.elapsedTicks + delay <= 0) {
+            deliverMessage(message);
+        } else {
+            let logEntry = `Message ${message.type} delayed by ${delay} ticks`
+            console.log(logEntry);
+            addLogEntry(logEntry);
+            message.transitTicks = Number(message.transitTicks) + Number(delay);
+            animateMessage(message);
+        }
+    }
+
 
     /** PROTOCOL UTILS */
     /**
@@ -311,11 +333,17 @@
             bind:resetGraph={resetGraph}
             bind:animateMessage={animateMessage}
             bind:updateActorStatePopper={updateActorStatePopper}
+            bind:messages={messages}
+            deliverMessage={deliverMessage}
+            delayMessage={delayMessage}
+            addLogEntry={addLogEntry}
+            removeMessage={removeMessage}
             actors={actors}
             tickSize={tickSize}
     />
 </div>
 
+<div id="ui-layer"></div>
 
 {#if leftPanel === LeftPanelOptions.CODE}
     <!--Code block-->
