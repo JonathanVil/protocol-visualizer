@@ -316,6 +316,12 @@
         if (id_messages < -1000) {id_messages = -1}
         return id_messages--;
     }
+
+    let showPoppers = false;
+    function togglePoppers() {
+        showPoppers = !showPoppers;
+    }
+
 </script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -342,8 +348,6 @@
             tickSize={tickSize}
     />
 </div>
-
-<div id="ui-layer"></div>
 
 {#if leftPanel === LeftPanelOptions.CODE}
     <!--Code block-->
@@ -392,6 +396,13 @@
 <button on:click={() => settingsPanelOpen = !settingsPanelOpen} class="absolute top-14 right-5 p-1 rounded-lg hover:bg-blue-200">
     <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
 </button>
+
+<button on:click={togglePoppers} class="absolute top-14 right-15 p-1 rounded-lg hover:bg-blue-200 border text-xs">
+    <p>Toggle Poppers</p>
+</button>
+
+
+<div id="ui-layer" hidden="{showPoppers}"></div>
 
 
 {#if settingsPanelOpen}

@@ -187,7 +187,6 @@
             const popper = node.popper({
                 content: () => el
             });
-
             const update = () => popper.update();
             node.on('position', update);
             cyInstance.on('pan zoom resize', update);
