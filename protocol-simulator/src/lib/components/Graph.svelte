@@ -13,7 +13,6 @@
     import MessagePopper from "$lib/components/MessagePopper.svelte";
     import {createPopper} from "@popperjs/core";
     import {Queue} from '$lib/datastructures/Queue.js';
-    import EventLog from "$lib/components/EventLog.svelte";
 
 
 
@@ -433,6 +432,19 @@
         dropMessage(message);
     }
 
+    /**
+     * @param {any} color
+     * @param {Actor} actor
+     * */
+    export function changeColor(color, actor){
+        if (typeof color === 'string') {
+            if (color.includes("#")) {color = color.slice(0, 7);}
+            const node = cyInstance.getElementById(String(actor.id));
+            node.style("background-color", color);
+        } else {
+            console.error("color not a string", color);
+        }
+    }
 
     //Adding Nodes (incrementally)
     $: if (cyInstance) {
