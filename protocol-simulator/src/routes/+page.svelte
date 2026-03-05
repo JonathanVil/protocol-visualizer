@@ -28,7 +28,7 @@
 
     let messages = new Queue();
     let timeouts = new Queue();
-    let id = 0;
+    let nextActorId = 0;
     let tick = 0;
 
     let restoringState = false;
@@ -45,7 +45,7 @@
 
         //  svelte automatically updates them in the Graph.svelte
         /** @type {Actor} */
-        let actor = watchActor(new actorClass(id++));
+        let actor = watchActor(new actorClass(nextActorId++));
         actors = [...actors, actor];
         let logEntry = "Adding actor"
         console.log(logEntry);
@@ -89,7 +89,7 @@
         timeouts = new Queue();
         eventLog = [];
         actors = [];
-        id = 0;
+        nextActorId = 0;
         tick = 0;
         paused = true;
         resetGraph();
@@ -172,10 +172,12 @@
     }
     /** @type {(messages: Queue) => void} */
     let removeDeadMessageNodes;
+
+    /** @type {(actor: Actor) => void} */
+    let removeActorNode;
     /** @param {number} restoredTick **/
     function restoreState(restoredTick) {
                                             // TODO: we need to update graph correctly to remove old nodes
-                                            // TODO: deal with discrepancies between current and earlier actors
         restoringState = true;
         if (tick === restoredTick) { //cant rewind to current tick
             return
@@ -185,8 +187,12 @@
             let actorsState = entry.state.actorsState;
 
             if (actorsState.length < actors.length) {
+                for (let i = actorsState.length; i < actors.length; i++) {
+                    removeActorNode(actors[i])
+                }
                 actors = actors.slice(0, actorsState.length);
             }
+            nextActorId = actors.length;
 
             for (let i = 0; i < actorsState.length; i++) {
                 const savedActor = actorsState[i];
@@ -414,6 +420,7 @@
             bind:animateMessage={animateMessage}
             bind:updateActorStatePopper={updateActorStatePopper}
             bind:removeDeadMessageNodes={removeDeadMessageNodes}
+            bind:removeActorNode={removeActorNode}
             actors={actors}
             tickSize={tickSize}
     />

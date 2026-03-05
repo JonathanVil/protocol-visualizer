@@ -121,6 +121,14 @@
         return { added: true, id };
     }
 
+    /** @param {Actor} actor */
+    export function removeActorNode(actor) {
+        console.log("TRYING")
+        const nodeId = String(actor.id);
+        const node = cyInstance.getElementById(nodeId).remove();
+        removeActorStatePopper(actor.id);
+    }
+
     // Helper: ensure an edge exists
     /**
      * @param {{ source: number, target: number, label: string }} e
