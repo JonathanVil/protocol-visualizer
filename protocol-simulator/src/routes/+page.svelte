@@ -25,8 +25,8 @@
 
     /** @type {{ tick: number, lines: string[], state: any }[]} */
     let eventLog = [{ tick: 0, lines: [], state: null}]
-    /** @type {Record<number, {name: string, queue: Queue}[]>} */
-    let queues = {}; //this is used to restore the queues when rewinding
+    /** @type {Record<number, string[]>} */
+    let queueNamesDict = {}; //this is used to restore the queues when rewinding
     let messages = new Queue();
     let timeouts = new Queue();
     let nextActorId = 0;
@@ -149,9 +149,9 @@
             /** @type {Record<string, any>} */ //this pattern basically just allows us to access fields and methods that are not in the actor definition
             const actorObj = actor;
 
-            let actorQueues = null;
-            if (queues[actor.id] != null) {
-                actorQueues = queues[actor.id];
+            let queueNames = null;
+            if (queueNamesDict[actor.id] != null) {
+                queueNames = queueNamesDict[actor.id];
             }
 
 
@@ -160,10 +160,10 @@
 
                     snapshot[key] = structuredClone(actorObj[key]); // save normal fields
 
-                    if (actorQueues != null) { // save queues
-                        for (let i = 0; i < actorQueues.length; i++) {
-                            if (key === actorQueues[i].name) {
-                               snapshot[key] = actorQueues[i].queue.toArray().map(e => structuredClone(e));
+                    if (queueNames != null) { // save queues
+                        for (let i = 0; i < queueNames.length; i++) {
+                            if (key === queueNames[i]) {
+                               snapshot[key] = actorObj[key].toArray().map(/** @param {any} e */ e => structuredClone(e));
                             }
                         }
 
@@ -193,7 +193,7 @@
     /** @type {(actor: Actor) => void} */
     let removeActorNode;
     /** @param {number} restoredTick **/
-    function restoreState(restoredTick) { //TODO: clear out queues for actors who died
+    function restoreState(restoredTick) {
         restoringState = true;
         if (tick === restoredTick) { //cant rewind to current tick
             return
@@ -206,6 +206,7 @@
             if (actorsState.length < actors.length) {
                 for (let i = actorsState.length; i < actors.length; i++) {
                     removeActorNode(actors[i])
+                    queueNamesDict[actors[i].id] = []; // remove entries for removed actors
                 }
                 actors = actors.slice(0, actorsState.length);
             }
@@ -216,10 +217,29 @@
                 /** @type {Record<string, any>} */
                 const actor = actors[i];
 
+                let queueNames = null;
+                if (queueNamesDict[savedActor.id] != null) {
+                    queueNames = queueNamesDict[savedActor.id];
+                }
 
                 // Restore saved properties
                 for (let key of Object.keys(savedActor)) {
-                    actor[key] = structuredClone(savedActor[key]); //we copy again to ensure integrity of the saved state
+                    actor[key] = structuredClone(savedActor[key]); //we restore regular fields
+
+
+                    if (queueNames != null) { // we need to restore fields that are queues a little differently
+                        for (let name of queueNames) {
+                            if (name === key) {
+                                let restoredQueue = new Queue();
+                                for (let e of savedActor[key]) { // we saved an array, now we make it a queue
+                                    restoredQueue.push(e);
+                                }
+                                actor[key] = restoredQueue;
+                            }
+                        }
+                    }
+
+
                 }
             }
             for (let actor of actors) {
@@ -355,9 +375,12 @@
      *  @param {string} name
      * */
     function createQueue(id, name) { //Example of use: let q = createQueue(this.id, "q"); q.push("hey"); let hey = q.pop();
-        let q = new Queue()
-        queues[id].push({name: name, queue: q}) //we need this information for saving and restoring state correctly
-        return q
+        if (!queueNamesDict[id]) {
+            queueNamesDict[id] = [];
+        }
+
+        queueNamesDict[id].push(name) //we need this information for saving and restoring state correctly
+        return new Queue()
     }
 
     /**
