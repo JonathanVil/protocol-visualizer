@@ -304,9 +304,13 @@
 
             const messageObject = messages.find( /** @param {Message} m */ m => String(m.id) === messageNode.id() ); // find the message that matches this graph node
 
+            const popperContainer = document.createElement("div");
+            popperContainer.style.position = 'absolute';
+            uiLayer.appendChild(popperContainer);
+
             //We then mount a new svelte component (MessagePopper) to the DOM
             const component = mount(MessagePopper, {
-                target: uiLayer,
+                target: popperContainer,
                 props: {
                     message: messageObject,
                     delayMessage: delayMessage,
@@ -320,7 +324,7 @@
             //Anchor / reference for messageNode, that the popper can use for position
             const popperReference = messageNode.popperRef();
 
-            const messagePopper = createPopper(popperReference, uiLayer, {
+            const messagePopper = createPopper(popperReference, popperContainer, {
                 placement: 'right',
             });
 
@@ -330,7 +334,7 @@
             cyInstance.on('pan zoom resize', update);
 
             //Bundle the "Popper": popper instance, svelte component and DOM element
-            messagePopUp = {messagePopper, component, uiLayer, update};
+            messagePopUp = {messagePopper, component, popperContainer, update};
 
             messagesToNodes.set(messageObject.id, messageNode);
 
