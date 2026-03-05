@@ -25,7 +25,8 @@
 
     /** @type {{ tick: number, lines: string[], state: any }[]} */
     let eventLog = [{ tick: 0, lines: [], state: null}]
-
+    /** @type {Record<number, {name: string, queue: Queue}[]>} */
+    let queues = {}; //this is used to restore the queues when rewinding
     let messages = new Queue();
     let timeouts = new Queue();
     let nextActorId = 0;
@@ -148,9 +149,25 @@
             /** @type {Record<string, any>} */ //this pattern basically just allows us to access fields and methods that are not in the actor definition
             const actorObj = actor;
 
+            let actorQueues = null;
+            if (queues[actor.id] != null) {
+                actorQueues = queues[actor.id];
+            }
+
+
             for (let key of Object.keys(actorObj)) { //these are the properties of our actor
                 if (typeof actorObj[key] !== "function") {  //filter out functions
-                    snapshot[key] = structuredClone(actorObj[key]);
+
+                    snapshot[key] = structuredClone(actorObj[key]); // save normal fields
+
+                    if (actorQueues != null) { // save queues
+                        for (let i = 0; i < actorQueues.length; i++) {
+                            if (key === actorQueues[i].name) {
+                               snapshot[key] = actorQueues[i].queue.toArray().map(e => structuredClone(e));
+                            }
+                        }
+
+                    }
                 }
             }
 
@@ -176,7 +193,7 @@
     /** @type {(actor: Actor) => void} */
     let removeActorNode;
     /** @param {number} restoredTick **/
-    function restoreState(restoredTick) {
+    function restoreState(restoredTick) { //TODO: clear out queues for actors who died
         restoringState = true;
         if (tick === restoredTick) { //cant rewind to current tick
             return
@@ -334,9 +351,13 @@
     function getActors() { //Example of use: let total actors = getActors()
         return actors.length;
     }
-
-    function createQueue() { //Example of use: let q = createQueue(); q.push("hey"); let hey = q.pop();
-        return new Queue();
+    /** @param {number} id
+     *  @param {string} name
+     * */
+    function createQueue(id, name) { //Example of use: let q = createQueue(this.id, "q"); q.push("hey"); let hey = q.pop();
+        let q = new Queue()
+        queues[id].push({name: name, queue: q}) //we need this information for saving and restoring state correctly
+        return q
     }
 
     /**

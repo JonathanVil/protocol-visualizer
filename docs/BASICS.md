@@ -61,7 +61,10 @@ It takes four arguments:
 ## `getActors()`
 returns the number of actors currently in the systems
 
-## `createQueue()`
+## `createQueue(id, name)`
+- `id` should always be the actors ID, which can be accessed with `this.id`. This enables restoring the datastructure when rewinding.
+- `name` is the name of the queue.
+
 returns an empty linked list queue
 
 ### Queue functions
