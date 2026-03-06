@@ -139,9 +139,8 @@
 
     /** @param {Actor} actor */
     export function removeActorNode(actor) {
-        console.log("TRYING")
         const nodeId = String(actor.id);
-        const node = cyInstance.getElementById(nodeId).remove();
+        cyInstance.getElementById(nodeId).remove();
         removeActorStatePopper(actor.id);
     }
 
