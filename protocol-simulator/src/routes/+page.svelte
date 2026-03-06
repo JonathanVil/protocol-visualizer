@@ -188,11 +188,19 @@
                     console.log(logEntry);
                     addLogEntry(logEntry);
                     updateActorStatePopper(receiver);
+
+                    // reflect nodeColor in graph
+                    if (prop === "nodeColor" && changeColor) {
+                        changeColor(value, target);
+                    }
                 }
                 return true;
             }
         });
     }
+
+    /** @type {(color: any, actor: Actor) => void} */
+    export let changeColor;
 
     // These are the functions we export into the Actors
     // TODO: put these somewhere nice :)
@@ -338,6 +346,7 @@
             delayMessage={delayMessage}
             addLogEntry={addLogEntry}
             removeMessage={removeMessage}
+            bind:changeColor={changeColor}
             actors={actors}
             tickSize={tickSize}
     />
