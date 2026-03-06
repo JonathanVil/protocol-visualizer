@@ -10,7 +10,7 @@
     export let send;
 
     function submit() {
-        send(Number(from), Number(to), type, data);
+        send(from, to, type, data);
     }
 </script>
 
