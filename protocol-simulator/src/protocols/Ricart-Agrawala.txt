@@ -7,7 +7,7 @@
         this.recievedTimestamp = 0;
         this.inCS = false;
         this.wantsCS = false;
-        this.messageQueue = createQueue(this.id, "messageQueue")
+        this.messageQueue = createQueue();
         this.approvalCount = 0;
     }
 
