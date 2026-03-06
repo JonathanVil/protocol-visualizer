@@ -136,6 +136,13 @@
         return { added: true, id };
     }
 
+    /** @param {Actor} actor */
+    export function removeActorNode(actor) {
+        const nodeId = String(actor.id);
+        cyInstance.getElementById(nodeId).remove();
+        removeActorStatePopper(actor.id);
+    }
+
     // Helper: ensure an edge exists
     /**
      * @param {{ source: number, target: number, label: string }} e
@@ -394,26 +401,34 @@
 
     /** @param {Message} message  */
     export function dropMessage(message) {
-        const id = message.id;
-        const messageNode = messagesToNodes.get(id);
 
-        if (messageNode) {
-            //remove messageNode (and popper) from graph
-            removeMessagePopper(messageNode)
-            cyInstance.remove(messageNode);
-            graphMessageNodes.splice(graphMessageNodes.indexOf(messageNode), 1);
-            messagesToNodes.delete(id);
-
+            removeMessageNode(message)
             let logEntry = `Dropped message ${message.type} from ${message.source} to ${message.destination}`;
             console.log(logEntry);
             addLogEntry(logEntry);
 
             //remove message from logic message
             removeMessage(message);
+
+
+    }
+
+    /** @param {Message} message  */
+    export function removeMessageNode (message) {
+        const id = message.id;
+        const messageNode = messagesToNodes.get(id);
+
+        if (messageNode) {
+            //remove messageNode (and popper) from graph
+            if (messageNode.scratch('messagePopup')) {
+                removeMessagePopper(messageNode)
+            }
+            cyInstance.remove(messageNode);
+            graphMessageNodes.splice(graphMessageNodes.indexOf(messageNode), 1);
+            messagesToNodes.delete(id);
         } else {
             console.warn("Could not find message node to drop", messageNode)
         }
-
     }
 
     /**
@@ -529,6 +544,7 @@
         });
 
     }
+
 </script>
 
 <div bind:this={cyContainer} class="w-full h-96 border border-gray-300 rounded-md relative overflow-hidden"></div>

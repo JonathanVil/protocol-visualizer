@@ -97,4 +97,16 @@ export class Queue {
         }
         console.log(result+'null')
     }
+    /**
+     * @returns {any[]}
+     */
+    toArray() { //used when saving state, since we need an iterable object
+        let arr = []
+        let next = this.head
+        while (next != null){
+            arr.push(next.value)
+            next = next.next
+        }
+        return arr
+    }
 }
