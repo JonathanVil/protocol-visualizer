@@ -182,79 +182,76 @@
     let removeActorNode;
     /** @param {number} restoredTick **/
     function restoreState(restoredTick) {
-        restoringState = true;
-        if (tick === restoredTick) { //cant rewind to current tick
-            return
-        }
+        if (tick === restoredTick) return; //cant rewind to current tick
+
         const entry = eventLog.find(e => e.tick === restoredTick);
-        if (entry) {
-            // restore actors
-            let actorsState = entry.state.actorsState;
+        if (!entry) return;
 
-            if (actorsState.length < actors.length) {
-                for (let i = actorsState.length; i < actors.length; i++) {
-                    removeActorNode(actors[i]);
-                }
-                actors = actors.slice(0, actorsState.length);
+        // restore actors
+        restoringState = true;
+
+        let actorsState = entry.state.actorsState;
+
+        if (actorsState.length < actors.length) {
+            for (let i = actorsState.length; i < actors.length; i++) {
+                removeActorNode(actors[i]);
             }
-            nextActorId = actors.length;
-
-            for (let i = 0; i < actorsState.length; i++) {
-                const savedActor = actorsState[i];
-                /** @type {Record<string, any>} */
-                const actor = actors[i];
-
-                // Restore saved properties
-                for (let key of Object.keys(savedActor)) {
-                    if (typeof actor[key] === "object" && actor[key] instanceof Queue) {
-                        // we need to restore fields that are queues a little differently
-                        let restoredQueue = new Queue();
-                        for (let e of savedActor[key]) { // we saved an array, now we make it a queue
-                            restoredQueue.push(e);
-                        }
-                        actor[key] = restoredQueue;
-                    } else {
-                        //we restore regular fields
-                        actor[key] = structuredClone(savedActor[key]);
-                    }
-                }
-            }
-            for (let actor of actors) {
-                updateActorStatePopper(actor); // reflect the updated fields
-            }
-
-
-            // restore messages (note: we dont restore the nextMessageId)
-            let restoredMessages = new Queue();
-            for (let m of entry.state.messagesState) { // we saved an array, now we make it a queue
-                restoredMessages.push(m);
-                animateMessage(m)
-            }
-            for (let m of messages.toArray()) {
-                if (!restoredMessages.find(/** @param {Message} msg */ msg => msg.id === m.id)) {
-                    console.log(m.id)
-                    removeMessageNode(m);
-                }
-            }
-            messages = restoredMessages
-
-
-
-            // restore timeouts
-            timeouts = new Queue();
-            for (let t of entry.state.timeoutsState) {
-                timeouts.push(t);
-            }
-
-            tick = restoredTick;
-
-            // clear eventlog entries that happened after where we restored to
-            let index = eventLog.indexOf(entry)
-            eventLog = eventLog.slice(0, index + 1);
-
-            saveState(); // ensure the copy of state is clean for next rewind
-
+            actors = actors.slice(0, actorsState.length);
         }
+        nextActorId = actors.length;
+
+        for (let i = 0; i < actorsState.length; i++) {
+            const savedActor = actorsState[i];
+            /** @type {Record<string, any>} */
+            const actor = actors[i];
+
+            // Restore saved properties
+            for (let key of Object.keys(savedActor)) {
+                if (typeof actor[key] === "object" && actor[key] instanceof Queue) {
+                    // we need to restore fields that are queues a little differently
+                    let restoredQueue = new Queue();
+                    for (let e of savedActor[key]) { // we saved an array, now we make it a queue
+                        restoredQueue.push(e);
+                    }
+                    actor[key] = restoredQueue;
+                } else {
+                    //we restore regular fields
+                    actor[key] = structuredClone(savedActor[key]);
+                }
+            }
+        }
+        for (let actor of actors) {
+            updateActorStatePopper(actor); // reflect the updated fields
+        }
+
+        // restore messages (note: we dont restore the nextMessageId)
+        let restoredMessages = new Queue();
+        for (let m of entry.state.messagesState) { // we saved an array, now we make it a queue
+            restoredMessages.push(m);
+            animateMessage(m)
+        }
+        for (let m of messages.toArray()) {
+            if (!restoredMessages.find(/** @param {Message} msg */ msg => msg.id === m.id)) {
+                console.log(m.id)
+                removeMessageNode(m);
+            }
+        }
+        messages = restoredMessages
+
+        // restore timeouts
+        timeouts = new Queue();
+        for (let t of entry.state.timeoutsState) {
+            timeouts.push(t);
+        }
+
+        tick = restoredTick;
+
+        // clear eventlog entries that happened after where we restored to
+        let index = eventLog.indexOf(entry)
+        eventLog = eventLog.slice(0, index + 1);
+
+        saveState(); // ensure the copy of state is clean for next rewind
+
         restoringState = false;
     }
 
