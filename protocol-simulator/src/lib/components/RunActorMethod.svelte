@@ -1,26 +1,49 @@
 <script>
-
     /** @type {string} */
     export let methodName;
 
     /** @type {string[]} */
     export let argumentNames = [];
 
-    /** @type {(args: string[]) => void} */
+    /** @type {(args: any[]) => void} */
     export let run;
 
     /** @type {() => void} */
     export let cancel;
 
-    /** @type {any[]} */
+    /** @type {{ name: string, value: string, type: 'String' | 'Number' }[]} */
     let args = [];
+
+    $: args = argumentNames.map((name, index) => {
+        const existing = args[index];
+        return {
+            name: existing?.name ?? name,
+            value: existing?.value ?? '',
+            type: existing?.type ?? 'String'
+        };
+    });
+
+    /**
+     * @param {{value: string, type: ("String"|"Number")}} arg
+     */
+    function isInvalidNumberArg(arg) {
+        return arg?.type === 'Number' && arg.value.trim() !== '' && Number.isNaN(Number(arg.value));
+    }
 
     function submit() {
         if (args.length !== argumentNames.length) {
             return;
         }
 
-        run(args);
+        if (args.some(isInvalidNumberArg)) {
+            return;
+        }
+
+        const parsedArgs = args.map((arg) =>
+            arg.type === 'Number' ? Number(arg.value) : arg.value
+        );
+
+        run(parsedArgs);
     }
 </script>
 
@@ -31,7 +54,7 @@
             aria-roledescription="cancel"
     >
         <div
-                class="w-[320px] rounded-md border border-white/10 bg-slate-950/95 p-2 shadow-[0_12px_30px_rgba(0,0,0,0.55)]"
+                class="rounded-md border border-white/10 bg-slate-950/95 p-2"
         >
             <div class="mb-1 flex items-center justify-between">
                 <div class="text-[12px] font-semibold opacity-90">Run: <code>{methodName}({argumentNames.join(', ')})</code></div>
@@ -48,6 +71,34 @@
                     </svg>
                 </button>
             </div>
+
+            {#if args.length > 0}
+                <div class="mt-3 space-y-2">
+                    {#each args as arg}
+                        <div class="flex flex-row items-center justify-between gap-2">
+                            <label class="text-xs text-white/80" for={"arg-" + arg.name}>
+                                {arg.name}
+                            </label>
+
+                            <input
+                                id={"arg-" + arg.name}
+                                class="min-w-0 rounded border bg-white/5 px-2 py-1 text-xs text-white outline-none placeholder:text-white/35 focus:border-white/30 {isInvalidNumberArg(arg) ? 'border-red-500' : 'border-white/10'}"
+                                bind:value={arg.value}
+                                placeholder={"Enter " + arg.name}
+                            />
+
+                            <select
+                                id={"arg-type-" + arg.name}
+                                class="rounded border border-white/10 bg-white/5 px-2 py-1 text-xs text-white outline-none focus:border-white/30"
+                                bind:value={arg.type}
+                            >
+                                <option value="String" class="text-black">String</option>
+                                <option value="Number" class="text-black">Number</option>
+                            </select>
+                        </div>
+                    {/each}
+                </div>
+            {/if}
 
             <div class="mt-2 flex items-center justify-end gap-2">
 
