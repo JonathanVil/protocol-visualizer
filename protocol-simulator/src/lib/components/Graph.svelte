@@ -509,9 +509,8 @@
         const source = cyInstance.getElementById(message.source).position();
         const target = cyInstance.getElementById(message.destination).position();
                                                                         // elapsedticks             transitTicks
-        const targetPosThisTickX = source.x + ((target.x - source.x) * (tick - message.sentTick)) / (message.arrivalTick - message.sentTick)
-        const targetPosThisTickY = source.y + ((target.y - source.y) * (tick - message.sentTick)) / (message.arrivalTick - message.sentTick)
-
+        const targetPosThisTickX = source.x + (((target.x - source.x) * (tick - message.sentTick)) / (message.arrivalTick - message.sentTick))
+        const targetPosThisTickY = source.y + (((target.y - source.y) * (tick - message.sentTick)) / (message.arrivalTick - message.sentTick))
         //Create the message node in graph, if it does not exist.
         let msg = cyInstance.getElementById(message.id)
         if (msg.empty()) {
@@ -532,7 +531,7 @@
             easing: 'linear',
             queue: false,
             complete: () => {
-                if ((tick - message.sentTick) >= (message.arrivalTick - message.sentTick)) {
+                if ((tick) >= (message.arrivalTick)) {
                     // remove message node from graph & array
 
                     if (msg.scratch('messagePopup')) {

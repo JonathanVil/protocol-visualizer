@@ -388,7 +388,7 @@
         addLogEntry(logEntry);
         let transitTime = getTransitTime();
         let arrivalTick = tick + transitTime;
-        messages.push({id: getNextMessageId(), source: from, destination: to, type: type, arrivalTick: arrivalTick, data: data})
+        messages.push({id: getNextMessageId(), source: from, destination: to, type: type, sentTick: tick, arrivalTick: arrivalTick, data: data})
     }
 
 
