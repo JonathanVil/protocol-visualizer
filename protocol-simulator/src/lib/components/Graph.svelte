@@ -106,7 +106,6 @@
         graphMessageNodes = [];
         edges = [];
 
-
         cyInstance.elements().remove(); // remove all nodes and edges
         removeAllPoppers();            // remove all poppers + unmount components
     }
@@ -385,6 +384,8 @@
     /** @param {import('cytoscape').NodeSingular} messageNode */
     function removeMessagePopper(messageNode) {
         const messagePopUp = messageNode.scratch('messagePopup')
+        if (!messagePopUp) {return}
+
         messageNode.removeScratch('messagePopup');
 
         // Remove event listeners (must match original handler references)
