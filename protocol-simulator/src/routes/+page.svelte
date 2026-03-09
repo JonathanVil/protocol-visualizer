@@ -517,6 +517,7 @@
             bind:changeColor={changeColor}
             actors={actors}
             tickSize={tickSize}
+            tick={tick}
     />
 </div>
 
