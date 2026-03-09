@@ -187,13 +187,12 @@
 
             const component = mount(ActorStatePopper, {
                 target: el,
-                props: { store: actorStore }
+                props: { store: actorStore, setCollapsedGlobal: setActorPoppersCollapsed}
             });
 
             const popper = node.popper({
                 content: () => el
             });
-
             const update = () => popper.update();
             node.on('position', update);
             cyInstance.on('pan zoom resize', update);
@@ -206,6 +205,15 @@
 
         entry.popper.update();
     }
+
+    /** Toggle all Actor Poppers*/
+    /** @param {boolean} collapsed */
+    function setActorPoppersCollapsed(collapsed) {
+        poppers.forEach(popper => {
+            popper?.component.setCollapsed(collapsed);
+        });
+    }
+
 
     /**
      * @param {cytoscapePopper.RefElement} ref
