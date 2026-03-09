@@ -28,6 +28,9 @@
     /** @type {(msg: Message) => void} */
     export let removeMessage;
 
+    /** @type {(actor: Actor) => void} */
+    export let killActor;
+
     /** @type {Queue} */
     export let messages = new Queue();
     /** @type {{ source: number, target: number, label: string }[]} */
@@ -187,7 +190,7 @@
 
             const component = mount(ActorStatePopper, {
                 target: el,
-                props: { store: actorStore }
+                props: { store: actorStore, killActor: killActor },
             });
 
             const popper = node.popper({

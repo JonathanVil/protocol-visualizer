@@ -402,6 +402,14 @@
         }
     }
 
+    /**
+     * @param {Actor} actor
+     * @returns void
+     * */
+    export function killActor(actor) {
+        console.log("kill actor", actor);
+    }
+
 
     /** PROTOCOL UTILS */
     /**
@@ -473,6 +481,7 @@
             bind:removeMessageNode={removeMessageNode}
             bind:removeActorNode={removeActorNode}
             bind:messages={messages}
+            killActor={killActor}
             deliverMessage={deliverMessage}
             delayMessage={delayMessage}
             addLogEntry={addLogEntry}
