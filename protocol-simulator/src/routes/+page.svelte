@@ -260,20 +260,55 @@
     let animateMessage;
     function handleMessages() {
         let n = messages.length;
+        /** @type {Map<number, Message[]>} */
+        const deliverableMessages = new Map(); // map of actorID to messages waiting to be delivered to them
         for (let i = 0; i < n; i++) {
             let message = messages.pop()
-            if (message != null){
-                message.elapsedTicks++
-                //Animate messages
-                animateMessage(message);
 
-                if (message.elapsedTicks >= message.transitTicks){
-                    deliverMessage(message)
-                } else {
-                    messages.push(message)
+            if (message == null) continue;
+
+            animateMessage(message)
+
+            if (message.tick > tick) { // we only look at messages that should be delivered
+                continue;
+            }
+
+            // group messages by receiver id
+            let list = deliverableMessages.get(message.to);
+
+            if (!list) {
+                list = [];
+                deliverableMessages.set(message.to, list);
+            }
+
+            list.push(message);
+        }
+
+        // deliver messages
+        for (const msgs of deliverableMessages.values()) {
+            if (msgs.length === 1) {  // if there is only one message scheduled, deliver it
+                deliverMessage(msgs[0])
+                continue
+            }
+
+            // we need to find the messages that have waited longest
+            let lowestArrivalTick = msgs[0].arrivalTick;
+            for (const msg of msgs) {
+                if (msg.arrivalTick < lowestArrivalTick) {
+                    lowestArrivalTick = msg.arrivalTick;
                 }
             }
+
+            let oldestMsgs = []
+            for (const msg of msgs) {
+                if (msg.arrivalTick === lowestArrivalTick) {
+                    oldestMsgs.push(msg);
+                }
+            }
+            //finally deliver a random message
+            deliverMessage(oldestMsgs[Math.floor(Math.random() * (oldestMsgs.length - 1))])
         }
+
     }
 
     function handleTimeouts() {
