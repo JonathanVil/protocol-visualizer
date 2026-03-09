@@ -28,9 +28,6 @@
     /** @type {(msg: Message) => void} */
     export let removeMessage;
 
-    /** @type {(actor: Actor) => void} */
-    export let killActor;
-
     /** @type {Queue} */
     export let messages = new Queue();
     /** @type {{ source: number, target: number, label: string }[]} */
@@ -190,7 +187,7 @@
 
             const component = mount(ActorStatePopper, {
                 target: el,
-                props: { store: actorStore, killActor: killActor },
+                props: { store: actorStore, killActor: killActorGraph },
             });
 
             const popper = node.popper({
@@ -448,6 +445,17 @@
     function deliverGraphMessage(message) {
         deliverMessage(message);
         dropMessage(message);
+    }
+
+    /** Function used to kill an actor in page.svelte (from graph -> page.svelte)
+     * @type {(actor: Actor) => void} */
+    export let killActor;
+
+    /** Function for killing an actor. Used between popper and page.svelte, to turn a node gray
+     * @param {Actor} actor  */
+    export function killActorGraph(actor) {
+        killActor(actor)
+        changeColor("#525252", actor)
     }
 
     /**
