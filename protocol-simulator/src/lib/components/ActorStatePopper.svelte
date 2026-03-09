@@ -62,9 +62,8 @@
     /**
      * Used by its parent to toggle all poppers
      */
-    export function togglePopper() {
-        console.log("Toggle poppers")
-        collapsed = !collapsed;
+    export function closePopper() {
+        collapsed = true;
     }
 
     /** @type {string | null} */

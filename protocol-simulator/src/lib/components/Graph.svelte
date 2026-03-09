@@ -29,7 +29,7 @@
     export let removeMessage;
 
     /** @type {() => void} */
-    export let togglePoppers;
+    export let closeActorPoppers;
 
     /** @type {Queue} */
     export let messages = new Queue();
@@ -203,8 +203,11 @@
     }
 
     /** Toggle all Actor Poppers*/
-    togglePoppers = () => {
-        poppers.forEach(popper => popper?.component.togglePopper());
+    closeActorPoppers = () => {
+        poppers.forEach(popper => {
+            popper?.component.closePopper();
+        });
+
     }
 
 

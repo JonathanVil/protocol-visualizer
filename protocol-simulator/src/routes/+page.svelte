@@ -27,7 +27,7 @@
     let eventLog = [{ tick: 0, lines: []}]
 
     /** @type {() => void} */
-    let togglePoppers;
+    let closeActorPoppers;
 
     let messages = new Queue();
     let timeouts = new Queue();
@@ -320,8 +320,8 @@
         return id_messages--;
     }
 
-    function toggleAllPoppers() {
-        togglePoppers()
+    function closeAllActorPoppers() {
+        closeActorPoppers()
     }
 
 </script>
@@ -342,7 +342,7 @@
             bind:animateMessage={animateMessage}
             bind:updateActorStatePopper={updateActorStatePopper}
             bind:messages={messages}
-            bind:togglePoppers={togglePoppers}
+            bind:closeActorPoppers={closeActorPoppers}
             deliverMessage={deliverMessage}
             delayMessage={delayMessage}
             addLogEntry={addLogEntry}
@@ -400,8 +400,8 @@
     <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
 </button>
 
-<button on:click={() => toggleAllPoppers()} class="absolute top-14 right-15 p-1 rounded-lg hover:bg-blue-200 border text-xs">
-    <p>Toggle Poppers</p>
+<button on:click={() => closeAllActorPoppers()} class="absolute top-14 right-15 p-1 rounded-lg hover:bg-blue-200 border text-xs">
+    <p>Close Popups</p>
 </button>
 
 
