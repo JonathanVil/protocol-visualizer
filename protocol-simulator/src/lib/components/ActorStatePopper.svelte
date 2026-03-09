@@ -7,8 +7,12 @@
     /** @type {ActorReadable} */
     export let store;
 
-    /** @type {(actor: Actor) => void} */
+
+    /** @type {(actor: Actor, kill: boolean, color: string) => void} */
     export let killActor;
+
+    /** @type {boolean} */
+    let isInactive = false;
 
     /** @param {any} v */
     export function formatValue(v) {
@@ -27,6 +31,9 @@
     const excludedAttributes = ['id', 'nodeColor']
 
     $: actor = $store;
+
+    /** @type {string} */
+    $: originalColor = actor.nodeColor;
 
     $: entries =
         actor
@@ -120,9 +127,17 @@
     <div class="pr-6">
         <div class="flex flex-row items-center gap-28">
             <div class="mb-0.5 font-semibold opacity-90">Actor {actor?.id}</div>
-            <button class=" bg-blue-600 text-white rounded hover:bg-blue-700 w-8 h-5 text-xs flex text-center justify-center items-center"
-                    on:click={() => killActor(actor)}>
-                Kill
+            <button class=" bg-blue-600 text-white rounded hover:bg-blue-700 w-12 h-5 text-xs flex text-center justify-center items-center"
+                    on:click={() =>
+                    {
+                       isInactive = !isInactive
+                       killActor(actor, isInactive, originalColor)
+                    }}>
+                {#if !isInactive}
+                    <p>Kill</p>
+                {:else}
+                    <p>Resurrect</p>
+                {/if}
             </button>
         </div>
 

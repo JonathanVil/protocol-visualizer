@@ -417,13 +417,20 @@
     }
 
     /** Makes an actor inactive
-     * It no longer can recieve message and will remove all its timeouts
+     * It no longer can receive message and will remove all its timeouts
      * @param {Actor} actor
+     * @param {boolean} kill used to determine if a Actor should be set inactive or resurrected
      * @returns void
      * */
-    export function killActor(actor) {
-        inactiveActors.push(actor);
-        timeouts.remove(/** @param {TimeOutEntry} timeout */ timeout => timeout.actorId === actor.id)
+    export function killActor(actor, kill) {
+        if (kill) {
+            inactiveActors.push(actor);
+            timeouts.remove(/** @param {TimeOutEntry} timeout */ timeout => timeout.actorId === actor.id)
+        } else
+        {
+            inactiveActors.splice(inactiveActors.indexOf(actor), 1);
+        }
+
     }
 
 

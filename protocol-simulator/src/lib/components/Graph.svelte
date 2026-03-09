@@ -189,9 +189,15 @@
                 target: el,
                 props: {
                     store: actorStore,
-                    killActor: () => {
-                        changeColor("#525252", actor)
-                        killActor(actor)
+                    killActor: (actor, kill, originalColor) => {
+                        if (kill) {
+                            changeColor("#525252", actor)
+                            killActor(actor, kill)
+                        } else {
+                            console.error(originalColor);
+                            changeColor(originalColor ? originalColor : '#1d4ed8', actor)
+                            killActor(actor, kill)
+                        }
                     } },
             });
 
@@ -301,6 +307,10 @@
 
     /** @type {(logEntry: String) => void}  */
     export let addLogEntry;
+
+    /** Function used to kill an actor in page.svelte (from graph -> page.svelte)
+     * @type {(actor: Actor, kill: boolean) => void} */
+    export let killActor;
 
     /**
      * @param {import('cytoscape').EventObject} evt - The Cytoscape event object
@@ -452,9 +462,6 @@
         dropMessage(message);
     }
 
-    /** Function used to kill an actor in page.svelte (from graph -> page.svelte)
-     * @type {(actor: Actor) => void} */
-    export let killActor;
 
     /**
      * @param {any} color
