@@ -223,21 +223,16 @@
             title={stateCollapsed ? 'Show state (Shift + Click to show all)' : 'Hide state (Shift + Click to hide all)'}
             on:click={toggleShowState}
         >
-            {#if stateCollapsed}
                 <!-- "show" icon (eye) -->
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
                     <circle cx="12" cy="12" r="3" />
                 </svg>
-            {:else}
-                <!-- "hide" icon (eye off) -->
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M10.58 10.58A2 2 0 0 0 12 14a2 2 0 0 0 1.42-.58" />
-                    <path d="M9.88 4.24A10.94 10.94 0 0 1 12 5c6.5 0 10 7 10 7a18.2 18.2 0 0 1-2.16 3.19" />
-                    <path d="M6.61 6.61C3.7 8.58 2 12 2 12s3.5 7 10 7c1.7 0 3.23-.32 4.58-.82" />
-                    <path d="M2 2l20 20" />
-                </svg>
-            {/if}
+                <span
+                        class="absolute h-[2px] w-5 rounded bg-current transition-all duration-200 ease-in-out {stateCollapsed ? 'rotate-0 opacity-0 scale-75' : '-rotate-45 opacity-100 scale-100'}"
+                        aria-hidden="true"
+                ></span>
+
         </button>
 
         <button
@@ -247,7 +242,11 @@
                 title={methodsListCollapsed ? 'Show methods (Shift + Click to show all)' : 'Hide methods (Shift + Click to hide all)'}
                 on:click={toggleShowMethods}
         >
-            <i class="fa fa-play"></i>
+            <i class="fa fa-terminal"></i>
+            <span
+                    class="absolute h-[2px] w-5 rounded bg-current transition-all duration-200 ease-in-out {methodsListCollapsed ? 'rotate-0 opacity-0 scale-75' : '-rotate-45 opacity-100 scale-100'}"
+                    aria-hidden="true"
+            ></span>
         </button>
     </div>
 
@@ -284,10 +283,6 @@
                 {#if editingKey}
                     <EditActorState save={v => saveEdit(v)} bind:editingKey={editingKey} bind:editText={editText} bind:editOriginalValue={editOriginalValue} />
                 {/if}
-
-                {#if selectedMethod}
-                    <RunActorMethod run={args => runMethod(selectedMethod[0], args)} cancel={() => selectedMethod = null} methodName={selectedMethod[0]} argumentNames={selectedMethod[1]}  />
-                {/if}
             {/if}
         {/if}
 
@@ -310,6 +305,10 @@
                 {:else}
                     <p>No functions found</p>
                 {/each}
+
+                {#if selectedMethod}
+                    <RunActorMethod run={args => selectedMethod && runMethod(selectedMethod[0], args)} cancel={() => selectedMethod = null} methodName={selectedMethod[0]} argumentNames={selectedMethod[1]}  />
+                {/if}
             {/if}
         </div>
     </div>
