@@ -189,13 +189,13 @@
                 target: el,
                 props: {
                     store: actorStore,
-                    killActor: (actor, kill, originalColor) => {
+                    toggleAlive: (actor, kill, originalColor) => {
                         if (kill) {
                             changeColor("#525252", actor)
-                            killActor(actor, kill)
+                            toggleAlive(actor, kill)
                         } else {
                             changeColor(originalColor ? originalColor : '#1d4ed8', actor)
-                            killActor(actor, kill)
+                            toggleAlive(actor, kill)
                         }
                     } },
             });
@@ -309,7 +309,7 @@
 
     /** Function used to kill an actor in page.svelte (from graph -> page.svelte)
      * @type {(actor: Actor, kill: boolean) => void} */
-    export let killActor;
+    export let toggleAlive;
 
     /**
      * @param {import('cytoscape').EventObject} evt - The Cytoscape event object

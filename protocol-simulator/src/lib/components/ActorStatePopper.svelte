@@ -9,7 +9,7 @@
 
 
     /** @type {(actor: Actor, kill: boolean, color: string) => void} */
-    export let killActor;
+    export let toggleAlive;
 
     /** @type {boolean} */
     let isInactive = false;
@@ -131,7 +131,7 @@
                     on:click={() =>
                     {
                        isInactive = !isInactive
-                       killActor(actor, isInactive, originalColor)
+                       toggleAlive(actor, isInactive, originalColor)
                     }}>
                 {#if !isInactive}
                     <p>Kill</p>

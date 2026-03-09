@@ -422,7 +422,7 @@
      * @param {boolean} kill used to determine if a Actor should be set inactive or resurrected
      * @returns void
      * */
-    export function killActor(actor, kill) {
+    export function toggleAlive(actor, kill) {
         if (kill) {
             inactiveActors.push(actor);
             timeouts.remove(/** @param {TimeOutEntry} timeout */ timeout => timeout.actorId === actor.id)
@@ -504,7 +504,7 @@
             bind:removeMessageNode={removeMessageNode}
             bind:removeActorNode={removeActorNode}
             bind:messages={messages}
-            killActor={killActor}
+            toggleAlive={toggleAlive}
             deliverMessage={deliverMessage}
             delayMessage={delayMessage}
             addLogEntry={addLogEntry}
