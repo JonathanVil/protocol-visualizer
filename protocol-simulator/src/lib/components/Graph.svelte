@@ -13,7 +13,6 @@
     import MessagePopper from "$lib/components/MessagePopper.svelte";
     import {createPopper} from "@popperjs/core";
     import {Queue} from '$lib/datastructures/Queue.js';
-    import EventLog from "$lib/components/EventLog.svelte";
 
 
 
@@ -28,6 +27,9 @@
 
     /** @type {(msg: Message) => void} */
     export let removeMessage;
+
+    /** @type {() => void} */
+    export let togglePoppers;
 
     /** @type {Queue} */
     export let messages = new Queue();
@@ -181,7 +183,7 @@
 
             const component = mount(ActorStatePopper, {
                 target: el,
-                props: { store: actorStore }
+                props: { store: actorStore}
             });
 
             const popper = node.popper({
@@ -199,6 +201,12 @@
 
         entry.popper.update();
     }
+
+    /** Toggle all Actor Poppers*/
+    togglePoppers = () => {
+        poppers.forEach(popper => popper?.component.togglePopper());
+    }
+
 
     /**
      * @param {cytoscapePopper.RefElement} ref

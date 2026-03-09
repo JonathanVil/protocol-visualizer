@@ -26,6 +26,9 @@
     /** @type {{ tick: number, lines: string[] }[]} */
     let eventLog = [{ tick: 0, lines: []}]
 
+    /** @type {() => void} */
+    let togglePoppers;
+
     let messages = new Queue();
     let timeouts = new Queue();
     let id = 0;
@@ -317,9 +320,8 @@
         return id_messages--;
     }
 
-    let showPoppers = false;
-    function togglePoppers() {
-        showPoppers = !showPoppers;
+    function toggleAllPoppers() {
+        togglePoppers()
     }
 
 </script>
@@ -340,6 +342,7 @@
             bind:animateMessage={animateMessage}
             bind:updateActorStatePopper={updateActorStatePopper}
             bind:messages={messages}
+            bind:togglePoppers={togglePoppers}
             deliverMessage={deliverMessage}
             delayMessage={delayMessage}
             addLogEntry={addLogEntry}
@@ -397,12 +400,12 @@
     <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
 </button>
 
-<button on:click={togglePoppers} class="absolute top-14 right-15 p-1 rounded-lg hover:bg-blue-200 border text-xs">
+<button on:click={() => toggleAllPoppers()} class="absolute top-14 right-15 p-1 rounded-lg hover:bg-blue-200 border text-xs">
     <p>Toggle Poppers</p>
 </button>
 
 
-<div id="ui-layer" hidden="{showPoppers}"></div>
+<div id="ui-layer"></div>
 
 
 {#if settingsPanelOpen}

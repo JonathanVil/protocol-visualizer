@@ -59,6 +59,14 @@
         collapsed = !collapsed;
     }
 
+    /**
+     * Used by its parent to toggle all poppers
+     */
+    export function togglePopper() {
+        console.log("Toggle poppers")
+        collapsed = !collapsed;
+    }
+
     /** @type {string | null} */
     let editingKey = null;
 
