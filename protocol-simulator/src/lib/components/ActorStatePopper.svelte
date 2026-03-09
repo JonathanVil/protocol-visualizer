@@ -11,6 +11,12 @@
     /** @type {(c: boolean) => void} */
     export let setStateCollapsedGlobal;
 
+    /** @type {(c: boolean) => void} */
+    export let setMethodsCollapsedGlobal;
+
+    /** @type {() => void} */
+    export let reposition;
+
     /** @param {any} v */
     export function formatValue(v) {
         if (v === null) return 'null';
@@ -65,18 +71,27 @@
 
         // if user holds shift
         if (event.shiftKey) {
-            setStateCollapsedGlobal(!collapsed);
+            setStateCollapsedGlobal(!stateCollapsed);
         } else {
             stateCollapsed = !stateCollapsed;
+            reposition();
         }
     }
 
     /**
-     * Used by its parent to toggle all poppers
+     * Used by its parent to toggle all state
      * @param {boolean} val
      */
     export function setStateCollapsed(val) {
         stateCollapsed = val;
+    }
+
+    /**
+     * Used by its parent to toggle all methods
+     * @param {boolean} val
+     */
+    export function setMethodsCollapsed(val) {
+        methodsListCollapsed = val;
     }
 
     /** @type {string | null} */
@@ -106,7 +121,7 @@
         console.log(`Saving ${editingKey} = ${newValue}`);
     }
 
-    let methodsListOpen = false;
+    let methodsListCollapsed = false;
 
     /** @type {[string, string[]] | null} */
     let selectedMethod = null;
@@ -164,11 +179,17 @@
     }
 
     /**
-     * @param {event} event
+     * @param {MouseEvent} event
      */
     function toggleShowMethods(event) {
         event?.stopPropagation?.();
-        methodsListOpen = !methodsListOpen;
+
+        if(event.shiftKey) {
+            setMethodsCollapsedGlobal(!methodsListCollapsed);
+        } else {
+            methodsListCollapsed = !methodsListCollapsed;
+            reposition();
+        }
     }
 
     /**
@@ -199,7 +220,7 @@
             type="button"
             class="inline-flex h-5 w-5 items-center justify-center rounded text-white/80 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
             aria-label={stateCollapsed ? 'Show popper' : 'Hide popper'}
-            title={stateCollapsed ? 'Show (Shift + Click to show all)' : 'Hide (Shift + Click to hide all)'}
+            title={stateCollapsed ? 'Show state (Shift + Click to show all)' : 'Hide state (Shift + Click to hide all)'}
             on:click={toggleShowState}
         >
             {#if stateCollapsed}
@@ -223,7 +244,7 @@
                 type="button"
                 class="inline-flex h-5 w-5 items-center justify-center rounded text-white/80 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
                 aria-label="Show methods"
-                title="Show methods"
+                title={methodsListCollapsed ? 'Show methods (Shift + Click to show all)' : 'Hide methods (Shift + Click to hide all)'}
                 on:click={toggleShowMethods}
         >
             <i class="fa fa-play"></i>
@@ -271,7 +292,7 @@
         {/if}
 
         <div class="font-mono">
-            {#if methodsListOpen}
+            {#if !methodsListCollapsed}
                 {#each methods.entries() as [name, val]}
                     <div class="font-mono opacity-95 flex items-center gap-1">
                         <span class="opacity-90">{name}({val.join(', ')})</span>

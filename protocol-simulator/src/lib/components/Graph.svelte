@@ -185,15 +185,15 @@
 
             const actorStore = writable(actor);
 
+            const update = () => popper.update();
             const component = mount(ActorStatePopper, {
                 target: el,
-                props: { store: actorStore, setCollapsedGlobal: setActorPoppersCollapsed}
+                props: { store: actorStore, setStateCollapsedGlobal: setActorStateCollapsed, setMethodsCollapsedGlobal: setActorMethodsCollapsed, reposition: update}
             });
 
             const popper = node.popper({
                 content: () => el
             });
-            const update = () => popper.update();
             node.on('position', update);
             cyInstance.on('pan zoom resize', update);
 
@@ -208,9 +208,18 @@
 
     /** Toggle all Actor Poppers*/
     /** @param {boolean} collapsed */
-    function setActorPoppersCollapsed(collapsed) {
+    function setActorStateCollapsed(collapsed) {
         poppers.forEach(popper => {
-            popper?.component.setCollapsed(collapsed);
+            popper?.component.setStateCollapsed(collapsed);
+            popper?.update();
+        });
+    }
+
+    /** @param {boolean} collapsed */
+    function setActorMethodsCollapsed(collapsed) {
+        poppers.forEach(popper => {
+            popper?.component.setMethodsCollapsed(collapsed);
+            popper?.update();
         });
     }
 
