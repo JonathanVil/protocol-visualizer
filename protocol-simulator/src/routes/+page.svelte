@@ -23,14 +23,14 @@
     /** @type {Actor[]} */
     let actors = [];
 
-    /** @type {{ tick: number, lines: string[] }[]} */
-    let eventLog = [{ tick: 0, lines: []}]
-
+    /** @type {{ tick: number, lines: string[], state: any }[]} */
+    let eventLog = [{ tick: 0, lines: [], state: null}]
     let messages = new Queue();
     let timeouts = new Queue();
-    let id = 0;
+    let nextActorId = 0;
     let tick = 0;
 
+    let restoringState = false;
     let paused = true;
 
     function spawnActor() {
@@ -44,7 +44,7 @@
 
         //  svelte automatically updates them in the Graph.svelte
         /** @type {Actor} */
-        let actor = watchActor(new actorClass(id++));
+        let actor = watchActor(new actorClass(nextActorId++));
         actors = [...actors, actor];
         let logEntry = "Adding actor"
         console.log(logEntry);
@@ -88,7 +88,7 @@
         timeouts = new Queue();
         eventLog = [];
         actors = [];
-        id = 0;
+        nextActorId = 0;
         tick = 0;
         paused = true;
         resetGraph();
@@ -101,6 +101,12 @@
 
     function handleTick() {
         let startTime = Date.now()
+        const entry = eventLog.find(e => e.tick === tick);
+        if (entry) { //if last tick had an event, we save its state for rewinding
+            saveState()
+            console.log(entry)
+        }
+
         tick++
 
         //update messages by one tick
@@ -109,6 +115,8 @@
         //update timeouts by one tick
         handleTimeouts()
 
+
+
         if (!paused) {
             let elapsedTime = Date.now() - startTime;
             if (elapsedTime > tickSize) {
@@ -116,7 +124,6 @@
             }
             setTimeout(handleTick, tickSize - elapsedTime); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
         }
-
     }
 
     /**
@@ -125,11 +132,127 @@
     export function addLogEntry(line) {
         const entry = eventLog.find(e => e.tick === tick);
         if (!entry) {
-            eventLog = [...eventLog, {tick, lines: [line]}];
+            eventLog = [...eventLog, {tick, lines: [line], state: null}];
         } else {
             entry.lines = [...entry.lines, line];
             eventLog = [...eventLog.slice(0, eventLog.length - 1), entry]
         }
+    }
+
+    function saveState() {
+        let actorsState = actors.map(actor => {
+            /** @type {Record<string, any>} */ // we save the fields in a dict of field name to field value
+            let snapshot = {};
+
+            /** @type {Record<string, any>} */ //this pattern basically just allows us to access fields and methods that are not in the actor definition
+            const actorObj = actor;
+
+            for (let key of Object.keys(actorObj)) { //these are the properties of our actor
+                if (typeof actorObj[key] === "function") continue; //filter out functions
+
+                if (typeof actorObj[key] === "object" && actorObj[key] instanceof Queue) {
+                    // save queues
+                    snapshot[key] = actorObj[key].toArray().map(/** @param {any} e */ e => structuredClone(e));
+                } else {
+                    // save normal fields
+                    snapshot[key] = structuredClone(actorObj[key]);
+                }
+            }
+
+            return snapshot;
+        });
+
+        let messagesState = messages.toArray().map(m => structuredClone(m)); //we lose methods on clone, so we need an iterable copy in order to restore the queue
+        let timeoutsState = timeouts.toArray().map(t => structuredClone(t));
+
+
+        let state = {actorsState: actorsState, messagesState: messagesState, timeoutsState: timeoutsState};
+
+        const entry = eventLog.find(e => e.tick === tick);
+        if (entry){
+            entry.state = state; //add the saved state to the entry
+            eventLog = [...eventLog.slice(0, eventLog.length - 1), entry] //add the entry to the log
+        }
+
+    }
+    /** @type {(message: Message) => void} */
+    let removeMessageNode;
+
+    /** @type {(actor: Actor) => void} */
+    let removeActorNode;
+    /** @param {number} restoredTick **/
+    function restoreState(restoredTick) {
+        if (tick === restoredTick) return; //cant rewind to current tick
+
+        const entry = eventLog.find(e => e.tick === restoredTick);
+        if (!entry) return;
+
+        // restore actors
+        restoringState = true;
+
+        let actorsState = entry.state.actorsState;
+
+        if (actorsState.length < actors.length) {
+            for (let i = actorsState.length; i < actors.length; i++) {
+                removeActorNode(actors[i]);
+            }
+            actors = actors.slice(0, actorsState.length);
+        }
+        nextActorId = actors.length;
+
+        for (let i = 0; i < actorsState.length; i++) {
+            const savedActor = actorsState[i];
+            /** @type {Record<string, any>} */
+            const actor = actors[i];
+
+            // Restore saved properties
+            for (let key of Object.keys(savedActor)) {
+                if (typeof actor[key] === "object" && actor[key] instanceof Queue) {
+                    // we need to restore fields that are queues a little differently
+                    let restoredQueue = new Queue();
+                    for (let e of savedActor[key]) { // we saved an array, now we make it a queue
+                        restoredQueue.push(e);
+                    }
+                    actor[key] = restoredQueue;
+                } else {
+                    //we restore regular fields
+                    actor[key] = structuredClone(savedActor[key]);
+                }
+            }
+        }
+        for (let actor of actors) {
+            updateActorStatePopper(actor); // reflect the updated fields
+        }
+
+        // restore messages (note: we dont restore the nextMessageId)
+        let restoredMessages = new Queue();
+        for (let m of entry.state.messagesState) { // we saved an array, now we make it a queue
+            restoredMessages.push(m);
+            animateMessage(m)
+        }
+        for (let m of messages.toArray()) {
+            if (!restoredMessages.find(/** @param {Message} msg */ msg => msg.id === m.id)) {
+                console.log(m.id)
+                removeMessageNode(m);
+            }
+        }
+        messages = restoredMessages
+
+        // restore timeouts
+        timeouts = new Queue();
+        for (let t of entry.state.timeoutsState) {
+            timeouts.push(t);
+        }
+
+        tick = restoredTick;
+
+        // clear eventlog entries that happened after where we restored to
+        let index = eventLog.indexOf(entry)
+        eventLog = eventLog.slice(0, index + 1);
+
+        saveState(); // ensure the copy of state is clean for next rewind
+
+        restoringState = false;
     }
 
     /** @type {(msg: Message) => void} */
@@ -158,7 +281,10 @@
             let timer = timeouts.pop()
             if (timer != null){
                 if (timer.ticks === 0){
-                    timer.reaction()
+                    /** @type {Record<string, any>} */
+                    const actor = actors[timer.actorId];
+
+                    actor[timer.reaction]();
                 } else {
                     timer.ticks -= 1
                     timeouts.push(timer);
@@ -183,16 +309,24 @@
                 const prev = Reflect.get(target, prop);
                 const success = Reflect.set(target, prop, value);
 
-                if (success && prev !== value) {
+                if (success && prev !== value && !restoringState) { //make sure restoring state is false, so we dont log rewinding
                     let logEntry = `Actor ${target.id} ${String(prop)} changed from ${prev} to ${value}`;
                     console.log(logEntry);
                     addLogEntry(logEntry);
                     updateActorStatePopper(receiver);
+
+                    // reflect nodeColor in graph
+                    if (prop === "nodeColor" && changeColor) {
+                        changeColor(value, target);
+                    }
                 }
                 return true;
             }
         });
     }
+
+    /** @type {(color: any, actor: Actor) => void} */
+    export let changeColor;
 
     // These are the functions we export into the Actors
     // TODO: put these somewhere nice :)
@@ -202,7 +336,9 @@
      *  @param {any} data
      *  @param {string} type
      * */
-    function send(from, to, type, data) { //Example of use: send(this.id, from.id, "PING", "Hello")
+    function send(from, to, type, data) { //Example of use: send(this.id, msg.id, "PING", "Hello")
+        if (actors.length - 1 < to) return; // cant send messages to freaks who are not real
+
         let logEntry = `Actor ${from} sent msg ${type} to Actor ${to}`
         if (data){
             logEntry = `Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
@@ -219,7 +355,7 @@
     }
 
     function createQueue() { //Example of use: let q = createQueue(); q.push("hey"); let hey = q.pop();
-        return new Queue();
+        return new Queue()
     }
 
     /**
@@ -227,10 +363,11 @@
      * @param {number} ticks
      * @param {function} reaction
      */
-    function timeout(actor, ticks, reaction) { //Example of use: timeout(this, 10, fart); function fart() { console.log("fart") }
+    function timeout(actor, ticks, reaction) { //Example of use: timeout(this, 10, this.fart); function fart() { console.log("fart") }
         timeouts.push({
             ticks,
-            reaction: reaction.bind(actor)
+            actorId: actor.id,
+            reaction: reaction.name
         });
     }
 
@@ -333,11 +470,14 @@
             bind:resetGraph={resetGraph}
             bind:animateMessage={animateMessage}
             bind:updateActorStatePopper={updateActorStatePopper}
+            bind:removeMessageNode={removeMessageNode}
+            bind:removeActorNode={removeActorNode}
             bind:messages={messages}
             deliverMessage={deliverMessage}
             delayMessage={delayMessage}
             addLogEntry={addLogEntry}
             removeMessage={removeMessage}
+            bind:changeColor={changeColor}
             actors={actors}
             tickSize={tickSize}
     />
@@ -353,7 +493,11 @@
 {:else if leftPanel === LeftPanelOptions.LOG}
     <!--Log block-->
     <div class="absolute top-24 left-1 rounded-lg w-9/20">
-        <EventLog eventLog={eventLog} />
+        <EventLog
+            eventLog={eventLog}
+            restoreState={restoreState}
+        />
+
     </div>
 {/if}
 
