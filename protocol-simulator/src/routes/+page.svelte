@@ -8,7 +8,6 @@
     import ManualMessageComponent from "$lib/components/ManualMessageComponent.svelte";
     import Icon from '@iconify/svelte';
     import EventLog from "$lib/components/EventLog.svelte";
-    import {PriorityQueue} from "$lib/datastructures/PriorityQueue.js";
 
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
@@ -26,7 +25,7 @@
 
     /** @type {{ tick: number, lines: string[], state: any }[]} */
     let eventLog = [{ tick: 0, lines: [], state: null}]
-    let messages = new PriorityQueue();
+    let messages = new Queue();
     let timeouts = new Queue();
     let nextActorId = 0;
     let tick = 0;
@@ -85,7 +84,7 @@
     let resetGraph;
 
     function resetSimulation() {
-        messages = new PriorityQueue();
+        messages = new Queue();
         timeouts = new Queue();
         eventLog = [];
         actors = [];
@@ -226,9 +225,9 @@
         }
 
         // restore messages (note: we dont restore the nextMessageId)
-        let restoredMessages = new PriorityQueue();
+        let restoredMessages = new Queue();
         for (let m of entry.state.messagesState) { // we saved an array, now we make it a queue
-            restoredMessages.enqueue(m, m.arrivalTick);
+            restoredMessages.push(m);
             animateMessage(m)
         }
         for (let m of messages.toArray()) {
@@ -269,7 +268,9 @@
 
             animateMessage(message)
 
-            if (message.tick > tick) { // we only look at messages that should be delivered
+            messages.push(message);
+
+            if (message.arrivalTick > tick) { // we only look at messages that should be delivered
                 continue;
             }
 
@@ -288,6 +289,7 @@
         for (const msgs of deliverableMessages.values()) {
             if (msgs.length === 1) {  // if there is only one message scheduled, deliver it
                 deliverMessage(msgs[0])
+                messages.remove(/** @param {Message} m */ m => m.id === msgs[0].id);
                 continue
             }
 
@@ -306,7 +308,10 @@
                 }
             }
             //finally deliver a random message
-            deliverMessage(oldestMsgs[Math.floor(Math.random() * (oldestMsgs.length - 1))])
+            let randomIndex = Math.floor(Math.random() * (oldestMsgs.length - 1))
+
+            deliverMessage(oldestMsgs[randomIndex]);
+            messages.remove(/** @param {Message} m */ m => m.id === oldestMsgs[randomIndex].id);
         }
 
     }
