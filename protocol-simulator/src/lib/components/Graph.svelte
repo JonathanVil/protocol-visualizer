@@ -100,6 +100,9 @@
      * Used to reset the visuals in the graph
      */
     export function resetGraph() {
+        for (const node of graphMessageNodes) {
+            removeMessagePopper(node);
+        }
         graphMessageNodes = [];
         edges = [];
 
@@ -381,6 +384,8 @@
     /** @param {import('cytoscape').NodeSingular} messageNode */
     function removeMessagePopper(messageNode) {
         const messagePopUp = messageNode.scratch('messagePopup')
+        if (!messagePopUp) {return}
+
         messageNode.removeScratch('messagePopup');
 
         // Remove event listeners (must match original handler references)
