@@ -531,8 +531,6 @@
     />
 </div>
 
-<div id="ui-layer"></div>
-
 {#if leftPanel === LeftPanelOptions.CODE}
     <!--Code block-->
     <div class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
@@ -584,6 +582,10 @@
 <button on:click={() => settingsPanelOpen = !settingsPanelOpen} class="absolute top-14 right-5 p-1 rounded-lg hover:bg-blue-200">
     <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
 </button>
+
+
+
+<div id="ui-layer"></div>
 
 
 {#if settingsPanelOpen}
