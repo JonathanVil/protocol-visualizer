@@ -34,6 +34,24 @@ export class PriorityQueue extends Queue {
         current.next=newnode;
         newnode.next=next;
     }
+    // Finds an element and returns its priority
+    getPriority(value){
+        let node = this.find(value)
+        if (node) {
+            return node.priority;
+        }
+        return null;
+    }
+    // Updates an elements priority. Returns true if succesful, false if not
+    setPriority(value, priority){
+        let node = this.find(value)
+        if (node) {
+            this.remove(node);
+            this.enqueue(node.value, priority);
+            return true;
+        }
+        return false;
+    }
     //pushes with priority 0
     push(value){
         this.enqueue(value, 0)
