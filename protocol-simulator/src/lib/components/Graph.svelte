@@ -28,9 +28,6 @@
     /** @type {(msg: Message) => void} */
     export let removeMessage;
 
-    /** @type {() => void} */
-    export let closeActorPoppers;
-
     /** @type {Queue} */
     export let messages = new Queue();
     /** @type {{ source: number, target: number, label: string }[]} */
@@ -183,7 +180,7 @@
 
             const component = mount(ActorStatePopper, {
                 target: el,
-                props: { store: actorStore}
+                props: { store: actorStore, setCollapsedGlobal: setActorPoppersCollapsed}
             });
 
             const popper = node.popper({
@@ -203,11 +200,11 @@
     }
 
     /** Toggle all Actor Poppers*/
-    closeActorPoppers = () => {
+    /** @param {boolean} collapsed */
+    function setActorPoppersCollapsed(collapsed) {
         poppers.forEach(popper => {
-            popper?.component.closePopper();
+            popper?.component.setCollapsed(collapsed);
         });
-
     }
 
 

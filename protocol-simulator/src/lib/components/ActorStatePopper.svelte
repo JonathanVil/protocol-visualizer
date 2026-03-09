@@ -7,6 +7,9 @@
     /** @type {ActorReadable} */
     export let store;
 
+    /** @type {(c: boolean) => void} */
+    export let setCollapsedGlobal;
+
     /** @param {any} v */
     export function formatValue(v) {
         if (v === null) return 'null';
@@ -49,21 +52,28 @@
         }
     }
 
-    let collapsed = false;
+    export let collapsed = false;
 
     /**
-     * @param {event} event
+     * @param {MouseEvent} event
      */
     function toggleCollapsed(event) {
         event?.stopPropagation?.();
-        collapsed = !collapsed;
+
+        // if user holds shift
+        if (event.shiftKey) {
+            setCollapsedGlobal(!collapsed);
+        } else {
+            collapsed = !collapsed;
+        }
     }
 
     /**
      * Used by its parent to toggle all poppers
+     * @param {boolean} val
      */
-    export function closePopper() {
-        collapsed = true;
+    export function setCollapsed(val) {
+        collapsed = val;
     }
 
     /** @type {string | null} */

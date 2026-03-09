@@ -26,9 +26,6 @@
     /** @type {{ tick: number, lines: string[] }[]} */
     let eventLog = [{ tick: 0, lines: []}]
 
-    /** @type {() => void} */
-    let closeActorPoppers;
-
     let messages = new Queue();
     let timeouts = new Queue();
     let id = 0;
@@ -319,11 +316,6 @@
         if (id_messages < -1000) {id_messages = -1}
         return id_messages--;
     }
-
-    function closeAllActorPoppers() {
-        closeActorPoppers()
-    }
-
 </script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -342,7 +334,6 @@
             bind:animateMessage={animateMessage}
             bind:updateActorStatePopper={updateActorStatePopper}
             bind:messages={messages}
-            bind:closeActorPoppers={closeActorPoppers}
             deliverMessage={deliverMessage}
             delayMessage={delayMessage}
             addLogEntry={addLogEntry}
@@ -400,9 +391,6 @@
     <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
 </button>
 
-<button on:click={() => closeAllActorPoppers()} class="absolute top-14 right-15 p-1 rounded-lg hover:bg-blue-200 border text-xs">
-    <p>Close Popups</p>
-</button>
 
 
 <div id="ui-layer"></div>
