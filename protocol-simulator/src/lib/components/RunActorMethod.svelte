@@ -7,7 +7,7 @@
     export let argumentNames = [];
 
     /** @type {(args: string[]) => void} */
-    export let submit;
+    export let run;
 
     /** @type {() => void} */
     export let cancel;
@@ -15,12 +15,12 @@
     /** @type {any[]} */
     let args = [];
 
-    function run() {
+    function submit() {
         if (args.length !== argumentNames.length) {
             return;
         }
 
-        submit(args);
+        run(args);
     }
 </script>
 
@@ -34,7 +34,7 @@
                 class="w-[320px] rounded-md border border-white/10 bg-slate-950/95 p-2 shadow-[0_12px_30px_rgba(0,0,0,0.55)]"
         >
             <div class="mb-1 flex items-center justify-between">
-                <div class="text-[12px] font-semibold opacity-90">Run: {methodName}</div>
+                <div class="text-[12px] font-semibold opacity-90">Run: <code>{methodName}({argumentNames.join(', ')})</code></div>
                 <button
                         type="button"
                         class="inline-flex h-6 w-6 items-center justify-center rounded text-white/70 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
@@ -49,12 +49,7 @@
                 </button>
             </div>
 
-
-
             <div class="mt-2 flex items-center justify-end gap-2">
-                <div class="mr-auto text-[11px] opacity-70">
-                    <span>Esc</span> to cancel, <span>Ctrl/⌘+Enter</span> to save
-                </div>
 
                 <button
                         type="button"
@@ -66,9 +61,9 @@
                 <button
                         type="button"
                         class="rounded bg-white/10 px-2 py-1 text-[12px] text-white hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                        on:click={run}
+                        on:click={submit}
                 >
-                    Save
+                    Run
                 </button>
             </div>
         </div>
