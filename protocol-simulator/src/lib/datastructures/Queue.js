@@ -52,12 +52,12 @@ export class Queue {
         return null
     }
 
-    find(value)
+    find(func)
     {
         let current=this.head
         while(current)
         {
-            if(value(current.value))
+            if(func(current.value))
             {
                 return current.value
             }
