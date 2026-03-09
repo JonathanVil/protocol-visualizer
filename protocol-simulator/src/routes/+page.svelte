@@ -426,9 +426,16 @@
         if (kill) {
             inactiveActors.push(actor);
             timeouts.remove(/** @param {TimeOutEntry} timeout */ timeout => timeout.actorId === actor.id)
+            let logEntry = `Actor ${actor.id} was killed`
+            console.log(logEntry);
+            addLogEntry(logEntry);
+
         } else
         {
             inactiveActors.splice(inactiveActors.indexOf(actor), 1);
+            let logEntry = `Actor ${actor.id} was resurrected`
+            console.log(logEntry);
+            addLogEntry(logEntry);
         }
 
     }
