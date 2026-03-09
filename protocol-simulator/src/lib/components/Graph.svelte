@@ -100,8 +100,12 @@
      * Used to reset the visuals in the graph
      */
     export function resetGraph() {
+        for (const node of graphMessageNodes) {
+            removeMessagePopper(node);
+        }
         graphMessageNodes = [];
         edges = [];
+
 
         cyInstance.elements().remove(); // remove all nodes and edges
         removeAllPoppers();            // remove all poppers + unmount components
