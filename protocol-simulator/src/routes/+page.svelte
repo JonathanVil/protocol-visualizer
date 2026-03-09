@@ -267,9 +267,11 @@
 
             if (message == null) continue;
 
+            messages.push(message);
+
             animateMessage(message)
 
-            messages.push(message);
+
 
             if (message.arrivalTick > tick) { // we only look at messages that should be delivered
                 continue;
@@ -309,7 +311,7 @@
                 }
             }
             //finally deliver a random message
-            let randomIndex = Math.floor(Math.random() * (oldestMsgs.length - 1))
+            let randomIndex = Math.round(Math.random() * (oldestMsgs.length - 1))
 
             deliverMessage(oldestMsgs[randomIndex]);
             messages.remove(/** @param {Message} m */ m => m.id === oldestMsgs[randomIndex].id);
