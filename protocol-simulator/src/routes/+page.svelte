@@ -8,6 +8,7 @@
     import ManualMessageComponent from "$lib/components/ManualMessageComponent.svelte";
     import Icon from '@iconify/svelte';
     import EventLog from "$lib/components/EventLog.svelte";
+    import {PriorityQueue} from "$lib/datastructures/PriorityQueue.js";
 
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
@@ -25,7 +26,7 @@
 
     /** @type {{ tick: number, lines: string[], state: any }[]} */
     let eventLog = [{ tick: 0, lines: [], state: null}]
-    let messages = new Queue();
+    let messages = new PriorityQueue();
     let timeouts = new Queue();
     let nextActorId = 0;
     let tick = 0;
@@ -84,7 +85,7 @@
     let resetGraph;
 
     function resetSimulation() {
-        messages = new Queue();
+        messages = new PriorityQueue();
         timeouts = new Queue();
         eventLog = [];
         actors = [];
@@ -225,9 +226,9 @@
         }
 
         // restore messages (note: we dont restore the nextMessageId)
-        let restoredMessages = new Queue();
+        let restoredMessages = new PriorityQueue();
         for (let m of entry.state.messagesState) { // we saved an array, now we make it a queue
-            restoredMessages.push(m);
+            restoredMessages.enqueue(m, m.arrivalTick);
             animateMessage(m)
         }
         for (let m of messages.toArray()) {
@@ -346,7 +347,8 @@
         console.log(logEntry);
         addLogEntry(logEntry);
         let transitTime = getTransitTime();
-        messages.push({id: getNextMessageId(), source: from, destination: to, type: type, transitTicks: transitTime, elapsedTicks: 0, data: data})
+        let arrivalTick = tick + transitTime;
+        messages.push({id: getNextMessageId(), source: from, destination: to, type: type, arrivalTick: arrivalTick, data: data})
     }
 
 
@@ -391,13 +393,13 @@
      * @returns void
      * */
     function delayMessage(message, delay) {
-        if (message.transitTicks - message.elapsedTicks + delay <= 0) {
+        if (message.arrivalTick - tick + delay <= 0) {
             deliverMessage(message);
         } else {
             let logEntry = `Message ${message.type} delayed by ${delay} ticks`
             console.log(logEntry);
             addLogEntry(logEntry);
-            message.transitTicks = Number(message.transitTicks) + Number(delay);
+            message.arrivalTick = Number(message.arrivalTick) + Number(delay);
             animateMessage(message);
         }
     }
