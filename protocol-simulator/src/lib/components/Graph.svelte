@@ -194,7 +194,6 @@
                             changeColor("#525252", actor)
                             killActor(actor, kill)
                         } else {
-                            console.error(originalColor);
                             changeColor(originalColor ? originalColor : '#1d4ed8', actor)
                             killActor(actor, kill)
                         }
