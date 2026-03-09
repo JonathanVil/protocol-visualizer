@@ -25,6 +25,9 @@
     /** @type {number} */
     export let tickSize;
 
+    /** @type {number} */
+    export let tick;
+
     /** @type {(msg: Message) => void} */
     export let removeMessage;
 
@@ -505,9 +508,9 @@
     export function animateMessage(message) {
         const source = cyInstance.getElementById(message.source).position();
         const target = cyInstance.getElementById(message.destination).position();
-
-        const targetPosThisTickX = source.x + ((target.x - source.x) * message.elapsedTicks) / message.transitTicks
-        const targetPosThisTickY = source.y + ((target.y - source.y) * message.elapsedTicks) / message.transitTicks
+                                                                        // elapsedticks             transitTicks
+        const targetPosThisTickX = source.x + ((target.x - source.x) * (tick - message.sentTick)) / (message.arrivalTick - message.sentTick)
+        const targetPosThisTickY = source.y + ((target.y - source.y) * (tick - message.sentTick)) / (message.arrivalTick - message.sentTick)
 
         //Create the message node in graph, if it does not exist.
         let msg = cyInstance.getElementById(message.id)
@@ -529,7 +532,7 @@
             easing: 'linear',
             queue: false,
             complete: () => {
-                if (message.elapsedTicks >= message.transitTicks) {
+                if ((tick - message.sentTick) >= (message.arrivalTick - message.sentTick)) {
                     // remove message node from graph & array
 
                     if (msg.scratch('messagePopup')) {
