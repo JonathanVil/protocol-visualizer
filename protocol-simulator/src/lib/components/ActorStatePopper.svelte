@@ -31,6 +31,8 @@
             ? Object.entries(actor).filter(([k, v]) => typeof v !== 'function' && !excludedAttributes.includes(k))
             : [];
 
+    $: methods = getAllMethods(actor);
+
     // --- flash-on-change bookkeeping ---
     /** @type {Map<string, any>} */
     let prevByKey = new Map();
@@ -151,6 +153,25 @@
         event?.stopPropagation?.();
         methodsListOpen = !methodsListOpen;
     }
+
+    /**
+     * @param name {string}
+     * @param args {any[]}
+     */
+    function runMethod(name, args) {
+        if (!actor) return;
+        if (!methods.has(name)) return;
+
+        selectedMethod = null;
+        console.log(`Running ${name}(${args.join(', ')})`);
+
+        const method = Reflect.get(actor, name);
+        if (typeof method === 'function') {
+            method(...args);
+        } else {
+            console.error(`Method ${name} is not a function`);
+        }
+    }
 </script>
 
 <div
@@ -227,14 +248,14 @@
                 {/if}
 
                 {#if selectedMethod}
-                    <RunActorMethod methodName={selectedMethod[0]} argumentNames={selectedMethod[1]}  />
+                    <RunActorMethod run={args => runMethod(selectedMethod[0], args)} cancel={() => selectedMethod = null} methodName={selectedMethod[0]} argumentNames={selectedMethod[1]}  />
                 {/if}
             {/if}
         {/if}
 
         <div class="font-mono">
             {#if methodsListOpen}
-                {#each getAllMethods(actor).entries() as [name, val]}
+                {#each methods.entries() as [name, val]}
                     <div class="font-mono opacity-95 flex items-center gap-1">
                         <span class="opacity-90">{name}({val.join(', ')})</span>
 
