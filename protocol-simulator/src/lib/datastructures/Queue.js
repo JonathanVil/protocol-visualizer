@@ -65,12 +65,12 @@ export class Queue {
         }
         return null
     }
-    remove(value){
+    remove(func){
         let current = this.head
         let prev = null;
 
         while(current) {
-            if (value(current.value)) {
+            if (func(current.value)) {
                 //If the node to remove is the head, we need to update the head pointer
                 if (prev === null) {
                     this.head = current.next
