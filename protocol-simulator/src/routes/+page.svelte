@@ -30,10 +30,7 @@
     let timeouts = new Queue();
     let id = 0;
     let tick = 0;
-    /** @type number */
-    let intervalId;
 
-    let tickSpeedUpdated = false;
     let paused = true;
 
     function spawnActor() {
@@ -72,16 +69,10 @@
     }
 
     function startSimulation() {
-        if (tickSpeedUpdated) {
-            console.log("Updating simulation tickspeed");
-        } else {
-            console.log("Starting simulation");
-        }
+        console.log("Starting simulation");
 
         paused = false;
-        clearInterval(intervalId);
-        tickSpeedUpdated = false;
-        intervalId = setInterval(handleTick, tickSize); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
+        handleTick();
     }
 
     function pauseSimulation() {
@@ -93,30 +84,23 @@
     let resetGraph;
 
     function resetSimulation() {
-        clearInterval(intervalId);
         messages = new Queue();
         timeouts = new Queue();
         eventLog = [];
         actors = [];
         id = 0;
-        tickSpeedUpdated = false;
         tick = 0;
         paused = true;
         resetGraph();
     }
 
     function tickByOne() {
-        if (paused){
-            paused = false;
-            handleTick();
-            paused = true;
-        }
+        handleTick();
+
     }
 
     function handleTick() {
-        if (paused) {
-            return
-        }
+        let startTime = Date.now()
         tick++
 
         //update messages by one tick
@@ -125,11 +109,14 @@
         //update timeouts by one tick
         handleTimeouts()
 
-        //handle updating tickspeed
-        if (tickSpeedUpdated) { // We need to reboot the simulation loop in order to update tickspeed
-            paused = true;
-            startSimulation();
+        if (!paused) {
+            let elapsedTime = Date.now() - startTime;
+            if (elapsedTime > tickSize) {
+                console.log(`--------------------TIME TO HANDLE TICK HIGHER THAN TICKSIZE--------------------`);
+            }
+            setTimeout(handleTick, tickSize - elapsedTime); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
         }
+
     }
 
     /**
@@ -156,7 +143,7 @@
                 //Animate messages
                 animateMessage(message);
 
-                if (message.elapsedTicks=== message.transitTicks){
+                if (message.elapsedTicks >= message.transitTicks){
                     deliverMessage(message)
                 } else {
                     messages.push(message)
@@ -179,6 +166,11 @@
 
             }
         }
+    }
+
+    /** @param {Message} message */
+    function removeMessage(message) {
+        messages.remove(/** @param {Message} m */ m => m.id === message.id)
     }
 
     /** @type {(actor: Actor) => void} */
@@ -216,7 +208,6 @@
             logEntry = `Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
         }
         console.log(logEntry);
-        console.log(tickSize);
         addLogEntry(logEntry);
         let transitTime = getTransitTime();
         messages.push({id: getNextMessageId(), source: from, destination: to, type: type, transitTicks: transitTime, elapsedTicks: 0, data: data})
@@ -255,6 +246,23 @@
     /** @param {string} panel */
     function toggleLeftPanel(panel) {
         leftPanel = leftPanel === panel ? LeftPanelOptions.NONE : panel;
+    }
+
+    /**
+     * @param {Message} message
+     * @param {Number} delay
+     * @returns void
+     * */
+    function delayMessage(message, delay) {
+        if (message.transitTicks - message.elapsedTicks + delay <= 0) {
+            deliverMessage(message);
+        } else {
+            let logEntry = `Message ${message.type} delayed by ${delay} ticks`
+            console.log(logEntry);
+            addLogEntry(logEntry);
+            message.transitTicks = Number(message.transitTicks) + Number(delay);
+            animateMessage(message);
+        }
     }
 
 
@@ -325,11 +333,17 @@
             bind:resetGraph={resetGraph}
             bind:animateMessage={animateMessage}
             bind:updateActorStatePopper={updateActorStatePopper}
+            bind:messages={messages}
+            deliverMessage={deliverMessage}
+            delayMessage={delayMessage}
+            addLogEntry={addLogEntry}
+            removeMessage={removeMessage}
             actors={actors}
             tickSize={tickSize}
     />
 </div>
 
+<div id="ui-layer"></div>
 
 {#if leftPanel === LeftPanelOptions.CODE}
     <!--Code block-->
@@ -386,7 +400,6 @@
         () => Math.floor(1000 / tickSize),
         (v) => {
             tickSize = Math.floor(1000 / v);
-            tickSpeedUpdated = true;
         }}
 
        bind:transitLower={transitTimeLowerBound}
