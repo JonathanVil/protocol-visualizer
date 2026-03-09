@@ -89,6 +89,7 @@
         eventLog = [];
         actors = [];
         nextActorId = 0;
+        nextMessageId = -1;
         tick = 0;
         paused = true;
         resetGraph();
@@ -488,14 +489,14 @@
 
     // id's for messages
     /** @type {number} */
-    let id_messages = -1;
+    let nextMessageId = -1;
 
     /**
      * @return {number} The next message id
      */
     export function getNextMessageId() {
-        if (id_messages < -1000) {id_messages = -1}
-        return id_messages--;
+        if (nextMessageId < -1000) {nextMessageId = -1}
+        return nextMessageId--;
     }
 </script>
 
