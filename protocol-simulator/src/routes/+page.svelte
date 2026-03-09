@@ -12,6 +12,7 @@
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
     /** @typedef {import('$lib/types.js').Actor} Actor */
+    /** @typedef {import('$lib/types.js').TimeoutEntry} TimeOutEntry */
 
 
     /**@type {{ protocols: { name: string; content: string }[] }}*/
@@ -23,9 +24,14 @@
     /** @type {Actor[]} */
     let actors = [];
 
+    /** @type {Actor[]} */
+    let inactiveActors = [];
+
     /** @type {{ tick: number, lines: string[], state: any }[]} */
     let eventLog = [{ tick: 0, lines: [], state: null}]
     let messages = new Queue();
+
+    /** @type {Queue} */
     let timeouts = new Queue();
     let nextActorId = 0;
     let tick = 0;
@@ -57,6 +63,14 @@
      * @param {Message} message
      */
     function deliverMessage(message) {
+        // if the message is delivered to a inactive Actor, ignore it
+        if (inactiveActors.includes(actors[message.destination])) {
+            let logEntry = `Actor ${message.destination} recieved msg ${message.type} from Actor ${message.source}, but is dead`
+            console.log(logEntry);
+            addLogEntry(logEntry);
+            return;
+        }
+
         let logEntry = `Actor ${message.destination} recieved msg ${message.type} from Actor ${message.source}`
         if (message.data) {
             logEntry = `Actor ${message.destination} recieved msg ${message.type} with data ${message.data} from Actor ${message.source}`
@@ -402,12 +416,14 @@
         }
     }
 
-    /**
+    /** Makes an actor inactive
+     * It no longer can recieve message and will remove all its timeouts
      * @param {Actor} actor
      * @returns void
      * */
     export function killActor(actor) {
-        console.log("kill actor", actor);
+        inactiveActors.push(actor);
+        timeouts.remove(/** @param {TimeOutEntry} timeout */ timeout => timeout.actorId === actor.id)
     }
 
 
