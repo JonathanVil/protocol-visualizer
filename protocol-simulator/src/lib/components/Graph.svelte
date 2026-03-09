@@ -187,7 +187,12 @@
 
             const component = mount(ActorStatePopper, {
                 target: el,
-                props: { store: actorStore, killActor: killActorGraph },
+                props: {
+                    store: actorStore,
+                    killActor: () => {
+                        changeColor("#525252", actor)
+                        killActor(actor)
+                    } },
             });
 
             const popper = node.popper({
@@ -450,13 +455,6 @@
     /** Function used to kill an actor in page.svelte (from graph -> page.svelte)
      * @type {(actor: Actor) => void} */
     export let killActor;
-
-    /** Function for killing an actor. Used between popper and page.svelte, to turn a node gray
-     * @param {Actor} actor  */
-    export function killActorGraph(actor) {
-        killActor(actor)
-        changeColor("#525252", actor)
-    }
 
     /**
      * @param {any} color
