@@ -52,8 +52,4 @@ export class PriorityQueue extends Queue {
         }
         return false;
     }
-    //pushes with priority 0
-    push(value){
-        this.enqueue(value, 0)
-    }
 }
