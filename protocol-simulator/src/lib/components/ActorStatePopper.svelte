@@ -14,6 +14,9 @@
     /** @type {boolean} */
     let isInactive = false;
 
+    /** @type {(c: boolean) => void} */
+    export let setCollapsedGlobal;
+
     /** @param {any} v */
     export function formatValue(v) {
         if (v === null) return 'null';
@@ -59,14 +62,28 @@
         }
     }
 
-    let collapsed = false;
+    export let collapsed = false;
 
     /**
-     * @param {event} event
+     * @param {MouseEvent} event
      */
     function toggleCollapsed(event) {
         event?.stopPropagation?.();
-        collapsed = !collapsed;
+
+        // if user holds shift
+        if (event.shiftKey) {
+            setCollapsedGlobal(!collapsed);
+        } else {
+            collapsed = !collapsed;
+        }
+    }
+
+    /**
+     * Used by its parent to toggle all poppers
+     * @param {boolean} val
+     */
+    export function setCollapsed(val) {
+        collapsed = val;
     }
 
     /** @type {string | null} */
@@ -104,7 +121,7 @@
         type="button"
         class="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded text-white/80 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
         aria-label={collapsed ? 'Show popper' : 'Hide popper'}
-        title={collapsed ? 'Show' : 'Hide'}
+        title={collapsed ? 'Show (Shift + Click to show all)' : 'Hide (Shift + Click to hide all)'}
         on:click={toggleCollapsed}
     >
         {#if collapsed}
