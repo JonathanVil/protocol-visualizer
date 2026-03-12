@@ -274,8 +274,6 @@
             </button>
         </div>
 
-        <div class="mb-0.5 font-semibold opacity-90">Actor {actor?.id}</div>
-
         {#if !stateCollapsed}
             {#if !actor}
                 <div class="font-mono opacity-95"><span class="opacity-90">Actor</span>: <span>null</span></div>
