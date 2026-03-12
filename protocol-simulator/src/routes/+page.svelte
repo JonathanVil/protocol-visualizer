@@ -338,6 +338,9 @@
      * */
     function send(from, to, type, data) { //Example of use: send(this.id, msg.id, "PING", "Hello")
         if (actors.length - 1 < to) return; // cant send messages to freaks who are not real
+        if (typeof from !== "number") throw new Error("from must be a number");
+        if (typeof to !== "number") throw new Error("to must be a number");
+        if (typeof type !== "string") throw new Error("type must be a string");
 
         let logEntry = `Actor ${from} sent msg ${type} to Actor ${to}`
         if (data){
