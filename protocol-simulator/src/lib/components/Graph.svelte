@@ -25,6 +25,9 @@
     /** @type {number} */
     export let tickSize;
 
+    /** @type {number} */
+    export let tick;
+
     /** @type {(msg: Message) => void} */
     export let removeMessage;
 
@@ -519,9 +522,6 @@
         const source = cyInstance.getElementById(message.source).position();
         const target = cyInstance.getElementById(message.destination).position();
 
-        const targetPosThisTickX = source.x + ((target.x - source.x) * message.elapsedTicks) / message.transitTicks
-        const targetPosThisTickY = source.y + ((target.y - source.y) * message.elapsedTicks) / message.transitTicks
-
         //Create the message node in graph, if it does not exist.
         let msg = cyInstance.getElementById(message.id)
         if (msg.empty()) {
@@ -535,6 +535,21 @@
             messagesToNodes.set(message.id, msg);
         }
 
+        let elapsedTicks = (tick - message.sentTick)
+        let transitTicks = (message.arrivalTick - message.sentTick) - 1
+        if (tick > message.arrivalTick){ // dont overshoot if a message is in queue
+            elapsedTicks = message.arrivalTick - message.sentTick;
+        }
+
+        // elapsedticks             transitTicks
+        let targetPosThisTickX = source.x + (((target.x - source.x) * elapsedTicks) / transitTicks)
+        let targetPosThisTickY = source.y + (((target.y - source.y) * elapsedTicks) / transitTicks)
+
+        if (elapsedTicks >= transitTicks) {
+            targetPosThisTickX = target.x;
+            targetPosThisTickY = target.y;
+        }
+
         msg.animate({
             position: {x: targetPosThisTickX, y: targetPosThisTickY}
         }, {
@@ -542,7 +557,7 @@
             easing: 'linear',
             queue: false,
             complete: () => {
-                if (message.elapsedTicks >= message.transitTicks) {
+                if (!(messages.find(/** @param {Message} msg */ msg => msg.id === message.id))) {
                     // remove message node from graph & array
 
                     if (msg.scratch('messagePopup')) {

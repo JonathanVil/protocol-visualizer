@@ -1,6 +1,6 @@
 ﻿/** @typedef {new (id: number) => Actor} ActorConstructor */
 
-/** @typedef {{ id: number, source: number, destination: number, type: string, transitTicks: number, elapsedTicks: number, data?: any}} Message */
+/** @typedef {{ id: number, source: number, destination: number, type: string, sentTick: number, arrivalTick: number, data?: any}} Message */
 
 /**
  * @typedef {{
