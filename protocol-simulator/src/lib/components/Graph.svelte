@@ -8,7 +8,7 @@
         shift,
         limitShift,
     } from '@floating-ui/dom';
-    import ActorStatePopper from "$lib/components/ActorStatePopper.svelte";
+    import ActorPopper from "$lib/components/ActorPopper.svelte";
     import {writable} from "svelte/store";
     import MessagePopper from "$lib/components/MessagePopper.svelte";
     import {createPopper} from "@popperjs/core";
@@ -100,6 +100,9 @@
      * Used to reset the visuals in the graph
      */
     export function resetGraph() {
+        for (const node of graphMessageNodes) {
+            removeMessagePopper(node);
+        }
         graphMessageNodes = [];
         edges = [];
 
@@ -185,7 +188,8 @@
 
             const actorStore = writable(actor);
 
-            const component = mount(ActorStatePopper, {
+            const update = () => popper.update();
+            const component = mount(ActorPopper, {
                 target: el,
                 props: {
                     store: actorStore,
@@ -199,14 +203,13 @@
                             toggleAlive(actor)
                         }
                     },
-                    setCollapsedGlobal: setActorPoppersCollapsed
+                    setStateCollapsedGlobal: setActorStateCollapsed, setMethodsCollapsedGlobal: setActorMethodsCollapsed, reposition: update
                 },
             });
 
             const popper = node.popper({
                 content: () => el
             });
-            const update = () => popper.update();
             node.on('position', update);
             cyInstance.on('pan zoom resize', update);
 
@@ -221,9 +224,18 @@
 
     /** Toggle all Actor Poppers*/
     /** @param {boolean} collapsed */
-    function setActorPoppersCollapsed(collapsed) {
+    function setActorStateCollapsed(collapsed) {
         poppers.forEach(popper => {
-            popper?.component.setCollapsed(collapsed);
+            popper?.component.setStateCollapsed(collapsed);
+            popper?.update();
+        });
+    }
+
+    /** @param {boolean} collapsed */
+    function setActorMethodsCollapsed(collapsed) {
+        poppers.forEach(popper => {
+            popper?.component.setMethodsCollapsed(collapsed);
+            popper?.update();
         });
     }
 
@@ -398,6 +410,8 @@
     /** @param {import('cytoscape').NodeSingular} messageNode */
     function removeMessagePopper(messageNode) {
         const messagePopUp = messageNode.scratch('messagePopup')
+        if (!messagePopUp) {return}
+
         messageNode.removeScratch('messagePopup');
 
         // Remove event listeners (must match original handler references)

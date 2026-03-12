@@ -362,6 +362,9 @@
      * */
     function send(from, to, type, data) { //Example of use: send(this.id, msg.id, "PING", "Hello")
         if (actors.length - 1 < to) return; // cant send messages to freaks who are not real
+        if (typeof from !== "number") throw new Error("from must be a number");
+        if (typeof to !== "number") throw new Error("to must be a number");
+        if (typeof type !== "string") throw new Error("type must be a string");
 
         let logEntry = `Actor ${from} sent msg ${type} to Actor ${to}`
         if (data){
@@ -531,6 +534,8 @@
     />
 </div>
 
+<div id="ui-layer"></div>
+
 {#if leftPanel === LeftPanelOptions.CODE}
     <!--Code block-->
     <div class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
@@ -582,11 +587,6 @@
 <button on:click={() => settingsPanelOpen = !settingsPanelOpen} class="absolute top-14 right-5 p-1 rounded-lg hover:bg-blue-200">
     <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
 </button>
-
-
-
-<div id="ui-layer"></div>
-
 
 {#if settingsPanelOpen}
     <!--Settings block-->

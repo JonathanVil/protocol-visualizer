@@ -3,17 +3,19 @@
     /** @typedef {import('svelte/store').Readable<Actor>} ActorReadable */
 
     import EditActorState from "$lib/components/EditActorState.svelte";
+    import RunActorMethod from "$lib/components/RunActorMethod.svelte";
 
     /** @type {ActorReadable} */
     export let store;
 
-
-    /** @type {(actor: Actor, color: string) => void} */
-    export let toggleAlive;
-
+    /** @type {(c: boolean) => void} */
+    export let setStateCollapsedGlobal;
 
     /** @type {(c: boolean) => void} */
-    export let setCollapsedGlobal;
+    export let setMethodsCollapsedGlobal;
+
+    /** @type {() => void} */
+    export let reposition;
 
     /** @param {any} v */
     export function formatValue(v) {
@@ -29,17 +31,16 @@
     }
 
     // these attributes are not shown in the popper
-    const excludedAttributes = ['id', 'nodeColor', 'alive']
+    const excludedAttributes = ['id', 'nodeColor']
 
     $: actor = $store;
-
-    /** @type {string} */
-    $: originalColor = actor.nodeColor;
 
     $: entries =
         actor
             ? Object.entries(actor).filter(([k, v]) => typeof v !== 'function' && !excludedAttributes.includes(k))
             : [];
+
+    $: methods = getAllMethods(actor);
 
     // --- flash-on-change bookkeeping ---
     /** @type {Map<string, any>} */
@@ -60,28 +61,37 @@
         }
     }
 
-    export let collapsed = false;
+    let stateCollapsed = false;
 
     /**
      * @param {MouseEvent} event
      */
-    function toggleCollapsed(event) {
+    function toggleShowState(event) {
         event?.stopPropagation?.();
 
         // if user holds shift
         if (event.shiftKey) {
-            setCollapsedGlobal(!collapsed);
+            setStateCollapsedGlobal(!stateCollapsed);
         } else {
-            collapsed = !collapsed;
+            stateCollapsed = !stateCollapsed;
+            reposition();
         }
     }
 
     /**
-     * Used by its parent to toggle all poppers
+     * Used by its parent to toggle all state
      * @param {boolean} val
      */
-    export function setCollapsed(val) {
-        collapsed = val;
+    export function setStateCollapsed(val) {
+        stateCollapsed = val;
+    }
+
+    /**
+     * Used by its parent to toggle all methods
+     * @param {boolean} val
+     */
+    export function setMethodsCollapsed(val) {
+        methodsListCollapsed = val;
     }
 
     /** @type {string | null} */
@@ -110,52 +120,142 @@
         Reflect.set(actor, editingKey, newValue);
         console.log(`Saving ${editingKey} = ${newValue}`);
     }
+
+    let methodsListCollapsed = false;
+
+    /** @type {[string, string[]] | null} */
+    let selectedMethod = null;
+    /**
+    * @param {Object} obj
+    */
+    function getAllMethods(obj) {
+        if (!obj) return new Map();
+
+        /**
+         * Extract argument names from a function.
+         * Handles: `foo(a,b)`, `function foo(a,b)`, `(a,b)=>`, `a=>`
+         * Not perfect for every JS edge case, but good enough for UI display.
+         * @param {Function} fn
+         * @returns {string[]}
+         */
+        function getArgNames(fn) {
+            const src = Function.prototype.toString.call(fn).trim();
+
+            // Arrow: single param without parens:  x => ...
+            const singleArrow = src.match(/^([A-Za-z_$][\w$]*)\s*=>/);
+            if (singleArrow) return [singleArrow[1]];
+
+            // Anything with (...) up front: function/method/arrow with parens
+            const paren = src.match(/^[^(]*\(\s*([^)]*)\)/);
+            const raw = (paren?.[1] ?? '').trim();
+            if (!raw) return [];
+
+            return raw
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean)
+                // strip default values: `a = 1` -> `a`
+                .map((s) => s.replace(/\s*=.*$/, '').trim())
+                // strip rest: `...args` -> `args`
+                .map((s) => s.replace(/^\.\.\./, '').trim());
+        }
+
+        /** @type {Map<string, string[]>} */
+        const namesToArgs = new Map();
+
+        let proto = Object.getPrototypeOf(obj);
+        for (const key of Reflect.ownKeys(proto)) {
+            if (key === 'constructor') continue;
+
+            const desc = Object.getOwnPropertyDescriptor(proto, key);
+            if (!desc) continue;
+
+            if (typeof desc.value === 'function') {
+                namesToArgs.set(String(key), getArgNames(desc.value));
+            }
+        }
+
+        return namesToArgs;
+    }
+
+    /**
+     * @param {MouseEvent} event
+     */
+    function toggleShowMethods(event) {
+        event?.stopPropagation?.();
+
+        if(event.shiftKey) {
+            setMethodsCollapsedGlobal(!methodsListCollapsed);
+        } else {
+            methodsListCollapsed = !methodsListCollapsed;
+            reposition();
+        }
+    }
+
+    /**
+     * @param name {string}
+     * @param args {any[]}
+     */
+    function runMethod(name, args) {
+        if (!actor) return;
+        if (!methods.has(name)) return;
+
+        selectedMethod = null;
+        console.log(`Running ${name}(${args.join(', ')})`);
+
+        const method = Reflect.get(actor, name);
+        if (typeof method === 'function') {
+            /** @type {Record<string, any>} */
+            const jank = actor; // reassign to please the type checker
+            jank[method.name](args);
+        } else {
+            console.error(`Method ${name} is not a function`);
+        }
+    }
 </script>
 
 <div
-    class="pointer-events-auto relative whitespace-nowrap rounded-lg border border-white/10 bg-slate-900/90 px-2 py-1.5 text-[12px] leading-[1.2] text-white shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
+    class="pointer-events-auto relative whitespace-nowrap rounded-lg border border-white/10 bg-slate-900/90 pl-2 pr-6 py-1.5 text-[12px] leading-[1.2] text-white shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
 >
-    <button
-        type="button"
-        class="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded text-white/80 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-        aria-label={collapsed ? 'Show popper' : 'Hide popper'}
-        title={collapsed ? 'Show (Shift + Click to show all)' : 'Hide (Shift + Click to hide all)'}
-        on:click={toggleCollapsed}
-    >
-        {#if collapsed}
-            <!-- "show" icon (eye) -->
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
-                <circle cx="12" cy="12" r="3" />
-            </svg>
-        {:else}
-            <!-- "hide" icon (eye off) -->
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10.58 10.58A2 2 0 0 0 12 14a2 2 0 0 0 1.42-.58" />
-                <path d="M9.88 4.24A10.94 10.94 0 0 1 12 5c6.5 0 10 7 10 7a18.2 18.2 0 0 1-2.16 3.19" />
-                <path d="M6.61 6.61C3.7 8.58 2 12 2 12s3.5 7 10 7c1.7 0 3.23-.32 4.58-.82" />
-                <path d="M2 2l20 20" />
-            </svg>
-        {/if}
-    </button>
+    <div class="absolute flex flex-row right-1 top-1">
+        <button
+            type="button"
+            class="inline-flex h-5 w-5 items-center justify-center rounded text-white/80 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+            aria-label={stateCollapsed ? 'Show popper' : 'Hide popper'}
+            title={stateCollapsed ? 'Show state (Shift + Click to show all)' : 'Hide state (Shift + Click to hide all)'}
+            on:click={toggleShowState}
+        >
+                <!-- "show" icon (eye) -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                    <circle cx="12" cy="12" r="3" />
+                </svg>
+                <span
+                        class="absolute h-[2px] w-5 rounded bg-current transition-all duration-200 ease-in-out {stateCollapsed ? 'rotate-0 opacity-0 scale-75' : '-rotate-45 opacity-100 scale-100'}"
+                        aria-hidden="true"
+                ></span>
+
+        </button>
+
+        <button
+                type="button"
+                class="inline-flex h-5 w-5 items-center justify-center rounded text-white/80 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                aria-label="Show methods"
+                title={methodsListCollapsed ? 'Show methods (Shift + Click to show all)' : 'Hide methods (Shift + Click to hide all)'}
+                on:click={toggleShowMethods}
+        >
+            <i class="fa fa-terminal"></i>
+            <span
+                    class="absolute h-[2px] w-5 rounded bg-current transition-all duration-200 ease-in-out {methodsListCollapsed ? 'rotate-0 opacity-0 scale-75' : '-rotate-45 opacity-100 scale-100'}"
+                    aria-hidden="true"
+            ></span>
+        </button>
+    </div>
 
     <div class="pr-6">
-        <div class="flex flex-row items-center gap-28">
-            <div class="mb-0.5 font-semibold opacity-90">Actor {actor?.id}</div>
-            <button class=" bg-blue-600 text-white rounded hover:bg-blue-700 w-13 h-5 text-xs flex text-center justify-center items-center"
-                    on:click={() =>
-                    {
-                       toggleAlive(actor, originalColor)
-                    }}>
-                {#if actor.alive}
-                    <p>Kill</p>
-                {:else}
-                    <p>Resurrect</p>
-                {/if}
-            </button>
-        </div>
+        <div class="mb-0.5 font-semibold opacity-90">Actor {actor?.id}</div>
 
-        {#if !collapsed}
+        {#if !stateCollapsed}
             {#if !actor}
                 <div class="font-mono opacity-95"><span class="opacity-90">Actor</span>: <span>null</span></div>
             {:else}
@@ -187,6 +287,32 @@
                 {/if}
             {/if}
         {/if}
+
+        <div class="font-mono">
+            {#if !methodsListCollapsed}
+                {#each methods.entries() as [name, val]}
+                    <div class="font-mono opacity-95 flex items-center gap-1">
+                        <span class="opacity-90">{name}({val.join(', ')})</span>
+
+                        <button
+                                type="button"
+                                class="ml-1 inline-flex h-5 w-5 items-center justify-center rounded text-white/70 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                                aria-label={"Run " + name}
+                                title={"Run " + name}
+                                on:click={() => selectedMethod = [name, val]}
+                        >
+                            <i class="fa fa-play"></i>
+                        </button>
+                    </div>
+                {:else}
+                    <p>No functions found</p>
+                {/each}
+
+                {#if selectedMethod}
+                    <RunActorMethod run={args => selectedMethod && runMethod(selectedMethod[0], args)} cancel={() => selectedMethod = null} methodName={selectedMethod[0]} argumentNames={selectedMethod[1]}  />
+                {/if}
+            {/if}
+        </div>
     </div>
 </div>
 
