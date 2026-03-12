@@ -8,6 +8,9 @@
     /** @type {ActorReadable} */
     export let store;
 
+    /** @type {(actor: Actor, color: string) => void} */
+    export let toggleAlive;
+
     /** @type {(c: boolean) => void} */
     export let setStateCollapsedGlobal;
 
@@ -31,9 +34,12 @@
     }
 
     // these attributes are not shown in the popper
-    const excludedAttributes = ['id', 'nodeColor']
+    const excludedAttributes = ['id', 'nodeColor', 'alive']
 
     $: actor = $store;
+
+    /** @type {string} */
+    $: originalColor = actor.nodeColor;
 
     $: entries =
         actor
@@ -253,6 +259,21 @@
     </div>
 
     <div class="pr-6">
+        <div class="flex flex-row items-center gap-28">
+            <div class="mb-0.5 font-semibold opacity-90">Actor {actor?.id}</div>
+            <button class=" bg-blue-600 text-white rounded hover:bg-blue-700 w-13 h-5 text-xs flex text-center justify-center items-center"
+                    on:click={() =>
+                    {
+                       toggleAlive(actor, originalColor)
+                    }}>
+                {#if actor.alive}
+                    <p>Kill</p>
+                {:else}
+                    <p>Resurrect</p>
+                {/if}
+            </button>
+        </div>
+
         <div class="mb-0.5 font-semibold opacity-90">Actor {actor?.id}</div>
 
         {#if !stateCollapsed}
