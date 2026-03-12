@@ -278,14 +278,13 @@
             }
 
             // group messages by receiver id
-            let list = deliverableMessages.get(message.to);
-
+            let list = deliverableMessages.get(message.destination);
             if (!list) {
                 list = [];
-                deliverableMessages.set(message.to, list);
             }
 
             list.push(message);
+            deliverableMessages.set(message.destination, list);
         }
 
         // deliver messages
