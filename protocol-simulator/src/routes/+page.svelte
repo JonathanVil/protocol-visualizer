@@ -232,7 +232,6 @@
         }
         for (let m of messages.toArray()) {
             if (!restoredMessages.find(/** @param {Message} msg */ msg => msg.id === m.id)) {
-                console.log(m.id)
                 removeMessageNode(m);
             }
         }
