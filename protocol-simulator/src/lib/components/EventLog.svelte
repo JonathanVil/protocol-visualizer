@@ -5,10 +5,8 @@
 </script>
 
 
-<div class="overflow-scroll max-h-[calc(100vh-20rem)] shadow-xl p-2 rounded-md">
+<div class="overflow-scroll max-h-[calc(100vh-20rem)] shadow-xl p-2 rounded-md bg-white">
 	<table class="w-full border-collapse">
-		<thead class="sticky top-0 bg-white">
-		</thead>
 		<tbody>
 			{#each [...eventLog].toReversed() as tick}
 				<tr class="hover:bg-blue-100 transition-colors">
