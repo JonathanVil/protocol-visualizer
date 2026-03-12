@@ -8,7 +8,7 @@
         shift,
         limitShift,
     } from '@floating-ui/dom';
-    import ActorStatePopper from "$lib/components/ActorStatePopper.svelte";
+    import ActorPopper from "$lib/components/ActorPopper.svelte";
     import {writable} from "svelte/store";
     import MessagePopper from "$lib/components/MessagePopper.svelte";
     import {createPopper} from "@popperjs/core";
@@ -186,7 +186,7 @@
             const actorStore = writable(actor);
 
             const update = () => popper.update();
-            const component = mount(ActorStatePopper, {
+            const component = mount(ActorPopper, {
                 target: el,
                 props: { store: actorStore, setStateCollapsedGlobal: setActorStateCollapsed, setMethodsCollapsedGlobal: setActorMethodsCollapsed, reposition: update}
             });
