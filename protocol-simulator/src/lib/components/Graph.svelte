@@ -191,7 +191,20 @@
             const update = () => popper.update();
             const component = mount(ActorPopper, {
                 target: el,
-                props: { store: actorStore, setStateCollapsedGlobal: setActorStateCollapsed, setMethodsCollapsedGlobal: setActorMethodsCollapsed, reposition: update}
+                props: {
+                    store: actorStore,
+                    toggleAlive: (actor, originalColor) => {
+                        //if actor is alive, it will be killed
+                        if (actor.alive) {
+                            changeColor("#525252", actor)
+                            toggleAlive(actor)
+                        } else {
+                            changeColor(originalColor ? originalColor : '#1d4ed8', actor)
+                            toggleAlive(actor)
+                        }
+                    },
+                    setStateCollapsedGlobal: setActorStateCollapsed, setMethodsCollapsedGlobal: setActorMethodsCollapsed, reposition: update
+                },
             });
 
             const popper = node.popper({
@@ -316,6 +329,10 @@
 
     /** @type {(logEntry: String) => void}  */
     export let addLogEntry;
+
+    /** Function used to kill an actor in page.svelte (from graph -> page.svelte)
+     * @type {(actor: Actor) => void} */
+    export let toggleAlive;
 
     /**
      * @param {import('cytoscape').EventObject} evt - The Cytoscape event object

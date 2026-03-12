@@ -12,6 +12,7 @@
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
     /** @typedef {import('$lib/types.js').Actor} Actor */
+    /** @typedef {import('$lib/types.js').TimeoutEntry} TimeOutEntry */
 
 
     /**@type {{ protocols: { name: string; content: string }[] }}*/
@@ -26,6 +27,8 @@
     /** @type {{ tick: number, lines: string[], state: any }[]} */
     let eventLog = [{ tick: 0, lines: [], state: null}]
     let messages = new Queue();
+
+    /** @type {Queue} */
     let timeouts = new Queue();
     let nextActorId = 0;
     let tick = 0;
@@ -44,7 +47,10 @@
 
         //  svelte automatically updates them in the Graph.svelte
         /** @type {Actor} */
-        let actor = watchActor(new actorClass(nextActorId++));
+        let newActor = new actorClass(nextActorId++);
+        newActor.alive = true;
+
+        let actor = watchActor(newActor);
         actors = [...actors, actor];
         let logEntry = "Adding actor"
         console.log(logEntry);
@@ -57,6 +63,14 @@
      * @param {Message} message
      */
     function deliverMessage(message) {
+        // if the message is delivered to a inactive Actor, ignore it
+        if (!actors[message.destination].alive) {
+            let logEntry = `Actor ${message.destination} recieved msg ${message.type} from Actor ${message.source}, but is dead`
+            console.log(logEntry);
+            addLogEntry(logEntry);
+            return;
+        }
+
         let logEntry = `Actor ${message.destination} recieved msg ${message.type} from Actor ${message.source}`
         if (message.data) {
             logEntry = `Actor ${message.destination} recieved msg ${message.type} with data ${message.data} from Actor ${message.source}`
@@ -166,7 +180,7 @@
         let timeoutsState = timeouts.toArray().map(t => structuredClone(t));
 
 
-        let state = {actorsState: actorsState, messagesState: messagesState, timeoutsState: timeoutsState};
+        let state = {actorsState: actorsState, messagesState: messagesState, timeoutsState: timeoutsState };
 
         const entry = eventLog.find(e => e.tick === tick);
         if (entry){
@@ -248,6 +262,16 @@
         // clear eventlog entries that happened after where we restored to
         let index = eventLog.indexOf(entry)
         eventLog = eventLog.slice(0, index + 1);
+
+        //restore population state. First kill those who need to die and then revive the rest <3
+        for (let actor of actors) {
+            if (!actor.alive) {
+                changeColor("#525252", actor);
+            } else {
+                changeColor(actor.nodeColor, actor);
+            }
+        }
+
 
         saveState(); // ensure the copy of state is clean for next rewind
 
@@ -403,6 +427,29 @@
         }
     }
 
+    /** Makes an actor inactive
+     * It no longer can receive message and will remove all its timeouts
+     * @param {Actor} actor
+     * @returns void
+     * */
+    export function toggleAlive(actor) {
+        if (actor.alive) {
+            actor.alive = false;
+            timeouts.remove(/** @param {TimeOutEntry} timeout */ timeout => timeout.actorId === actor.id)
+            let logEntry = `Actor ${actor.id} was killed`
+            console.log(logEntry);
+            addLogEntry(logEntry);
+
+        } else
+        {
+            actor.alive = true;
+            let logEntry = `Actor ${actor.id} was revived`
+            console.log(logEntry);
+            addLogEntry(logEntry);
+        }
+
+    }
+
 
     /** PROTOCOL UTILS */
     /**
@@ -474,6 +521,7 @@
             bind:removeMessageNode={removeMessageNode}
             bind:removeActorNode={removeActorNode}
             bind:messages={messages}
+            toggleAlive={toggleAlive}
             deliverMessage={deliverMessage}
             delayMessage={delayMessage}
             addLogEntry={addLogEntry}
