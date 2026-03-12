@@ -205,7 +205,9 @@
 
         const method = Reflect.get(actor, name);
         if (typeof method === 'function') {
-            method(...args);
+            /** @type {Record<string, any>} */
+            const jank = actor; // reassign to please the type checker
+            jank[method.name](args);
         } else {
             console.error(`Method ${name} is not a function`);
         }
