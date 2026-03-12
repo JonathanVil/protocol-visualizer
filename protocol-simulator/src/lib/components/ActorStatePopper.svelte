@@ -8,11 +8,9 @@
     export let store;
 
 
-    /** @type {(actor: Actor, kill: boolean, color: string) => void} */
+    /** @type {(actor: Actor, color: string) => void} */
     export let toggleAlive;
 
-    /** @type {boolean} */
-    let isInactive = false;
 
     /** @type {(c: boolean) => void} */
     export let setCollapsedGlobal;
@@ -31,7 +29,7 @@
     }
 
     // these attributes are not shown in the popper
-    const excludedAttributes = ['id', 'nodeColor']
+    const excludedAttributes = ['id', 'nodeColor', 'alive']
 
     $: actor = $store;
 
@@ -147,10 +145,9 @@
             <button class=" bg-blue-600 text-white rounded hover:bg-blue-700 w-13 h-5 text-xs flex text-center justify-center items-center"
                     on:click={() =>
                     {
-                       isInactive = !isInactive
-                       toggleAlive(actor, isInactive, originalColor)
+                       toggleAlive(actor, originalColor)
                     }}>
-                {#if !isInactive}
+                {#if actor.alive}
                     <p>Kill</p>
                 {:else}
                     <p>Resurrect</p>

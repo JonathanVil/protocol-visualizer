@@ -189,13 +189,14 @@
                 target: el,
                 props: {
                     store: actorStore,
-                    toggleAlive: (actor, kill, originalColor) => {
-                        if (kill) {
+                    toggleAlive: (actor, originalColor) => {
+                        //if actor is alive, it will be killed
+                        if (actor.alive) {
                             changeColor("#525252", actor)
-                            toggleAlive(actor, kill)
+                            toggleAlive(actor)
                         } else {
                             changeColor(originalColor ? originalColor : '#1d4ed8', actor)
-                            toggleAlive(actor, kill)
+                            toggleAlive(actor)
                         }
                     },
                     setCollapsedGlobal: setActorPoppersCollapsed
@@ -318,7 +319,7 @@
     export let addLogEntry;
 
     /** Function used to kill an actor in page.svelte (from graph -> page.svelte)
-     * @type {(actor: Actor, kill: boolean) => void} */
+     * @type {(actor: Actor) => void} */
     export let toggleAlive;
 
     /**

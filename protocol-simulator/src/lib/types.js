@@ -10,6 +10,7 @@
  *   id: number,
  *   receive(message: { type: string, from: number }): void,
  *   nodeColor: string
+ *   alive: boolean
  * }} Actor
  */
 
