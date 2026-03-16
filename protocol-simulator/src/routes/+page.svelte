@@ -108,6 +108,8 @@
         timeouts = new Queue();
         eventLog = [];
         actors = [];
+        cachedActors = [];
+        previewingRewind = false;
         nextActorId = 0;
         nextMessageId = -1;
         tick = 0;
@@ -124,7 +126,9 @@
     }
 
     function handleTick() {
+        if (paused){return}
         let startTime = Date.now()
+
         const entry = eventLog.find(e => e.tick === tick);
         if (entry) { //if last tick had an event, we save its state for rewinding
             saveState()
@@ -132,7 +136,6 @@
         }
 
         tick++
-
         //update messages by one tick
         handleMessages()
 
@@ -216,7 +219,10 @@
         // restore actors
         restoringState = true;
         paused = true;
+
         previewingRewind = true;
+
+
         tick = restoredTick;
         if (actors.length > cachedActors.length) {
             cachedActors = actors
@@ -227,11 +233,8 @@
 
         let actorsState = entry.state.actorsState;
 
-        // TODO: allow previewing rewind without killing actors
         if (actorsState.length < actors.length) {
-            console.log("state shorter than actors")
             for (let i = actorsState.length; i < actors.length; i++) {
-                console.log("removing " + i)
                 removeActorNode(actors[i]);
             }
             actors = actors.slice(0, actorsState.length);
@@ -240,7 +243,6 @@
 
         // we may have been previewing something with n actors, and now we preview with n+1 actors. then, we must re-add the missing actors visually
         for (let i = 0; i < actorsState.length; i++) {
-            console.log("adding " + i);
             addActorNodeManually(actors[i]);
         }
 
@@ -277,7 +279,7 @@
         let restoredMessages = new Queue();
         for (let m of entry.state.messagesState) { // we saved an array, now we make it a queue
             restoredMessages.push(m);
-            animateMessage(m) //TODO: allow animating messages instantly
+            animateMessage(m, true)
         }
 
         messages = restoredMessages
@@ -305,12 +307,13 @@
     function finalizeRewind() { // Switches from previewing a previous state, to actually executing from that state
         // clear eventlog entries that happened after where we restored to
         let index = eventLog.findIndex(e => e.tick === tick);
-        if (index) {
+        if (index === -1) {
+            index = eventLog.findIndex(e => e.tick === tick - 1); //sometimes the tick will be off by one, dont worry about it
+        }
+        if (index !== -1) {
             eventLog = eventLog.slice(0, index + 1);
         }
 
-        const entry = eventLog.find(e => e.tick === tick);
-        if (!entry) return;
 
         cachedActors = actors
 
@@ -318,7 +321,7 @@
 
     }
 
-    /** @type {(msg: Message) => void} */
+    /** @type {(msg: Message, instant: boolean) => void} */
     let animateMessage;
     function handleMessages() {
         let n = messages.length;
@@ -331,7 +334,7 @@
 
             messages.push(message);
 
-            animateMessage(message)
+            animateMessage(message, false)
 
 
 
@@ -458,7 +461,7 @@
         let arrivalTick = tick + transitTime;
         let message = {id: getNextMessageId(), source: from, destination: to, type: type, sentTick: tick, arrivalTick: arrivalTick, data: data}
         messages.push(message)
-        animateMessage(message);
+        animateMessage(message, false);
     }
 
 
@@ -510,7 +513,7 @@
             console.log(logEntry);
             addLogEntry(logEntry);
             message.arrivalTick = Number(message.arrivalTick) + Number(delay);
-            animateMessage(message);
+            animateMessage(message, true);
         }
     }
 

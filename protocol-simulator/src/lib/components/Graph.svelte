@@ -564,8 +564,9 @@
         });
     }
 
-    /** @param {Message} message */
-    export function animateMessage(message) {
+    /** @param {Message} message
+     *  @param {boolean} instant */
+    export function animateMessage(message, instant) {
         const source = cyInstance.getElementById(message.source).position();
         const target = cyInstance.getElementById(message.destination).position();
 
@@ -597,10 +598,13 @@
             targetPosThisTickY = target.y;
         }
 
+        let time = tickSize
+        if (instant) { time = 0}
+
         msg.animate({
             position: {x: targetPosThisTickX, y: targetPosThisTickY}
         }, {
-            duration: tickSize,
+            duration: time,
             easing: 'linear',
             queue: false,
             complete: () => {
