@@ -5,6 +5,8 @@
     export let sourceCode = "";
 
     /*!!!                MONACO EDITOR                  !!!*/
+    /** @type {typeof import('monaco-editor')} */
+    let monaco;
 
     //JSDOC comment for type
     /** @type {HTMLElement | null} */
@@ -15,22 +17,26 @@
 
     let ignoreNextUpdate = false;
 
+
+    /*!!!                Built-in functions                 !!!*/
     /** @type {boolean} */
     let showBuiltInFunctions = false;
     /** @type {HTMLElement | null} */
     let builtInFunctionsEditorDiv = null;
     /** @type {import('monaco-editor').editor.IStandaloneCodeEditor} */
     let builtInEditorInstance;
-    /** @type {String} */
-    let builtInFunctions = "hej";
 
-    /** @type {typeof import('monaco-editor')} */
-    let monaco2;
+    let file;
+    /** @type {String} */
+    let builtInFunctions = ""
+
+
 
     onMount(async () => {
         // dynamic import only runs in the browser
-        const monaco = await import('monaco-editor');
-        monaco2 = await import('monaco-editor');
+        monaco = await import('monaco-editor');
+        file = await fetch("built-in-functions.txt");
+        builtInFunctions = await file.text();
 
         if (!editorDiv) return;
 
@@ -63,11 +69,11 @@
     }
 
     $: if (builtInFunctionsEditorDiv && showBuiltInFunctions) {
-        if (monaco2) {
-            builtInEditorInstance = monaco2.editor.create(builtInFunctionsEditorDiv, {
+        if (monaco) {
+            builtInEditorInstance = monaco.editor.create(builtInFunctionsEditorDiv, {
                 value: builtInFunctions,
                 language: "javascript",
-                theme: "hc-light",
+                theme: "vs-dark",
                 automaticLayout: true,
                 minimap: { enabled: false },
                 fontSize: 14,
@@ -89,7 +95,7 @@
 
 {#if showBuiltInFunctions}
     awd
-    <div bind:this={builtInFunctionsEditorDiv} class="absolute top-10 right-2 w-1/2 h-4/5 border rounded-md "></div>
+    <div bind:this={builtInFunctionsEditorDiv} class="absolute top-10 right-2 w-1/2 h-4/5 border-2 rounded-md "></div>
 {/if}
 
 
