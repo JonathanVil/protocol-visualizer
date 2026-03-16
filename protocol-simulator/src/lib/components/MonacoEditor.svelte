@@ -11,6 +11,9 @@
     /** @type {EditorTab | null} */
     export let selectedTab = null;
 
+    /** @type {string | null} */
+    let editingTabId = null;
+
     /** @type {HTMLElement | null} */
     let editorDiv = null;
 
@@ -79,21 +82,89 @@
      * @param {string} name
      * @param {string | null} code
      */
-    export function openTab(name, code) {
+    export function openNewTab(name, code) {
         tabs = [...tabs, {
             id: crypto.randomUUID(),
             name,
             model: monaco.editor.createModel(code ?? "", "javascript")
         }]
+
+        setTab(tabs[tabs.length - 1]);
+        editingTabId = tabs[length - 1].id;
+    }
+
+    /** @param {EditorTab} tab */
+    export function closeTab(tab) {
+        if (tabs.length === 1) return;
+
+        let i = tabs.indexOf(tab);
+        tabs = tabs.filter(t => t.id !== tab.id);
+
+        if (selectedTab?.id === tab.id) {
+            setTab(tabs[i - 1] ?? null);
+        }
     }
 </script>
 
-<div class="flex-row gap-2">
-    {#each tabs as tab}
-        <button class="border border-black" on:click={() => setTab(tab)}>
-            {tab.name}
-        </button>
-    {/each}
+<div class="flex items-center justify-between gap-3 rounded-t-md border border-b-0 border-gray-300 bg-gray-100 px-3 py-2">
+    <div class="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
+        {#each tabs as tab}
+            <div
+                class={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition ${
+                    selectedTab?.id === tab.id
+                        ? "border-blue-500 bg-white text-blue-700 shadow-sm"
+                        : "border-gray-300 bg-gray-50 text-gray-700 hover:bg-white"
+                }`}
+            >
+
+                {#if editingTabId === tab.id}
+                    <input
+                        class="bg-transparent text-left font-medium outline-none placeholder:text-gray-400"
+                        bind:value={tab.name}
+                        aria-label="Tab name"
+                        size={Math.max(tab.name.length, 1)}
+                        autofocus
+                        on:blur={() => editingTabId = null}
+                        on:keydown={(event) => {
+                            if (event.key === "Enter" || event.key === "Escape") {
+                                editingTabId = null;
+                            }
+                        }}
+                    />
+                {:else}
+                    <button
+                        type="button"
+                        class="truncate text-left font-medium flex items-center gap-2"
+                        on:click={e => e.shiftKey ? closeTab(tab) : setTab(tab)}
+                        on:dblclick={() => editingTabId = tab.id}
+                    >
+                        <span class="h-2 w-2 rounded-full bg-current opacity-70"></span>
+                        {tab.name}
+                    </button>
+                {/if}
+
+                <button
+                    type="button"
+                    class="flex h-5 w-5 items-center justify-center rounded text-gray-400 hover:bg-gray-200 hover:text-gray-700"
+                    aria-label={`Close ${tab.name}`}
+                    title={`Close ${tab.name}`}
+                    on:click={() => closeTab(tab)}
+                >
+                    ×
+                </button>
+            </div>
+        {/each}
+    </div>
+
+    <button
+        type="button"
+        class="shrink-0 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:bg-gray-50"
+        aria-label="Open tab"
+        title="Open tab"
+        on:click={() => openNewTab("New tab", null)}
+    >
+        + Open
+    </button>
 </div>
 
-<div bind:this={editorDiv} class="w-full h-full border border-gray-300 rounded-md"></div>
+<div bind:this={editorDiv} class="h-full w-full rounded-b-md border border-gray-300"></div>
