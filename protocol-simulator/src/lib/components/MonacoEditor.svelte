@@ -26,7 +26,6 @@
     let monaco;
 
     let showLoadExistingMenu = false;
-    const existingProtocolOptions = ["Default", "Bully", "Ricart-Agrawala"];
 
     /** @type {HTMLDivElement | null} */
     let loadExistingMenuWrapper = null;
