@@ -590,7 +590,13 @@
 {#if leftPanel === LeftPanelOptions.CODE}
     <!--Code block-->
     <div class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
-        <MonacoEditor bind:tabs={editorTabs} bind:selectedTab={selectedEditorTab} bind:openNewTab={openNewEditorTab} bind:predefinedProtocols={predefinedProtocols} />
+        <MonacoEditor
+                bind:tabs={editorTabs}
+                bind:selectedTab={selectedEditorTab}
+                bind:openNewTab={openNewEditorTab}
+                bind:predefinedProtocols={predefinedProtocols}
+                spawnActor={spawnActor}
+        />
     </div>
 {:else if leftPanel === LeftPanelOptions.LOG}
     <!--Log block-->
@@ -602,13 +608,6 @@
 
     </div>
 {/if}
-
-
-<!--Send actor button-->
-<button class="absolute bottom-2 left-120 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center"
-        on:click={spawnActor}>
-    Spawn actor
-</button>
 
 <!--Left panel selector-->
 <div class="absolute top-14 left-5 flex items-center gap-1 rounded-lg bg-white/80 backdrop-blur p-1 shadow">
