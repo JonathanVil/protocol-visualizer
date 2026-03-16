@@ -11,7 +11,10 @@
     /** @type {EditorTab | null} */
     export let selectedTab = null;
 
+    /** @type {{ name: string; content: string }[] } */
     export let predefinedProtocols;
+
+    let defaultProtocol = predefinedProtocols.find(/** @type {{ name: string; content: string }} */ p => p.name === "Default");
 
     /** @type {string | null} */
     let editingTabId = null;
@@ -63,6 +66,8 @@
             fontSize: 14,
             model: selectedTab?.model ?? null
         });
+
+        openNewTab("New tab", null);
     });
 
     /** @param {EditorTab} tab */
@@ -103,7 +108,7 @@
         let newTab = {
             id: crypto.randomUUID(),
             name,
-            model: monaco.editor.createModel(code ?? "", "javascript")
+            model: monaco.editor.createModel(code ?? defaultProtocol?.content ?? "", "javascript")
         }
         tabs = [...tabs, newTab]
 
@@ -202,7 +207,7 @@
                     Select protocol
                 </div>
 
-                {#each predefinedProtocols as protocol}
+                {#each predefinedProtocols.filter(p => p.name !== "Default") as protocol}
                     <button
                         type="button"
                         class="block w-full px-3 py-2 text-left text-sm text-gray-700 transition hover:bg-gray-100"
