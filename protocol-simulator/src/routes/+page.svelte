@@ -126,7 +126,6 @@
     }
 
     function handleTick() {
-        if (paused){return}
         let startTime = Date.now()
 
         const entry = eventLog.find(e => e.tick === tick);
@@ -149,7 +148,7 @@
             if (elapsedTime > tickSize) {
                 console.log(`--------------------TIME TO HANDLE TICK HIGHER THAN TICKSIZE--------------------`);
             }
-            setTimeout(handleTick, tickSize - elapsedTime); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
+            setTimeout(() => !paused && handleTick(), tickSize - elapsedTime); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
         }
     }
 
