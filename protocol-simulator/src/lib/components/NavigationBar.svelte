@@ -1,4 +1,6 @@
 ﻿<script>
+    import InfoToolTip from "$lib/components/InfoToolTip.svelte";
+
     export let predefinedProtocols;
 
     /**
@@ -26,6 +28,10 @@
         </select>
 
         <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" on:click={() => {leftPanel = "code"; sourceCode = selectedProtocol?.content ?? ""}}>Load</button>
+        <div class="pt-1 pb-7">
+            <InfoToolTip text="Load predefined protocols from the list."></InfoToolTip>
+        </div>
+
     </div>
 
     <a href="https://github.com/JonathanVil/protocol-visualizer" aria-label="GitHub">

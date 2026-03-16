@@ -38,7 +38,7 @@
             <div class="flex flex-col w-30">
                 <div class="flex flex-row gap-18">
                     Data
-                    <InfoToolTip text="Enter message content. Click 'Send' to put the message in transit"></InfoToolTip>
+                    <InfoToolTip text="Enter message content. Click 'Send' to put the message in transit in the network"></InfoToolTip>
                 </div>
 
                 <input class="border p-1 h-7" id="data" bind:value={data} placeholder="Data" />
