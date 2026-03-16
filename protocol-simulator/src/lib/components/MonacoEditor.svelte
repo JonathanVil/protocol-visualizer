@@ -51,3 +51,10 @@
 </script>
 
 <div bind:this={editorDiv} class="w-full h-full border border-gray-300 rounded-md"></div>
+<button
+        class="absolute top-2 right-2 flex items-center gap-1 rounded-lg bg-white hover:bg-gray-200 focus:outline-none"
+        aria-label="Built-in functions" title="See built-in functions"
+>
+    <img src="icon_func.png" class="w-8" alt="Italian Trulli">
+</button>
+
