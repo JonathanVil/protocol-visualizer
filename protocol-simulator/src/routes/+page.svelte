@@ -562,13 +562,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
 <!--Top navigation bar-->
-<NavigationBar
-        bind:predefinedProtocols={predefinedProtocols}
-        loadProtocol={(name, code) => {
-            openNewEditorTab(name, code)
-            leftPanel = "code";
-        }}
-></NavigationBar>
+<NavigationBar></NavigationBar>
 
 <!--Dotted graph (background)-->
 <div class="cy-wrapper">
@@ -596,7 +590,7 @@
 {#if leftPanel === LeftPanelOptions.CODE}
     <!--Code block-->
     <div class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
-        <MonacoEditor bind:tabs={editorTabs} bind:selectedTab={selectedEditorTab} bind:openNewTab={openNewEditorTab} />
+        <MonacoEditor bind:tabs={editorTabs} bind:selectedTab={selectedEditorTab} bind:openNewTab={openNewEditorTab} bind:predefinedProtocols={predefinedProtocols} />
     </div>
 {:else if leftPanel === LeftPanelOptions.LOG}
     <!--Log block-->

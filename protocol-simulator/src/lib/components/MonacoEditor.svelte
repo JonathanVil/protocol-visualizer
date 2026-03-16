@@ -11,6 +11,8 @@
     /** @type {EditorTab | null} */
     export let selectedTab = null;
 
+    export let predefinedProtocols;
+
     /** @type {string | null} */
     let editingTabId = null;
 
@@ -23,6 +25,12 @@
     /** @type {typeof import('monaco-editor')} */
     let monaco;
 
+    let showLoadExistingMenu = false;
+    const existingProtocolOptions = ["Default", "Bully", "Ricart-Agrawala"];
+
+    /** @type {HTMLDivElement | null} */
+    let loadExistingMenuWrapper = null;
+
     onMount(async () => {
         self.MonacoEnvironment = {
             getWorker(_, label) {
@@ -34,6 +42,15 @@
             }
         };
 
+        /** @param {Event} event */
+        const handleDocumentClick = (event) => {
+            if (!showLoadExistingMenu) return;
+            if (event.target instanceof Node && loadExistingMenuWrapper?.contains(event.target)) return;
+
+            showLoadExistingMenu = false;
+        };
+
+        document.addEventListener("click", handleDocumentClick);
 
         monaco = await import("monaco-editor");
 
@@ -158,15 +175,49 @@
         {/each}
     </div>
 
-    <button
-        type="button"
-        class="shrink-0 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:bg-gray-50"
-        aria-label="Open tab"
-        title="Open tab"
-        on:click={() => openNewTab(null, null)}
-    >
-        + Open
-    </button>
+    <div class="relative flex shrink-0 items-center gap-2" bind:this={loadExistingMenuWrapper}>
+        <button
+            type="button"
+            class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:bg-gray-50"
+            aria-label="Open tab"
+            title="Open tab"
+            on:click={() => openNewTab(null, null)}
+        >
+            + Open
+        </button>
+
+        <button
+            type="button"
+            class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:bg-gray-50"
+            aria-label="Load existing"
+            title="Load existing"
+            aria-expanded={showLoadExistingMenu}
+            on:click={() => showLoadExistingMenu = !showLoadExistingMenu}
+        >
+            Load existing
+        </button>
+
+        {#if showLoadExistingMenu}
+            <div class="absolute right-0 top-full z-10 mt-2 w-52 rounded-md border border-gray-300 bg-white py-1 shadow-lg">
+                <div class="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Select protocol
+                </div>
+
+                {#each predefinedProtocols as protocol}
+                    <button
+                        type="button"
+                        class="block w-full px-3 py-2 text-left text-sm text-gray-700 transition hover:bg-gray-100"
+                        on:click={() => {
+                            openNewTab(protocol.name, protocol.content);
+                            showLoadExistingMenu = false;
+                        }}
+                    >
+                        {protocol.name}
+                    </button>
+                {/each}
+            </div>
+        {/if}
+    </div>
 </div>
 
 <div bind:this={editorDiv} class="h-full w-full rounded-b-md border border-gray-300"></div>
