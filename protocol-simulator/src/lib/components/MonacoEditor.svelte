@@ -67,7 +67,9 @@
             model: selectedTab?.model ?? null
         });
 
-        openNewTab("New tab", null);
+        if(tabs.length === 0) {
+            openNewTab("New tab", null);
+        }
     });
 
     /** @param {EditorTab} tab */
