@@ -506,8 +506,8 @@
     /** @param {Actor} actor **/
     export function addActorNodeManually(actor){
         cyInstance.batch(() => {
-            ensureActorNode(actor)
-            if (actors.length >= 2) {
+            let added, _ = ensureActorNode(actor)
+            if (actors.length >= 2 && added) {
                 for (let i = 0; i < actors.length - 1; i++) {
                     const nodeA = actors[i];
                     const newEdge = {source: nodeA.id, target: actor.id, label: ""};
