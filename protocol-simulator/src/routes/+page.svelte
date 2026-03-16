@@ -204,6 +204,9 @@
     /** @type {(message: Message) => void} */
     let removeMessageNode;
 
+    /** @type {() => void} */
+    let clearMessageNodes;
+
     /** @type {(actor: Actor) => void} */
     let removeActorNode;
     /** @param {number} restoredTick **/
@@ -272,9 +275,8 @@
             updateActorStatePopper(actors[i]); // reflect the updated fields
         }
 
-        for (let m of messages.toArray()) {
-            removeMessageNode(m);
-        }
+        clearMessageNodes();
+
 
         // restore messages (note: we dont restore the nextMessageId)
         let restoredMessages = new Queue();
@@ -461,7 +463,7 @@
         addLogEntry(logEntry);
         let transitTime = getTransitTime();
         let arrivalTick = tick + transitTime;
-        let message = {id: getNextMessageId(), source: from, destination: to, type: type, sentTick: tick, arrivalTick: arrivalTick, data: data}
+        let message = {id: getNextMessageId(), source: Number(from), destination: Number(to), type: type, sentTick: tick, arrivalTick: arrivalTick, data: data}
         messages.push(message)
         animateMessage(message, false);
     }
@@ -620,6 +622,7 @@
             removeMessage={removeMessage}
             bind:changeColor={changeColor}
             bind:addActorNodeManually={addActorNodeManually}
+            bind:clearMessageNodes={clearMessageNodes}
             actors={actors}
             tickSize={tickSize}
             tick={tick}

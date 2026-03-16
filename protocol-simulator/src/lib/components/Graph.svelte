@@ -461,18 +461,23 @@
     export function removeMessageNode (message) {
         const id = message.id;
         const messageNode = messagesToNodes.get(id);
+        if (!messageNode) return;
 
-        if (messageNode) {
-            //remove messageNode (and popper) from graph
-            if (messageNode.scratch('messagePopup')) {
-                removeMessagePopper(messageNode)
-            }
-            cyInstance.remove(messageNode);
-            graphMessageNodes.splice(graphMessageNodes.indexOf(messageNode), 1);
-            messagesToNodes.delete(id);
-        } else {
-            console.warn("Could not find message node to drop", messageNode)
+
+        //remove messageNode (and popper) from graph
+        if (messageNode.scratch('messagePopup')) {
+            removeMessagePopper(messageNode)
         }
+        cyInstance.remove(messageNode);
+        graphMessageNodes.splice(graphMessageNodes.indexOf(messageNode), 1);
+        messagesToNodes.delete(id);
+
+    }
+
+    export function clearMessageNodes() {
+        graphMessageNodes?.forEach(node => {
+            cyInstance.remove(node);
+        });
     }
 
     /**
