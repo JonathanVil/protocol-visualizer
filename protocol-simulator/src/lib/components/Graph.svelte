@@ -148,6 +148,7 @@
         const nodeId = String(actor.id);
         cyInstance.getElementById(nodeId).remove();
         removeActorStatePopper(actor.id);
+        rearrangeGraph()
     }
 
     // Helper: ensure an edge exists
@@ -506,22 +507,38 @@
 
     /** @param {Actor} actor **/
     export function addActorNodeManually(actor){
-        cyInstance.batch(() => {
-            let added, _ = ensureActorNode(actor)
-            if (actors.length >= 2 && added) {
-                for (let i = 0; i < actors.length - 1; i++) {
-                    const nodeA = actors[i];
-                    const newEdge = {source: nodeA.id, target: actor.id, label: ""};
+        if (!actor) {
+            console.warn("addActorNodeManually called with undefined actor");
+            return;
+        }
 
-                    // keep your local edges array updated (optional but consistent)
-                    // and ensure the edge exists in Cytoscape
-                    const edgeAdded = ensureEdge(newEdge);
-                    if (edgeAdded) {
-                        edges = [...edges, newEdge];
-                    }
+        cyInstance.batch(() => {
+
+            const { added } = ensureActorNode(actor);
+            if (!added) return;
+
+            const newId = String(actor.id);
+
+            const existingActors = cyInstance.nodes(`.actor[id != "${newId}"]`);
+
+            for (const node of existingActors) {
+
+                const otherNum = Number(node.id());
+                const newNum = Number(newId);
+
+                const source = otherNum
+                const target = newNum
+
+                const newEdge = { source, target, label: "" };
+
+                const edgeAdded = ensureEdge(newEdge);
+
+                if (edgeAdded) {
+                    edges = [...edges, newEdge];
                 }
             }
-            rearrangeGraph()
+
+            rearrangeGraph();
         });
     }
 
