@@ -12,11 +12,12 @@
 				<tr class="hover:bg-blue-100 transition-colors">
 					<td class="p-2 font-semibold align-top">{tick.tick}</td>
 					<td class="p-2 align-top">
-						<i
+						<button
 							class="fa fa-fast-backward cursor-pointer"
-							aria-hidden="true"
+							aria-label="Rewind"
+							title="Rewind"
 							on:click={() => restoreState(tick.tick)}
-						></i>
+						></button>
 					</td>
 					<td class="p-2">
 						{#each tick.lines.toReversed() as line}
