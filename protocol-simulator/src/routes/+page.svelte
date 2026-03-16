@@ -22,7 +22,7 @@
     let sourceCode = "// Write your code here...";
 
     /** @type {Actor[]} */
-    let actors = [];
+    let actors = []; // the list of currently active actors
 
     /** @type {{ tick: number, lines: string[], state: any }[]} */
     let eventLog = []
@@ -36,6 +36,8 @@
     let restoringState = false;
     let paused = true;
     let previewingRewind = false;
+    /** @type {Actor[]} */
+    let cachedActors = [] // used when previewing and rewinding, this is the list of all actors at the latest point in the eventlog
 
     function spawnActor() {
         /** @type {ActorConstructor|null} */
@@ -216,17 +218,32 @@
         paused = true;
         previewingRewind = true;
         tick = restoredTick;
+        if (actors.length > cachedActors.length) {
+            cachedActors = actors
+        } else {
+            actors = cachedActors
+        }
+
 
         let actorsState = entry.state.actorsState;
 
         // TODO: allow previewing rewind without killing actors
         if (actorsState.length < actors.length) {
+            console.log("state shorter than actors")
             for (let i = actorsState.length; i < actors.length; i++) {
+                console.log("removing " + i)
                 removeActorNode(actors[i]);
             }
-            //actors = actors.slice(0, actorsState.length);
+            actors = actors.slice(0, actorsState.length);
+            nextActorId = actors.length;
         }
-        //nextActorId = actors.length;
+
+        // we may have been previewing something with n actors, and now we preview with n+1 actors. then, we must re-add the missing actors visually
+        for (let i = 0; i < actorsState.length; i++) {
+            console.log("adding " + i);
+            addActorNodeManually(actors[i]);
+        }
+
 
         for (let i = 0; i < actorsState.length; i++) {
             const savedActor = actorsState[i];
@@ -248,8 +265,8 @@
                 }
             }
         }
-        for (let actor of actors) {
-            updateActorStatePopper(actor); // reflect the updated fields
+        for (let i = 0; i < actors.length; i++) {
+            updateActorStatePopper(actors[i]); // reflect the updated fields
         }
 
         for (let m of messages.toArray()) {
@@ -280,7 +297,6 @@
             }
         }
 
-
         saveState(); // ensure the copy of state is clean for next rewind
 
         restoringState = false;
@@ -292,6 +308,12 @@
         if (index) {
             eventLog = eventLog.slice(0, index + 1);
         }
+
+        const entry = eventLog.find(e => e.tick === tick);
+        if (!entry) return;
+
+        cachedActors = actors
+
         previewingRewind = false;
 
     }
