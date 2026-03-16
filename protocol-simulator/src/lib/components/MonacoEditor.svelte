@@ -35,7 +35,7 @@
     onMount(async () => {
         // dynamic import only runs in the browser
         monaco = await import('monaco-editor');
-        file = await fetch("built-in-functions.txt");
+        file = await fetch("BASICS.md");
         builtInFunctions = await file.text();
 
         if (!editorDiv) return;
@@ -72,7 +72,7 @@
         if (monaco) {
             builtInEditorInstance = monaco.editor.create(builtInFunctionsEditorDiv, {
                 value: builtInFunctions,
-                language: "javascript",
+                language: "markdown",
                 theme: "vs-dark",
                 automaticLayout: true,
                 minimap: { enabled: false },
@@ -94,7 +94,7 @@
 </button>
 
 {#if showBuiltInFunctions}
-    <div bind:this={builtInFunctionsEditorDiv} class="absolute top-10 right-2 w-1/2 h-4/5 border-2 rounded-md "></div>
+    <div bind:this={builtInFunctionsEditorDiv} class="absolute top-10 right-2 w-2/3 h-4/5 border-2 rounded-md "></div>
 {/if}
 
 
