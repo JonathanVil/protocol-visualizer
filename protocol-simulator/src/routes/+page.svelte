@@ -224,9 +224,9 @@
             for (let i = actorsState.length; i < actors.length; i++) {
                 removeActorNode(actors[i]);
             }
-            actors = actors.slice(0, actorsState.length);
+            //actors = actors.slice(0, actorsState.length);
         }
-        nextActorId = actors.length;
+        //nextActorId = actors.length;
 
         for (let i = 0; i < actorsState.length; i++) {
             const savedActor = actorsState[i];
@@ -260,7 +260,7 @@
         let restoredMessages = new Queue();
         for (let m of entry.state.messagesState) { // we saved an array, now we make it a queue
             restoredMessages.push(m);
-            animateMessage(m)
+            animateMessage(m) //TODO: allow animating messages instantly
         }
 
         messages = restoredMessages
@@ -270,9 +270,6 @@
         for (let t of entry.state.timeoutsState) {
             timeouts.push(t);
         }
-
-
-
 
         //restore population state. First kill those who need to die and then revive the rest <3
         for (let actor of actors) {
@@ -414,8 +411,10 @@
     /** @type {(color: any, actor: Actor) => void} */
     export let changeColor;
 
+    /** @type {(actor: Actor) => void} */
+    export let addActorNodeManually;
+
     // These are the functions we export into the Actors
-    // TODO: put these somewhere nice :)
 
     /** @param {number} from
      *  @param {number} to
@@ -593,6 +592,7 @@
             addLogEntry={addLogEntry}
             removeMessage={removeMessage}
             bind:changeColor={changeColor}
+            bind:addActorNodeManually={addActorNodeManually}
             actors={actors}
             tickSize={tickSize}
             tick={tick}

@@ -503,6 +503,27 @@
         }
     }
 
+    /** @param {Actor} actor **/
+    export function addActorNodeManually(actor){
+        cyInstance.batch(() => {
+            ensureActorNode(actor)
+            if (actors.length >= 2) {
+                for (let i = 0; i < actors.length - 1; i++) {
+                    const nodeA = actors[i];
+                    const newEdge = {source: nodeA.id, target: actor.id, label: ""};
+
+                    // keep your local edges array updated (optional but consistent)
+                    // and ensure the edge exists in Cytoscape
+                    const edgeAdded = ensureEdge(newEdge);
+                    if (edgeAdded) {
+                        edges = [...edges, newEdge];
+                    }
+                }
+            }
+            cyInstance.layout({name: 'circle', radius: 120, avoidOverlap: true, fit: true}).run();
+        });
+    }
+
     //Adding Nodes (incrementally)
     $: if (cyInstance) {
 
