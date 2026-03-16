@@ -79,10 +79,26 @@
     }
 
     /**
-     * @param {string} name
-     * @param {string | null} code
+     * @param {string | null | undefined} name
+     * @param {string | null | undefined} code
      */
     export function openNewTab(name, code) {
+        if (!name) {
+            const hasPlainNewTab = tabs.some((t) => t.name === "New tab");
+
+            const maxNewTabNumber = Math.max(
+                1,
+                ...tabs.map(t => {
+                    const match = t.name.match(/^New tab (\d+)$/);
+                    return match ? Number.parseInt(match[1], 10) : 0;
+                })
+            );
+
+            name = hasPlainNewTab
+                ? `New tab ${maxNewTabNumber + 1}`
+                : "New tab";
+        }
+
         tabs = [...tabs, {
             id: crypto.randomUUID(),
             name,
@@ -161,7 +177,7 @@
         class="shrink-0 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:bg-gray-50"
         aria-label="Open tab"
         title="Open tab"
-        on:click={() => openNewTab("New tab", null)}
+        on:click={() => openNewTab(null, null)}
     >
         + Open
     </button>
