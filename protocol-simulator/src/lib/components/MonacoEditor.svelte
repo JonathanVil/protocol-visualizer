@@ -6,7 +6,7 @@
     /** @typedef {import('$lib/types.js').EditorTab} EditorTab */
 
     /** @type {EditorTab[]} */
-    let tabs = [];
+    export let tabs = [];
 
     /** @type {EditorTab | null} */
     export let selectedTab = null;
@@ -47,21 +47,6 @@
             fontSize: 14,
             model: selectedTab?.model ?? null
         });
-
-        tabs = [
-            {
-                id: crypto.randomUUID(),
-                name: "Protocol 1",
-                model: monaco.editor.createModel("// code here", "javascript"),
-            },
-            {
-                id: crypto.randomUUID(),
-                name: "Protocol 2",
-                model: monaco.editor.createModel("// other code", "javascript")
-            }
-        ]
-
-        setTab(tabs[0]);
     });
 
     /** @param {EditorTab} tab */
@@ -99,14 +84,15 @@
                 : "New tab";
         }
 
-        tabs = [...tabs, {
+        let newTab = {
             id: crypto.randomUUID(),
             name,
             model: monaco.editor.createModel(code ?? "", "javascript")
-        }]
+        }
+        tabs = [...tabs, newTab]
 
-        setTab(tabs[tabs.length - 1]);
-        editingTabId = tabs[length - 1].id;
+        setTab(newTab);
+        //editingTabId = newTab.id;
     }
 
     /** @param {EditorTab} tab */
@@ -117,7 +103,7 @@
         tabs = tabs.filter(t => t.id !== tab.id);
 
         if (selectedTab?.id === tab.id) {
-            setTab(tabs[i - 1] ?? null);
+            setTab(tabs[i - 1] ?? tabs[0] ?? null);
         }
     }
 </script>

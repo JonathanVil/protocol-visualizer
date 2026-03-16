@@ -20,8 +20,14 @@
     export let data; // props from +page.server.js
     let predefinedProtocols = data.protocols;
 
+    /** @type {EditorTab[]} */
+    let editorTabs = [];
+
     /** @type {EditorTab | null} */
     let selectedEditorTab = null;
+
+    /** @type {(name: string | null | undefined, code: string | null | undefined) => void} */
+    let openNewEditorTab;
 
     /** @type {Actor[]} */
     let actors = [];
@@ -558,13 +564,10 @@
 <!--Top navigation bar-->
 <NavigationBar
         bind:predefinedProtocols={predefinedProtocols}
-        bind:leftPanel={leftPanel}
-        bind:sourceCode={
-            () => selectedEditorTab?.model.getValue() ?? "",
-            (v) => {
-                selectedEditorTab?.model.setValue(v);
-            }
-        }
+        loadProtocol={(name, code) => {
+            openNewEditorTab(name, code)
+            leftPanel = "code";
+        }}
 ></NavigationBar>
 
 <!--Dotted graph (background)-->
@@ -593,7 +596,7 @@
 {#if leftPanel === LeftPanelOptions.CODE}
     <!--Code block-->
     <div class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
-        <MonacoEditor bind:selectedTab={selectedEditorTab} />
+        <MonacoEditor bind:tabs={editorTabs} bind:selectedTab={selectedEditorTab} bind:openNewTab={openNewEditorTab} />
     </div>
 {:else if leftPanel === LeftPanelOptions.LOG}
     <!--Log block-->

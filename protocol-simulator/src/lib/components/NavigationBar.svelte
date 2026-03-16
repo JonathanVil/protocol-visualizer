@@ -6,10 +6,8 @@
      */
     let selectedProtocol = null;
 
-    export let sourceCode;
-
-    export let leftPanel;
-
+    /** @type {(name: string, content: string) => void} */
+    export let loadProtocol;
 </script>
 
 <header class="h-14 bg-white shadow flex items-center justify-between px-6">
@@ -25,7 +23,7 @@
             {/each}
         </select>
 
-        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" on:click={() => {leftPanel = "code"; sourceCode = selectedProtocol?.content ?? ""}}>Load</button>
+        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" on:click={() => selectedProtocol && loadProtocol(selectedProtocol.name, selectedProtocol.content)}>Load</button>
     </div>
 
     <a href="https://github.com/JonathanVil/protocol-visualizer" aria-label="GitHub">
