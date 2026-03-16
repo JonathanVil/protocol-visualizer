@@ -600,6 +600,7 @@
 
 <!--Send actor button-->
 <button class="absolute bottom-2 left-120 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center"
+        aria-label="Spawn actor" title="Spawn actor with the defined source code"
         on:click={spawnActor}>
     Spawn actor
 </button>
