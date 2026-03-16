@@ -89,6 +89,7 @@
         eventLog = [];
         actors = [];
         nextActorId = 0;
+        nextMessageId = -1;
         tick = 0;
         paused = true;
         resetGraph();
@@ -258,20 +259,62 @@
     let animateMessage;
     function handleMessages() {
         let n = messages.length;
+        /** @type {Map<number, Message[]>} */
+        const deliverableMessages = new Map(); // map of actorID to messages waiting to be delivered to them
         for (let i = 0; i < n; i++) {
             let message = messages.pop()
-            if (message != null){
-                message.elapsedTicks++
-                //Animate messages
-                animateMessage(message);
 
-                if (message.elapsedTicks >= message.transitTicks){
-                    deliverMessage(message)
-                } else {
-                    messages.push(message)
+            if (message == null) continue;
+
+            messages.push(message);
+
+            animateMessage(message)
+
+
+
+            if (message.arrivalTick > tick) { // we only look at messages that should be delivered
+                continue;
+            }
+
+            // group messages by receiver id
+            let list = deliverableMessages.get(message.destination);
+            if (!list) {
+                list = [];
+            }
+
+            list.push(message);
+            deliverableMessages.set(message.destination, list);
+        }
+
+        // deliver messages
+        for (const msgs of deliverableMessages.values()) {
+            if (msgs.length === 1) {  // if there is only one message scheduled, deliver it
+                deliverMessage(msgs[0])
+                messages.remove(/** @param {Message} m */ m => m.id === msgs[0].id);
+                continue
+            }
+
+            // we need to find the messages that have waited longest
+            let lowestArrivalTick = msgs[0].arrivalTick;
+            for (const msg of msgs) {
+                if (msg.arrivalTick < lowestArrivalTick) {
+                    lowestArrivalTick = msg.arrivalTick;
                 }
             }
+
+            let oldestMsgs = []
+            for (const msg of msgs) {
+                if (msg.arrivalTick === lowestArrivalTick) {
+                    oldestMsgs.push(msg);
+                }
+            }
+            //finally deliver a random message
+            let randomIndex = Math.round(Math.random() * (oldestMsgs.length - 1))
+
+            deliverMessage(oldestMsgs[randomIndex]);
+            messages.remove(/** @param {Message} m */ m => m.id === oldestMsgs[randomIndex].id);
         }
+
     }
 
     function handleTimeouts() {
@@ -347,7 +390,10 @@
         console.log(logEntry);
         addLogEntry(logEntry);
         let transitTime = getTransitTime();
-        messages.push({id: getNextMessageId(), source: from, destination: to, type: type, transitTicks: transitTime, elapsedTicks: 0, data: data})
+        let arrivalTick = tick + transitTime;
+        let message = {id: getNextMessageId(), source: from, destination: to, type: type, sentTick: tick, arrivalTick: arrivalTick, data: data}
+        messages.push(message)
+        animateMessage(message);
     }
 
 
@@ -392,13 +438,13 @@
      * @returns void
      * */
     function delayMessage(message, delay) {
-        if (message.transitTicks - message.elapsedTicks + delay <= 0) {
+        if (message.arrivalTick - tick + delay <= 0) {
             deliverMessage(message);
         } else {
             let logEntry = `Message ${message.type} delayed by ${delay} ticks`
             console.log(logEntry);
             addLogEntry(logEntry);
-            message.transitTicks = Number(message.transitTicks) + Number(delay);
+            message.arrivalTick = Number(message.arrivalTick) + Number(delay);
             animateMessage(message);
         }
     }
@@ -445,14 +491,14 @@
 
     // id's for messages
     /** @type {number} */
-    let id_messages = -1;
+    let nextMessageId = -1;
 
     /**
      * @return {number} The next message id
      */
     export function getNextMessageId() {
-        if (id_messages < -1000) {id_messages = -1}
-        return id_messages--;
+        if (nextMessageId < -1000) {nextMessageId = -1}
+        return nextMessageId--;
     }
 </script>
 
@@ -481,6 +527,7 @@
             bind:changeColor={changeColor}
             actors={actors}
             tickSize={tickSize}
+            tick={tick}
     />
 </div>
 
