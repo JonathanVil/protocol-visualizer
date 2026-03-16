@@ -94,7 +94,6 @@
 </button>
 
 {#if showBuiltInFunctions}
-    awd
     <div bind:this={builtInFunctionsEditorDiv} class="absolute top-10 right-2 w-1/2 h-4/5 border-2 rounded-md "></div>
 {/if}
 
