@@ -283,6 +283,13 @@
         for (let m of entry.state.messagesState) { // we saved an array, now we make it a queue
             restoredMessages.push(m);
         }
+
+        for (let m of messages.toArray()) {
+            if (!restoredMessages.find(/** @param {Message} msg */ msg => msg.id === m.id)) {
+                removeMessageNode(m);
+            }
+        }
+
         messages = restoredMessages
         for (let m of messages.toArray()) {
             animateMessage(m, true)
