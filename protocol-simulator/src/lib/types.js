@@ -14,4 +14,13 @@
  * }} Actor
  */
 
+/**
+ * @typedef {{
+ *   id: string,
+ *   name: string,
+ *   model: import('monaco-editor').editor.ITextModel;
+ *   viewState?: import('monaco-editor').editor.ICodeEditorViewState | null;
+ * }} EditorTab
+ */
+
 export {};

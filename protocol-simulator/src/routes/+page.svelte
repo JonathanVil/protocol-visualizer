@@ -13,13 +13,15 @@
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
     /** @typedef {import('$lib/types.js').Actor} Actor */
     /** @typedef {import('$lib/types.js').TimeoutEntry} TimeOutEntry */
+    /** @typedef {import('$lib/types.js').EditorTab} EditorTab */
 
 
     /**@type {{ protocols: { name: string; content: string }[] }}*/
     export let data; // props from +page.server.js
     let predefinedProtocols = data.protocols;
 
-    let sourceCode = "// Write your code here...";
+    /** @type {EditorTab | null} */
+    let selectedEditorTab = null;
 
     /** @type {Actor[]} */
     let actors = [];
@@ -37,8 +39,10 @@
     let paused = true;
 
     function spawnActor() {
+        if (selectedEditorTab?.model.getValue() == null) return;
+
         /** @type {ActorConstructor|null} */
-        const actorClass = parseProtocolCode(sourceCode, send, getActors, createQueue, timeout); // we need to give send here so the actor "knows" it
+        const actorClass = parseProtocolCode(selectedEditorTab?.model.getValue(), send, getActors, createQueue, timeout); // we need to give send here so the actor "knows" it
 
         if (actorClass == null) {
           console.error("Actor class not defined");
@@ -555,7 +559,12 @@
 <NavigationBar
         bind:predefinedProtocols={predefinedProtocols}
         bind:leftPanel={leftPanel}
-        bind:sourceCode={sourceCode}
+        bind:sourceCode={
+            () => selectedEditorTab?.model.getValue() ?? "",
+            (v) => {
+                selectedEditorTab?.model.setValue(v);
+            }
+        }
 ></NavigationBar>
 
 <!--Dotted graph (background)-->
@@ -584,7 +593,7 @@
 {#if leftPanel === LeftPanelOptions.CODE}
     <!--Code block-->
     <div class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
-        <MonacoEditor bind:sourceCode={sourceCode} />
+        <MonacoEditor bind:selectedTab={selectedEditorTab} />
     </div>
 {:else if leftPanel === LeftPanelOptions.LOG}
     <!--Log block-->

@@ -1,53 +1,99 @@
 ﻿<script>
     import {onMount} from "svelte";
+    import EditorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
+    import TsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 
-    //sourcecode passed between parent and child
-    export let sourceCode = "";
+    /** @typedef {import('$lib/types.js').EditorTab} EditorTab */
 
-    /*!!!                MONACO EDITOR                  !!!*/
+    /** @type {EditorTab[]} */
+    let tabs = [];
 
-    //JSDOC comment for type
+    /** @type {EditorTab | null} */
+    export let selectedTab = null;
+
     /** @type {HTMLElement | null} */
     let editorDiv = null;
 
     /** @type {import('monaco-editor').editor.IStandaloneCodeEditor} */
     let editorInstance;
 
-    let ignoreNextUpdate = false;
+    /** @type {typeof import('monaco-editor')} */
+    let monaco;
 
     onMount(async () => {
-        // dynamic import only runs in the browser
-        const monaco = await import('monaco-editor');
+        self.MonacoEnvironment = {
+            getWorker(_, label) {
+                if (label === "typescript" || label === "javascript") {
+                    return new TsWorker();
+                }
+
+                return new EditorWorker();
+            }
+        };
+
+
+        monaco = await import("monaco-editor");
 
         if (!editorDiv) return;
 
         editorInstance = monaco.editor.create(editorDiv, {
-            value: sourceCode,
             language: "javascript",
             theme: "vs-dark",
             automaticLayout: true,
             minimap: { enabled: false },
             fontSize: 14,
+            model: selectedTab?.model ?? null
         });
 
-        editorInstance.onDidChangeModelContent(() => {
-            ignoreNextUpdate = true;
-            sourceCode = editorInstance.getValue();
-        });
+        tabs = [
+            {
+                id: crypto.randomUUID(),
+                name: "Protocol 1",
+                model: monaco.editor.createModel("// code here", "javascript"),
+            },
+            {
+                id: crypto.randomUUID(),
+                name: "Protocol 2",
+                model: monaco.editor.createModel("// other code", "javascript")
+            }
+        ]
+
+        setTab(tabs[0]);
     });
 
-    // Reactively update the editor when sourceCode changes from the parent
-    $: if (
-        editorInstance &&
-        !ignoreNextUpdate &&
-        editorInstance.getValue() !== sourceCode
-    ) {
-        editorInstance.setValue(sourceCode);
+    /** @param {EditorTab} tab */
+    function setTab(tab) {
+        if (selectedTab?.id === tab.id) return;
+
+        if (selectedTab) {
+            selectedTab.viewState = editorInstance.saveViewState();
+        }
+
+        selectedTab = tab;
+        editorInstance.setModel(tab.model);
+        editorInstance.restoreViewState(tab.viewState ?? null);
+        editorInstance.focus();
     }
-    // Reset the ignore flag after the update cycle
-    $: if (ignoreNextUpdate) {
-        ignoreNextUpdate = false;
+
+    /**
+     * @param {string} name
+     * @param {string | null} code
+     */
+    export function openTab(name, code) {
+        tabs = [...tabs, {
+            id: crypto.randomUUID(),
+            name,
+            model: monaco.editor.createModel(code ?? "", "javascript")
+        }]
     }
 </script>
+
+<div class="flex-row gap-2">
+    {#each tabs as tab}
+        <button class="border border-black" on:click={() => setTab(tab)}>
+            {tab.name}
+        </button>
+    {/each}
+</div>
 
 <div bind:this={editorDiv} class="w-full h-full border border-gray-300 rounded-md"></div>
