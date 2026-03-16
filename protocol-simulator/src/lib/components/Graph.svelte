@@ -123,7 +123,8 @@
         if (color.includes("#")) {color = color.slice(0, 7);}
 
         return {
-            data: { id: String(actor.id), color: color } // cytoscape needs string IDs
+            data: { id: String(actor.id), color: color }, // cytoscape needs string IDs
+            classes: 'actor'
         };
     }
 
@@ -520,7 +521,7 @@
                     }
                 }
             }
-            cyInstance.layout({name: 'circle', radius: 120, avoidOverlap: true, fit: true}).run();
+            rearrangeGraph()
         });
     }
 
@@ -559,9 +560,23 @@
 
             // 3) Only re-run layout when we actually added nodes/edges
             if (addedSomething) {
-                cyInstance.layout({name: 'circle', radius: 120, avoidOverlap: true, fit: true}).run();
+                rearrangeGraph()
             }
         });
+    }
+
+    function rearrangeGraph() {
+        cyInstance.nodes('.actor')
+            .layout({name: 'circle', radius: 120, avoidOverlap: true, fit: true})
+            .run();
+
+        let n = messages.length;
+        for (let i = 0; i < n; i++) {
+            let message = messages.pop()
+            if (message == null) continue;
+            messages.push(message);
+            animateMessage(message, true)
+        }
     }
 
     /** @param {Message} message
