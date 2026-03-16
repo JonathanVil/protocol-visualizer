@@ -30,7 +30,6 @@
 
     /** @type {Queue} */
     let timeouts = new Queue();
-    let nextActorId = 0;
     let tick = 0;
 
     let restoringState = false;
@@ -50,7 +49,7 @@
 
         //  svelte automatically updates them in the Graph.svelte
         /** @type {Actor} */
-        let newActor = new actorClass(nextActorId++);
+        let newActor = new actorClass(actors.length);
         newActor.alive = true;
 
         let actor = watchActor(newActor);
@@ -110,7 +109,6 @@
         actors = [];
         cachedActors = [];
         previewingRewind = false;
-        nextActorId = 0;
         nextMessageId = -1;
         tick = 0;
         paused = true;
@@ -224,27 +222,30 @@
         saveState()
 
         tick = restoredTick;
-        if (actors.length > cachedActors.length) {
-            cachedActors = actors
-        } else {
-            actors = cachedActors
-        }
-
 
         let actorsState = entry.state.actorsState;
+        if (actors.length >= cachedActors.length) {
+            cachedActors = actors
+        }
+
 
         if (actorsState.length < actors.length) {
             for (let i = actorsState.length; i < actors.length; i++) {
                 removeActorNode(actors[i]);
             }
             actors = actors.slice(0, actorsState.length);
-            nextActorId = actors.length;
+        } else if (actorsState.length > actors.length) {
+            // add missing actors back
+            for (let i = (actors.length); i < actorsState.length; i++){
+                actors.push(cachedActors[i])
+
+                addActorNodeManually(actors[i]);
+            }
+
         }
 
-        // we may have been previewing something with n actors, and now we preview with n+1 actors. then, we must re-add the missing actors visually
-        for (let i = 0; i < actorsState.length; i++) {
-            addActorNodeManually(actors[i]);
-        }
+
+
 
 
         for (let i = 0; i < actorsState.length; i++) {
@@ -316,7 +317,7 @@
         }
 
 
-        cachedActors = actors
+        cachedActors = []
 
         previewingRewind = false;
 
