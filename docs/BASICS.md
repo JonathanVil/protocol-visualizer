@@ -79,3 +79,8 @@ It takes three arguments:
 - `actor` should always be `this`. This is important to ensure the method can access state.
 - `ticks` is the number of ticks the timer waits before executing the reaction.
 - `reaction` is a reference to the method to be called when the timer finishes. This method must take no arguments.
+
+# Fields
+
+## nodeColor
+The node color can set/get using `this.nodeColor = '#1d4ed8'`
