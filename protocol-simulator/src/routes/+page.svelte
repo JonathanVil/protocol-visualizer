@@ -25,7 +25,7 @@
     let actors = [];
 
     /** @type {{ tick: number, lines: string[], state: any }[]} */
-    let eventLog = [{ tick: 0, lines: [], state: null}]
+    let eventLog = []
     let messages = new Queue();
 
     /** @type {Queue} */
@@ -35,6 +35,7 @@
 
     let restoringState = false;
     let paused = true;
+    let previewingRewind = false;
 
     function spawnActor() {
         /** @type {ActorConstructor|null} */
@@ -71,9 +72,9 @@
             return;
         }
 
-        let logEntry = `Actor ${message.destination} recieved msg ${message.type} from Actor ${message.source}`
+        let logEntry = `Actor ${message.destination} received msg ${message.type} from Actor ${message.source}`
         if (message.data) {
-            logEntry = `Actor ${message.destination} recieved msg ${message.type} with data ${message.data} from Actor ${message.source}`
+            logEntry = `Actor ${message.destination} received msg ${message.type} with data ${message.data} from Actor ${message.source}`
         }
         console.log(logEntry);
         addLogEntry(logEntry);
@@ -84,6 +85,9 @@
 
     function startSimulation() {
         console.log("Starting simulation");
+        if (previewingRewind){
+            finalizeRewind()
+        }
 
         paused = false;
         handleTick();
@@ -110,6 +114,9 @@
     }
 
     function tickByOne() {
+        if (previewingRewind){
+            finalizeRewind()
+        }
         handleTick();
 
     }
@@ -145,6 +152,9 @@
      * @param {string} line
      */
     export function addLogEntry(line) {
+        if (previewingRewind) {
+            finalizeRewind()
+        }
         const entry = eventLog.find(e => e.tick === tick);
         if (!entry) {
             eventLog = [...eventLog, {tick, lines: [line], state: null}];
@@ -186,7 +196,6 @@
         const entry = eventLog.find(e => e.tick === tick);
         if (entry){
             entry.state = state; //add the saved state to the entry
-            eventLog = [...eventLog.slice(0, eventLog.length - 1), entry] //add the entry to the log
         }
 
     }
@@ -204,9 +213,13 @@
 
         // restore actors
         restoringState = true;
+        paused = true;
+        previewingRewind = true;
+        tick = restoredTick;
 
         let actorsState = entry.state.actorsState;
 
+        // TODO: allow previewing rewind without killing actors
         if (actorsState.length < actors.length) {
             for (let i = actorsState.length; i < actors.length; i++) {
                 removeActorNode(actors[i]);
@@ -239,17 +252,17 @@
             updateActorStatePopper(actor); // reflect the updated fields
         }
 
+        for (let m of messages.toArray()) {
+            removeMessageNode(m);
+        }
+
         // restore messages (note: we dont restore the nextMessageId)
         let restoredMessages = new Queue();
         for (let m of entry.state.messagesState) { // we saved an array, now we make it a queue
             restoredMessages.push(m);
             animateMessage(m)
         }
-        for (let m of messages.toArray()) {
-            if (!restoredMessages.find(/** @param {Message} msg */ msg => msg.id === m.id)) {
-                removeMessageNode(m);
-            }
-        }
+
         messages = restoredMessages
 
         // restore timeouts
@@ -258,11 +271,8 @@
             timeouts.push(t);
         }
 
-        tick = restoredTick;
 
-        // clear eventlog entries that happened after where we restored to
-        let index = eventLog.indexOf(entry)
-        eventLog = eventLog.slice(0, index + 1);
+
 
         //restore population state. First kill those who need to die and then revive the rest <3
         for (let actor of actors) {
@@ -277,6 +287,16 @@
         saveState(); // ensure the copy of state is clean for next rewind
 
         restoringState = false;
+    }
+
+    function finalizeRewind() { // Switches from previewing a previous state, to actually executing from that state
+        // clear eventlog entries that happened after where we restored to
+        let index = eventLog.findIndex(e => e.tick === tick);
+        if (index) {
+            eventLog = eventLog.slice(0, index + 1);
+        }
+        previewingRewind = false;
+
     }
 
     /** @type {(msg: Message) => void} */
