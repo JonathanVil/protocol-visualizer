@@ -221,6 +221,7 @@
 
         previewingRewind = true;
 
+        saveState()
 
         tick = restoredTick;
         if (actors.length > cachedActors.length) {
