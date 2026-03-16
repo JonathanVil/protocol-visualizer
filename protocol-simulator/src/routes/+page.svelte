@@ -278,10 +278,11 @@
         let restoredMessages = new Queue();
         for (let m of entry.state.messagesState) { // we saved an array, now we make it a queue
             restoredMessages.push(m);
+        }
+        messages = restoredMessages
+        for (let m of messages.toArray()) {
             animateMessage(m, true)
         }
-
-        messages = restoredMessages
 
         // restore timeouts
         timeouts = new Queue();

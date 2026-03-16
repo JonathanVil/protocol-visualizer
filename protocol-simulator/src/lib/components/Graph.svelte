@@ -613,30 +613,30 @@
             targetPosThisTickY = target.y;
         }
 
-        let time = tickSize
-        if (instant) { time = 0}
+        if (instant) {
+            msg.position({ x: targetPosThisTickX, y: targetPosThisTickY });
+        } else {
+            msg.animate({
+                position: {x: targetPosThisTickX, y: targetPosThisTickY}
+            }, {
+                duration: tickSize,
+                easing: 'linear',
+                queue: false,
+                complete: () => {
+                    if (!(messages.find(/** @param {Message} msg */msg => msg.id === message.id))) {
+                        // remove message node from graph & array
 
-        msg.animate({
-            position: {x: targetPosThisTickX, y: targetPosThisTickY}
-        }, {
-            duration: time,
-            easing: 'linear',
-            queue: false,
-            complete: () => {
-                if (!(messages.find(/** @param {Message} msg */ msg => msg.id === message.id))) {
-                    // remove message node from graph & array
+                        if (msg.scratch('messagePopup')) {
+                            removeMessagePopper(msg);
+                            messagesToNodes.delete(message.id);
+                        }
+                        cyInstance.remove(msg);
+                        graphMessageNodes.splice(graphMessageNodes.indexOf(msg), 1);
 
-                    if (msg.scratch('messagePopup')) {
-                        removeMessagePopper(msg);
-                        messagesToNodes.delete(message.id);
                     }
-                    cyInstance.remove(msg);
-                    graphMessageNodes.splice(graphMessageNodes.indexOf(msg), 1);
-
                 }
-            }
-        });
-
+            });
+        }
     }
 
 </script>
