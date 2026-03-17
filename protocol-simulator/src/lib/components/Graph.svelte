@@ -123,7 +123,8 @@
         if (color.includes("#")) {color = color.slice(0, 7);}
 
         return {
-            data: { id: String(actor.id), color: color } // cytoscape needs string IDs
+            data: { id: String(actor.id), color: color }, // cytoscape needs string IDs
+            classes: 'actor'
         };
     }
 
@@ -147,6 +148,7 @@
         const nodeId = String(actor.id);
         cyInstance.getElementById(nodeId).remove();
         removeActorStatePopper(actor.id);
+        rearrangeGraph()
     }
 
     // Helper: ensure an edge exists
@@ -459,18 +461,23 @@
     export function removeMessageNode (message) {
         const id = message.id;
         const messageNode = messagesToNodes.get(id);
+        if (!messageNode) return;
 
-        if (messageNode) {
-            //remove messageNode (and popper) from graph
-            if (messageNode.scratch('messagePopup')) {
-                removeMessagePopper(messageNode)
-            }
-            cyInstance.remove(messageNode);
-            graphMessageNodes.splice(graphMessageNodes.indexOf(messageNode), 1);
-            messagesToNodes.delete(id);
-        } else {
-            console.warn("Could not find message node to drop", messageNode)
+
+        //remove messageNode (and popper) from graph
+        if (messageNode.scratch('messagePopup')) {
+            removeMessagePopper(messageNode)
         }
+        cyInstance.remove(messageNode);
+        graphMessageNodes.splice(graphMessageNodes.indexOf(messageNode), 1);
+        messagesToNodes.delete(id);
+
+    }
+
+    export function clearMessageNodes() {
+        graphMessageNodes?.forEach(node => {
+            cyInstance.remove(node);
+        });
     }
 
     /**
@@ -501,6 +508,43 @@
         } else {
             console.error("color not a string", color);
         }
+    }
+
+    /** @param {Actor} actor **/
+    export function addActorNodeManually(actor){
+        if (!actor) {
+            console.warn("addActorNodeManually called with undefined actor");
+            return;
+        }
+
+        cyInstance.batch(() => {
+
+            const { added } = ensureActorNode(actor);
+            if (!added) return;
+
+            const newId = String(actor.id);
+
+            const existingActors = cyInstance.nodes(`.actor[id != "${newId}"]`);
+
+            for (const node of existingActors) {
+
+                const otherNum = Number(node.id());
+                const newNum = Number(newId);
+
+                const source = otherNum
+                const target = newNum
+
+                const newEdge = { source, target, label: "" };
+
+                const edgeAdded = ensureEdge(newEdge);
+
+                if (edgeAdded) {
+                    edges = [...edges, newEdge];
+                }
+            }
+
+            rearrangeGraph();
+        });
     }
 
     //Adding Nodes (incrementally)
@@ -538,13 +582,28 @@
 
             // 3) Only re-run layout when we actually added nodes/edges
             if (addedSomething) {
-                cyInstance.layout({name: 'circle', radius: 120, avoidOverlap: true, fit: true}).run();
+                rearrangeGraph()
             }
         });
     }
 
-    /** @param {Message} message */
-    export function animateMessage(message) {
+    function rearrangeGraph() {
+        cyInstance.nodes('.actor')
+            .layout({name: 'circle', radius: 120, avoidOverlap: true, fit: true})
+            .run();
+
+        let n = messages.length;
+        for (let i = 0; i < n; i++) {
+            let message = messages.pop()
+            if (message == null) continue;
+            messages.push(message);
+            animateMessage(message, true)
+        }
+    }
+
+    /** @param {Message} message
+     *  @param {boolean} instant */
+    export function animateMessage(message, instant) {
         const source = cyInstance.getElementById(message.source).position();
         const target = cyInstance.getElementById(message.destination).position();
 
@@ -576,27 +635,30 @@
             targetPosThisTickY = target.y;
         }
 
-        msg.animate({
-            position: {x: targetPosThisTickX, y: targetPosThisTickY}
-        }, {
-            duration: tickSize,
-            easing: 'linear',
-            queue: false,
-            complete: () => {
-                if (!(messages.find(/** @param {Message} msg */ msg => msg.id === message.id))) {
-                    // remove message node from graph & array
+        if (instant) {
+            msg.position({ x: targetPosThisTickX, y: targetPosThisTickY });
+        } else {
+            msg.animate({
+                position: {x: targetPosThisTickX, y: targetPosThisTickY}
+            }, {
+                duration: tickSize,
+                easing: 'linear',
+                queue: false,
+                complete: () => {
+                    if (!(messages.find(/** @param {Message} msg */msg => msg.id === message.id))) {
+                        // remove message node from graph & array
 
-                    if (msg.scratch('messagePopup')) {
-                        removeMessagePopper(msg);
-                        messagesToNodes.delete(message.id);
+                        if (msg.scratch('messagePopup')) {
+                            removeMessagePopper(msg);
+                            messagesToNodes.delete(message.id);
+                        }
+                        cyInstance.remove(msg);
+                        graphMessageNodes.splice(graphMessageNodes.indexOf(msg), 1);
+
                     }
-                    cyInstance.remove(msg);
-                    graphMessageNodes.splice(graphMessageNodes.indexOf(msg), 1);
-
                 }
-            }
-        });
-
+            });
+        }
     }
 
 </script>
