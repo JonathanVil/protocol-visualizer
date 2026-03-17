@@ -77,6 +77,7 @@
                 automaticLayout: true,
                 minimap: { enabled: false },
                 fontSize: 14,
+                readOnly: true
             });
         }
     }
