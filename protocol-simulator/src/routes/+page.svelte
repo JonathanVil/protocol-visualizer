@@ -46,7 +46,8 @@
     /** @type {Actor[]} */
     let cachedActors = [] // used when previewing and rewinding, this is the list of all actors at the latest point in the eventlog
 
-    function spawnActor() {
+    /** @param {string|null} protocolName */
+    function spawnActor(protocolName) {
         if (selectedEditorTab?.model.getValue() == null) return;
 
         /** @type {ActorConstructor|null} */
@@ -61,6 +62,7 @@
         /** @type {Actor} */
         let newActor = new actorClass(actors.length);
         newActor.alive = true;
+        newActor.protocolName = protocolName;
 
         let actor = watchActor(newActor);
         actors = [...actors, actor];

@@ -14,7 +14,7 @@
     /** @type {{ name: string; content: string }[] } */
     export let predefinedProtocols;
 
-    /** @type {() => void} */
+    /** @type {(name: string|null) => void} */
     export let spawnActor;
 
     let defaultProtocol = predefinedProtocols.find(/** @type {{ name: string; content: string }} */p => p.name === "Default");
@@ -36,7 +36,7 @@
     /** @type {HTMLDivElement | null} */
     let loadExistingMenuWrapper = null;
 
-    const newTabName = "New Protocol";
+    const newTabName = "Ping";
 
     onMount(async () => {
         self.MonacoEnvironment = {
@@ -168,6 +168,7 @@
                                 class="truncate text-left font-medium flex items-center gap-2"
                                 on:click={e => e.shiftKey ? closeTab(tab) : setTab(tab)}
                                 on:dblclick={() => editingTabId = tab.id}
+                                title={`Double-click to rename ${tab.name}. Shift+click to close.`}
                         >
                             <span class="h-2 w-2 rounded-full bg-current opacity-70"></span>
                             {tab.name}
@@ -230,7 +231,7 @@
     <div bind:this={editorDiv} class="min-h-0 flex-1 border border-gray-300"></div>
 
     <div class="flex items-center justify-between gap-3 rounded-b-md border border-b-0 border-gray-300 bg-gray-100 px-3 py-2">
-        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 inline-flex items-center text-sm font-medium" on:click={spawnActor}>
+        <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 inline-flex items-center text-sm font-medium" on:click={() => spawnActor(selectedTab?.name ?? null)}>
             <i class="fa fa-plus-circle mr-2" aria-hidden="true"></i>
             <span>Spawn '{selectedTab?.name ?? "new"}' actor</span>
         </button>

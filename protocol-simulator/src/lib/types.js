@@ -11,6 +11,7 @@
  *   receive(message: { type: string, from: number }): void,
  *   nodeColor: string
  *   alive: boolean
+ *   protocolName: string|null
  * }} Actor
  */
 

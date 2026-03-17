@@ -34,7 +34,7 @@
     }
 
     // these attributes are not shown in the popper
-    const excludedAttributes = ['id', 'nodeColor', 'alive']
+    const excludedAttributes = ['id', 'nodeColor', 'alive', 'protocolName']
 
     $: actor = $store;
 
@@ -260,7 +260,7 @@
 
     <div class="pr-6">
         <div class="flex flex-row items-center gap-28">
-            <div class="mb-0.5 font-semibold opacity-90">Actor {actor?.id}</div>
+            <div class="mb-0.5 font-semibold opacity-90">Actor {actor?.id} ({actor.protocolName})</div>
             <button class=" bg-blue-600 text-white rounded hover:bg-blue-700 w-13 h-5 text-xs flex text-center justify-center items-center"
                     on:click={() =>
                     {
