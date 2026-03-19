@@ -152,6 +152,7 @@
                         <input
                                 class="bg-transparent text-left font-medium outline-none placeholder:text-gray-400"
                                 bind:value={tab.name}
+                                on:change={() => selectedTab = selectedTab}
                                 aria-label="Tab name"
                                 size={Math.max(tab.name.length, 1)}
                                 autofocus
