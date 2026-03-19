@@ -66,7 +66,7 @@
 
         let actor = watchActor(newActor);
         actors = [...actors, actor];
-        let logEntry = "Adding actor"
+        let logEntry = "Adding " + protocolName + " actor"
         console.log(logEntry);
         addLogEntry(logEntry);
     }
