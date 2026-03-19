@@ -234,8 +234,8 @@
             <button
                     type="button"
                     class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:bg-gray-50"
-                    aria-label="Load existing"
-                    title="Load existing"
+                    aria-label="Load existing protocol"
+                    title="Load existing protocol"
                     aria-expanded={showLoadExistingMenu}
                     on:click={() => showLoadExistingMenu = !showLoadExistingMenu}
             >
@@ -260,6 +260,12 @@
                     {/each}
                 </div>
             {/if}
+            <button
+                    class="rounded-md border border-gray-300 bg-white px-1 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:bg-gray-50"
+                    aria-label="Built-in functions" title="See built-in functions"
+                    on:click={() => showBuiltInFunctions = !showBuiltInFunctions}>
+                <img src="icon_func.png" class="w-8" alt="Italian Trulli">
+            </button>
         </div>
     </div>
 
@@ -273,15 +279,9 @@
     </div>
 
 </div>
-<button
-        class="absolute top-2 right-2 flex items-center gap-1 rounded-lg bg-white hover:bg-gray-200 focus:outline-none"
-        aria-label="Built-in functions" title="See built-in functions"
-        on:click={() => showBuiltInFunctions = !showBuiltInFunctions}>
-    <img src="icon_func.png" class="w-8" alt="Italian Trulli">
-</button>
 
 {#if showBuiltInFunctions}
-    <div bind:this={builtInFunctionsEditorDiv} class="absolute top-10 right-2 w-2/3 h-4/5 border-2 rounded-md "></div>
+    <div bind:this={builtInFunctionsEditorDiv} class="absolute top-15 right-2 w-2/3 h-4/5 border-2 rounded-md "></div>
 {/if}
 
 
