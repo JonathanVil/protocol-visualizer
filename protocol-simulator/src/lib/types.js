@@ -11,7 +11,17 @@
  *   receive(message: { type: string, from: number }): void,
  *   nodeColor: string
  *   alive: boolean
+ *   protocolName: string|null
  * }} Actor
+ */
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   name: string,
+ *   model: import('monaco-editor').editor.ITextModel;
+ *   viewState?: import('monaco-editor').editor.ICodeEditorViewState | null;
+ * }} EditorTab
  */
 
 export {};

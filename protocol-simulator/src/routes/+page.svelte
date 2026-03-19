@@ -13,13 +13,21 @@
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
     /** @typedef {import('$lib/types.js').Actor} Actor */
     /** @typedef {import('$lib/types.js').TimeoutEntry} TimeOutEntry */
+    /** @typedef {import('$lib/types.js').EditorTab} EditorTab */
 
 
     /**@type {{ protocols: { name: string; content: string }[] }}*/
     export let data; // props from +page.server.js
     let predefinedProtocols = data.protocols;
 
-    let sourceCode = "// Write your code here...";
+    /** @type {EditorTab[]} */
+    let editorTabs = [];
+
+    /** @type {EditorTab | null} */
+    let selectedEditorTab = null;
+
+    /** @type {(name: string | null | undefined, code: string | null | undefined) => void} */
+    let openNewEditorTab;
 
     /** @type {Actor[]} */
     let actors = []; // the list of currently active actors
@@ -38,9 +46,12 @@
     /** @type {Actor[]} */
     let cachedActors = [] // used when previewing and rewinding, this is the list of all actors at the latest point in the eventlog
 
-    function spawnActor() {
+    /** @param {string|null} protocolName */
+    function spawnActor(protocolName) {
+        if (selectedEditorTab?.model.getValue() == null) return;
+
         /** @type {ActorConstructor|null} */
-        const actorClass = parseProtocolCode(sourceCode, send, getActors, createQueue, timeout); // we need to give send here so the actor "knows" it
+        const actorClass = parseProtocolCode(selectedEditorTab?.model.getValue(), send, getActors, createQueue, timeout); // we need to give send here so the actor "knows" it
 
         if (actorClass == null) {
           console.error("Actor class not defined");
@@ -51,10 +62,11 @@
         /** @type {Actor} */
         let newActor = new actorClass(actors.length);
         newActor.alive = true;
+        newActor.protocolName = protocolName;
 
         let actor = watchActor(newActor);
         actors = [...actors, actor];
-        let logEntry = "Adding actor"
+        let logEntry = "Adding " + protocolName + " actor"
         console.log(logEntry);
         addLogEntry(logEntry);
     }
@@ -607,11 +619,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
 <!--Top navigation bar-->
-<NavigationBar
-        bind:predefinedProtocols={predefinedProtocols}
-        bind:leftPanel={leftPanel}
-        bind:sourceCode={sourceCode}
-></NavigationBar>
+<NavigationBar></NavigationBar>
 
 <!--Dotted graph (background)-->
 <div class="cy-wrapper">
@@ -641,7 +649,13 @@
 {#if leftPanel === LeftPanelOptions.CODE}
     <!--Code block-->
     <div class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
-        <MonacoEditor bind:sourceCode={sourceCode} />
+        <MonacoEditor
+                bind:tabs={editorTabs}
+                bind:selectedTab={selectedEditorTab}
+                bind:openNewTab={openNewEditorTab}
+                bind:predefinedProtocols={predefinedProtocols}
+                spawnActor={spawnActor}
+        />
     </div>
 {:else if leftPanel === LeftPanelOptions.LOG}
     <!--Log block-->
@@ -653,13 +667,6 @@
 
     </div>
 {/if}
-
-
-<!--Send actor button-->
-<button class="absolute bottom-2 left-120 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center"
-        on:click={spawnActor}>
-    Spawn actor
-</button>
 
 <!--Left panel selector-->
 <div class="absolute top-14 left-5 flex items-center gap-1 rounded-lg bg-white/80 backdrop-blur p-1 shadow">
