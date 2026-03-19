@@ -38,6 +38,21 @@
 
     const newTabName = "Ping";
 
+
+    /*!!!                Built-in functions                 !!!*/
+    /** @type {boolean} */
+    let showBuiltInFunctions = false;
+    /** @type {HTMLElement | null} */
+    let builtInFunctionsEditorDiv = null;
+    /** @type {import('monaco-editor').editor.IStandaloneCodeEditor} */
+    let builtInEditorInstance;
+
+    let file;
+    /** @type {String} */
+    let builtInFunctions = ""
+
+
+
     onMount(async () => {
         self.MonacoEnvironment = {
             getWorker(_, label) {
@@ -60,6 +75,9 @@
         document.addEventListener("click", handleDocumentClick);
 
         monaco = await import("monaco-editor");
+        // dynamic import only runs in the browser
+        file = await fetch("BASICS.md");
+        builtInFunctions = await file.text();
 
         if (!editorDiv) return;
 
@@ -135,6 +153,22 @@
             setTab(tabs[i - 1] ?? tabs[0] ?? null);
         }
     }
+
+    $: if (builtInFunctionsEditorDiv && showBuiltInFunctions) {
+        if (monaco) {
+            builtInEditorInstance = monaco.editor.create(builtInFunctionsEditorDiv, {
+                value: builtInFunctions,
+                language: "markdown",
+                theme: "vs-dark",
+                automaticLayout: true,
+                minimap: { enabled: false },
+                fontSize: 14,
+                readOnly: true
+            });
+        }
+    }
+
+
 </script>
 
 <div class="flex h-full flex-col">
@@ -200,8 +234,8 @@
             <button
                     type="button"
                     class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:bg-gray-50"
-                    aria-label="Load existing"
-                    title="Load existing"
+                    aria-label="Load existing protocol"
+                    title="Load existing protocol"
                     aria-expanded={showLoadExistingMenu}
                     on:click={() => showLoadExistingMenu = !showLoadExistingMenu}
             >
@@ -226,6 +260,12 @@
                     {/each}
                 </div>
             {/if}
+            <button
+                    class="rounded-md border border-gray-300 bg-white px-1 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:bg-gray-50"
+                    aria-label="Built-in functions" title="See built-in functions"
+                    on:click={() => showBuiltInFunctions = !showBuiltInFunctions}>
+                <img src="icon_func.png" class="w-8" alt="Italian Trulli">
+            </button>
         </div>
     </div>
 
@@ -239,3 +279,10 @@
     </div>
 
 </div>
+
+{#if showBuiltInFunctions}
+    <div bind:this={builtInFunctionsEditorDiv} class="absolute top-15 right-2 w-2/3 h-4/5 border-2 rounded-md "></div>
+{/if}
+
+
+

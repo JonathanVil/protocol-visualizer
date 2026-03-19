@@ -1,4 +1,6 @@
 ﻿<script>
+    import InfoToolTip from "$lib/components/InfoToolTip.svelte";
+
     let to = 0;
     let from = 0;
     let type = "";
@@ -34,14 +36,18 @@
             </div>
 
             <div class="flex flex-col w-30">
-                Data
+                <div class="flex flex-row gap-18">
+                    Data
+                    <InfoToolTip text="Enter message content. Click 'Send' to put the message in transit in the network"></InfoToolTip>
+                </div>
+
                 <input class="border p-1 h-7" id="data" bind:value={data} placeholder="Data" />
             </div>
-
         </div>
     </div>
 
-    <button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+
+    <button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 " aria-label="Send message" title="Send message"
             on:click={submit}>
         Send
     </button>

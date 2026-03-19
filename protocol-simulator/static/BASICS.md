@@ -3,7 +3,7 @@
 ## Ticks
 The simulator is built on a "tick" system.
 A tick is executed every x milliseconds, where x is the ticksize.
-The ticksize can be determined through the UI, by modifying tickspeed (ticks / second) 
+The ticksize can be determined through the UI, by modifying tickspeed (ticks / second)
 
 ## Messages
 Every tick, moves each message currently in transit one tick closer to its recipient.
@@ -79,8 +79,8 @@ It takes three arguments:
 - `actor` should always be `this`. This is important to ensure the method can access state.
 - `ticks` is the number of ticks the timer waits before executing the reaction.
 - `reaction` is a reference to the method to be called when the timer finishes. This method must take no arguments.
-
+- 
 # Fields
 
-## nodeColor
+##  nodeColor
 The node color can set/get using `this.nodeColor = '#1d4ed8'`
