@@ -13,32 +13,45 @@
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
     /** @typedef {import('$lib/types.js').Actor} Actor */
     /** @typedef {import('$lib/types.js').TimeoutEntry} TimeOutEntry */
+    /** @typedef {import('$lib/types.js').EditorTab} EditorTab */
 
 
     /**@type {{ protocols: { name: string; content: string }[] }}*/
     export let data; // props from +page.server.js
     let predefinedProtocols = data.protocols;
 
-    let sourceCode = "// Write your code here...";
+    /** @type {EditorTab[]} */
+    let editorTabs = [];
+
+    /** @type {EditorTab | null} */
+    let selectedEditorTab = null;
+
+    /** @type {(name: string | null | undefined, code: string | null | undefined) => void} */
+    let openNewEditorTab;
 
     /** @type {Actor[]} */
-    let actors = [];
+    let actors = []; // the list of currently active actors
 
     /** @type {{ tick: number, lines: string[], state: any }[]} */
-    let eventLog = [{ tick: 0, lines: [], state: null}]
+    let eventLog = []
     let messages = new Queue();
 
     /** @type {Queue} */
     let timeouts = new Queue();
-    let nextActorId = 0;
     let tick = 0;
 
     let restoringState = false;
     let paused = true;
+    let previewingRewind = false;
+    /** @type {Actor[]} */
+    let cachedActors = [] // used when previewing and rewinding, this is the list of all actors at the latest point in the eventlog
 
-    function spawnActor() {
+    /** @param {string|null} protocolName */
+    function spawnActor(protocolName) {
+        if (selectedEditorTab?.model.getValue() == null) return;
+
         /** @type {ActorConstructor|null} */
-        const actorClass = parseProtocolCode(sourceCode, send, getActors, createQueue, timeout); // we need to give send here so the actor "knows" it
+        const actorClass = parseProtocolCode(selectedEditorTab?.model.getValue(), send, getActors, createQueue, timeout); // we need to give send here so the actor "knows" it
 
         if (actorClass == null) {
           console.error("Actor class not defined");
@@ -47,12 +60,13 @@
 
         //  svelte automatically updates them in the Graph.svelte
         /** @type {Actor} */
-        let newActor = new actorClass(nextActorId++);
+        let newActor = new actorClass(actors.length);
         newActor.alive = true;
+        newActor.protocolName = protocolName;
 
         let actor = watchActor(newActor);
         actors = [...actors, actor];
-        let logEntry = "Adding actor"
+        let logEntry = "Adding " + protocolName + " actor"
         console.log(logEntry);
         addLogEntry(logEntry);
     }
@@ -71,9 +85,9 @@
             return;
         }
 
-        let logEntry = `Actor ${message.destination} recieved msg ${message.type} from Actor ${message.source}`
+        let logEntry = `Actor ${message.destination} received msg ${message.type} from Actor ${message.source}`
         if (message.data) {
-            logEntry = `Actor ${message.destination} recieved msg ${message.type} with data ${message.data} from Actor ${message.source}`
+            logEntry = `Actor ${message.destination} received msg ${message.type} with data ${message.data} from Actor ${message.source}`
         }
         console.log(logEntry);
         addLogEntry(logEntry);
@@ -84,6 +98,9 @@
 
     function startSimulation() {
         console.log("Starting simulation");
+        if (previewingRewind){
+            finalizeRewind()
+        }
 
         paused = false;
         handleTick();
@@ -102,7 +119,8 @@
         timeouts = new Queue();
         eventLog = [];
         actors = [];
-        nextActorId = 0;
+        cachedActors = [];
+        previewingRewind = false;
         nextMessageId = -1;
         tick = 0;
         paused = true;
@@ -110,12 +128,16 @@
     }
 
     function tickByOne() {
+        if (previewingRewind){
+            finalizeRewind()
+        }
         handleTick();
 
     }
 
     function handleTick() {
         let startTime = Date.now()
+
         const entry = eventLog.find(e => e.tick === tick);
         if (entry) { //if last tick had an event, we save its state for rewinding
             saveState()
@@ -123,7 +145,6 @@
         }
 
         tick++
-
         //update messages by one tick
         handleMessages()
 
@@ -137,7 +158,7 @@
             if (elapsedTime > tickSize) {
                 console.log(`--------------------TIME TO HANDLE TICK HIGHER THAN TICKSIZE--------------------`);
             }
-            setTimeout(handleTick, tickSize - elapsedTime); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
+            setTimeout(() => !paused && handleTick(), tickSize - elapsedTime); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
         }
     }
 
@@ -145,6 +166,9 @@
      * @param {string} line
      */
     export function addLogEntry(line) {
+        if (previewingRewind) {
+            finalizeRewind()
+        }
         const entry = eventLog.find(e => e.tick === tick);
         if (!entry) {
             eventLog = [...eventLog, {tick, lines: [line], state: null}];
@@ -186,12 +210,14 @@
         const entry = eventLog.find(e => e.tick === tick);
         if (entry){
             entry.state = state; //add the saved state to the entry
-            eventLog = [...eventLog.slice(0, eventLog.length - 1), entry] //add the entry to the log
         }
 
     }
     /** @type {(message: Message) => void} */
     let removeMessageNode;
+
+    /** @type {() => void} */
+    let clearMessageNodes;
 
     /** @type {(actor: Actor) => void} */
     let removeActorNode;
@@ -204,16 +230,38 @@
 
         // restore actors
         restoringState = true;
+        paused = true;
+
+        previewingRewind = true;
+
+        saveState()
+
+        tick = restoredTick;
 
         let actorsState = entry.state.actorsState;
+        if (actors.length >= cachedActors.length) {
+            cachedActors = actors
+        }
+
 
         if (actorsState.length < actors.length) {
             for (let i = actorsState.length; i < actors.length; i++) {
                 removeActorNode(actors[i]);
             }
             actors = actors.slice(0, actorsState.length);
+        } else if (actorsState.length > actors.length) {
+            // add missing actors back
+            for (let i = (actors.length); i < actorsState.length; i++){
+                actors.push(cachedActors[i])
+
+                addActorNodeManually(actors[i]);
+            }
+
         }
-        nextActorId = actors.length;
+
+
+
+
 
         for (let i = 0; i < actorsState.length; i++) {
             const savedActor = actorsState[i];
@@ -235,34 +283,35 @@
                 }
             }
         }
-        for (let actor of actors) {
-            updateActorStatePopper(actor); // reflect the updated fields
+        for (let i = 0; i < actors.length; i++) {
+            updateActorStatePopper(actors[i]); // reflect the updated fields
         }
+
+        clearMessageNodes();
+
 
         // restore messages (note: we dont restore the nextMessageId)
         let restoredMessages = new Queue();
         for (let m of entry.state.messagesState) { // we saved an array, now we make it a queue
             restoredMessages.push(m);
-            animateMessage(m)
         }
+
         for (let m of messages.toArray()) {
             if (!restoredMessages.find(/** @param {Message} msg */ msg => msg.id === m.id)) {
                 removeMessageNode(m);
             }
         }
+
         messages = restoredMessages
+        for (let m of messages.toArray()) {
+            animateMessage(m, true)
+        }
 
         // restore timeouts
         timeouts = new Queue();
         for (let t of entry.state.timeoutsState) {
             timeouts.push(t);
         }
-
-        tick = restoredTick;
-
-        // clear eventlog entries that happened after where we restored to
-        let index = eventLog.indexOf(entry)
-        eventLog = eventLog.slice(0, index + 1);
 
         //restore population state. First kill those who need to die and then revive the rest <3
         for (let actor of actors) {
@@ -273,13 +322,29 @@
             }
         }
 
-
         saveState(); // ensure the copy of state is clean for next rewind
 
         restoringState = false;
     }
 
-    /** @type {(msg: Message) => void} */
+    function finalizeRewind() { // Switches from previewing a previous state, to actually executing from that state
+        // clear eventlog entries that happened after where we restored to
+        let index = eventLog.findIndex(e => e.tick === tick);
+        if (index === -1) {
+            index = eventLog.findIndex(e => e.tick === tick - 1); //sometimes the tick will be off by one, dont worry about it
+        }
+        if (index !== -1) {
+            eventLog = eventLog.slice(0, index + 1);
+        }
+
+
+        cachedActors = []
+
+        previewingRewind = false;
+
+    }
+
+    /** @type {(msg: Message, instant: boolean) => void} */
     let animateMessage;
     function handleMessages() {
         let n = messages.length;
@@ -292,7 +357,7 @@
 
             messages.push(message);
 
-            animateMessage(message)
+            animateMessage(message, false)
 
 
 
@@ -394,8 +459,10 @@
     /** @type {(color: any, actor: Actor) => void} */
     export let changeColor;
 
+    /** @type {(actor: Actor) => void} */
+    export let addActorNodeManually;
+
     // These are the functions we export into the Actors
-    // TODO: put these somewhere nice :)
 
     /** @param {number} from
      *  @param {number} to
@@ -415,9 +482,9 @@
         addLogEntry(logEntry);
         let transitTime = getTransitTime();
         let arrivalTick = tick + transitTime;
-        let message = {id: getNextMessageId(), source: from, destination: to, type: type, sentTick: tick, arrivalTick: arrivalTick, data: data}
+        let message = {id: getNextMessageId(), source: Number(from), destination: Number(to), type: type, sentTick: tick, arrivalTick: arrivalTick, data: data}
         messages.push(message)
-        animateMessage(message);
+        animateMessage(message, false);
     }
 
 
@@ -469,7 +536,7 @@
             console.log(logEntry);
             addLogEntry(logEntry);
             message.arrivalTick = Number(message.arrivalTick) + Number(delay);
-            animateMessage(message);
+            animateMessage(message, true);
         }
     }
 
@@ -552,11 +619,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
 <!--Top navigation bar-->
-<NavigationBar
-        bind:predefinedProtocols={predefinedProtocols}
-        bind:leftPanel={leftPanel}
-        bind:sourceCode={sourceCode}
-></NavigationBar>
+<NavigationBar></NavigationBar>
 
 <!--Dotted graph (background)-->
 <div class="cy-wrapper">
@@ -573,6 +636,8 @@
             addLogEntry={addLogEntry}
             removeMessage={removeMessage}
             bind:changeColor={changeColor}
+            bind:addActorNodeManually={addActorNodeManually}
+            bind:clearMessageNodes={clearMessageNodes}
             actors={actors}
             tickSize={tickSize}
             tick={tick}
@@ -584,7 +649,13 @@
 {#if leftPanel === LeftPanelOptions.CODE}
     <!--Code block-->
     <div class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
-        <MonacoEditor bind:sourceCode={sourceCode} />
+        <MonacoEditor
+                bind:tabs={editorTabs}
+                bind:selectedTab={selectedEditorTab}
+                bind:openNewTab={openNewEditorTab}
+                bind:predefinedProtocols={predefinedProtocols}
+                spawnActor={spawnActor}
+        />
     </div>
 {:else if leftPanel === LeftPanelOptions.LOG}
     <!--Log block-->
@@ -596,14 +667,6 @@
 
     </div>
 {/if}
-
-
-<!--Send actor button-->
-<button class="absolute bottom-2 left-120 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center"
-        aria-label="Spawn actor" title="Spawn actor with the defined source code"
-        on:click={spawnActor}>
-    Spawn actor
-</button>
 
 <!--Left panel selector-->
 <div class="absolute top-14 left-5 flex items-center gap-1 rounded-lg bg-white/80 backdrop-blur p-1 shadow">

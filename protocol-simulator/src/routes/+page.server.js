@@ -13,7 +13,7 @@ export async function load() {
         const filePath = path.join(protocolsDir, file);
         const content = fs.readFileSync(filePath, 'utf-8');
         protocols.push({
-            name: file,
+            name: path.parse(file).name,
             content
         });
     }
