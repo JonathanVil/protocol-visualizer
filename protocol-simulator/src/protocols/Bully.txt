@@ -14,7 +14,7 @@
         //Check if the seq number of the message is as expected
         //If not we drop (ensures messages are retrieved in same order as they were send)
         if ( msg.data <= this.expectedSeqNums[msg.from]) {
-            console.log("Messages had a lower sequence number... dropping");
+            console.log("Messages had a lower sequence number... ignoring");
             return;
         } else {
             this.expectedSeqNums[msg.from] = msg.data
@@ -55,11 +55,14 @@
             for (let i = this.id + 1; i < getActors(); i++) {
                 send(this.id, i, "ELECTION", this.incSeq());
             }
+
+            //After x ticks, it tries to coordinate as leader.
             timeout(this, 50, this.coordinate);
 
         }
     }
     coordinate(){
+        //Only coordinate if this node is still leader.
         if (this.leader === this.id && this.coordinationSent === false){
             for (let i = 0; i < getActors(); i++) {
                 send(this.id, i, "COORDINATE", this.incSeq());
