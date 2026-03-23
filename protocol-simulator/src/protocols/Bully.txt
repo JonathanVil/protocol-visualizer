@@ -1,7 +1,6 @@
 ﻿class Actor {
     constructor(id) {
         this.id = id;
-
         this.alive = true;
         this.leader = null;
         this.leaderIsAlive = false;
@@ -11,10 +10,12 @@
     }
 
     receive(msg) {
-        console.log("Expected seqs: ", this.expectedSeqNums)
-        //If message sequence number is less that expected
+
+        //Check if the seq number of the message is as expected
+        //If not we drop (ensures messages are retrieved in same order as they were send)
         if ( msg.data <= this.expectedSeqNums[msg.from]) {
-            console.log("gg")
+            console.log("Messages had a lower sequence number... dropping");
+            return;
         } else {
             this.expectedSeqNums[msg.from] = msg.data
         }
@@ -75,6 +76,17 @@
     incSeq() {
         this.seqNum = this.seqNum + 1;
         return this.seqNum;
+    }
+
+    sendPing() {
+        //If leader is alive
+        if (this.leader) {
+            this.leaderIsAlive = false;
+            send(this.id, this.leader, "PING", this.incSeq())
+            timeout(this, 40, this.startElection)
+        } else {
+            this.startElection()
+        }
     }
 }
 
