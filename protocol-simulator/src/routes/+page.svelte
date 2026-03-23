@@ -110,6 +110,15 @@
         actor.receive(msg)
     }
 
+    /**
+     * @param {number} source
+     * @param {number} target
+     * @returns {boolean}
+     */
+    function toggleRelation(source, target) {
+
+    }
+
     function startSimulation() {
         console.log("Starting simulation");
         if (previewingRewind){
@@ -641,6 +650,7 @@
             bind:removeActorNode={removeActorNode}
             bind:messages={messages}
             toggleAlive={toggleAlive}
+            toggleRelation={toggleRelation}
             deliverMessage={deliverMessage}
             delayMessage={delayMessage}
             addLogEntry={addLogEntry}

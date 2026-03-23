@@ -296,8 +296,8 @@
                     selector: 'edge',
                     style: {
                         width: 2,
-                        'line-color': '#9ca3af',
-                        'target-arrow-color': '#9ca3af',
+                        'line-color': '#707075',
+                        'target-arrow-color': '#707075',
                         'curve-style': 'bezier',
                         label: 'data(label)',
                         'font-size': '10px',
@@ -322,8 +322,15 @@
         cyInstance.on('tap', '.message',
             /** @param {import('cytoscape').EventObject} evt - The Cytoscape event object*/
             (evt) => {
-                createMessagerPopper(evt);
-            })
+                createMessagePopper(evt);
+            }
+        )
+        cyInstance.on('tap', 'edge',
+            /** @param {import('cytoscape').EventObject} evt - The Cytoscape event object*/
+            (evt) => {
+                toggleEdge(evt);
+            }
+        )
     });
 
     onDestroy(() => {
@@ -339,10 +346,32 @@
      * @type {(actor: Actor) => void} */
     export let toggleAlive;
 
+    /** @type {(source: number, target: number) => boolean}  */
+    export let toggleRelation;
+
     /**
      * @param {import('cytoscape').EventObject} evt - The Cytoscape event object
      */
-    function createMessagerPopper(evt) {
+    function toggleEdge(evt) {
+        let edge = evt.target;
+
+        let active = toggleRelation(edge.source, edge.target);
+
+        if (active) {
+            edge.style('line-color', '#707075');
+            edge.style('target-arrow-color', '#707075');
+            edge.style('line-style', 'solid');
+        } else {
+            edge.style('line-color', '#b8b8bd');
+            edge.style('target-arrow-color', '#b8b8bd');
+            edge.style('line-style', 'dotted');
+        }
+    }
+
+    /**
+     * @param {import('cytoscape').EventObject} evt - The Cytoscape event object
+     */
+    function createMessagePopper(evt) {
 
         /** @type {import('cytoscape').NodeSingular} */
         const messageNode = evt.target;
@@ -350,54 +379,53 @@
         let messagePopUp = messageNode.scratch('messagePopup');
 
         //If the popup does not already exists
-        if (!messagePopUp) {
-            const uiLayer = document.getElementById("ui-layer");
-            if (!uiLayer) {
-                console.error("Could not find UI");
-                return;
-            }
+        if (messagePopUp) {console.log("Message popper already exists"); return}
 
-            const messageObject = messages.find( /** @param {Message} m */ m => String(m.id) === messageNode.id() ); // find the message that matches this graph node
-
-            const popperContainer = document.createElement("div");
-            popperContainer.style.position = 'absolute';
-            uiLayer.appendChild(popperContainer);
-
-            //We then mount a new svelte component (MessagePopper) to the DOM
-            const component = mount(MessagePopper, {
-                target: popperContainer,
-                props: {
-                    message: messageObject,
-                    delayMessage: delayMessage,
-                    deliverMessage: deliverGraphMessage,
-                    dropMessage: dropMessage,
-                    closePopper: closePopper,
-                }
-            });
-
-
-            //Anchor / reference for messageNode, that the popper can use for position
-            const popperReference = messageNode.popperRef();
-
-            const messagePopper = createPopper(popperReference, popperContainer, {
-                placement: 'right',
-            });
-
-            //Update postion off popper when the message node change positon or zoom
-            const update = () => messagePopper.update();
-            messageNode.on('position', update);
-            cyInstance.on('pan zoom resize', update);
-
-            //Bundle the "Popper": popper instance, svelte component and DOM element
-            messagePopUp = {messagePopper, component, popperContainer, update};
-
-            messagesToNodes.set(messageObject.id, messageNode);
-
-            //Save it in the scratch of the node.
-            messageNode.scratch('messagePopup', messagePopUp);
-        } else {
-            console.log("Message popper already exists");
+        const uiLayer = document.getElementById("ui-layer");
+        if (!uiLayer) {
+            console.error("Could not find UI");
+            return;
         }
+
+        const messageObject = messages.find( /** @param {Message} m */ m => String(m.id) === messageNode.id() ); // find the message that matches this graph node
+
+        const popperContainer = document.createElement("div");
+        popperContainer.style.position = 'absolute';
+        uiLayer.appendChild(popperContainer);
+
+        //We then mount a new svelte component (MessagePopper) to the DOM
+        const component = mount(MessagePopper, {
+            target: popperContainer,
+            props: {
+                message: messageObject,
+                delayMessage: delayMessage,
+                deliverMessage: deliverGraphMessage,
+                dropMessage: dropMessage,
+                closePopper: closePopper,
+            }
+        });
+
+
+        //Anchor / reference for messageNode, that the popper can use for position
+        const popperReference = messageNode.popperRef();
+
+        const messagePopper = createPopper(popperReference, popperContainer, {
+            placement: 'right',
+        });
+
+        //Update postion off popper when the message node change positon or zoom
+        const update = () => messagePopper.update();
+        messageNode.on('position', update);
+        cyInstance.on('pan zoom resize', update);
+
+        //Bundle the "Popper": popper instance, svelte component and DOM element
+        messagePopUp = {messagePopper, component, popperContainer, update};
+
+        messagesToNodes.set(messageObject.id, messageNode);
+
+        //Save it in the scratch of the node.
+        messageNode.scratch('messagePopup', messagePopUp);
+
     }
 
     /** @param {Message} message */
@@ -533,6 +561,7 @@
 
                 const source = otherNum
                 const target = newNum
+
 
                 const newEdge = { source, target, label: "" };
 
