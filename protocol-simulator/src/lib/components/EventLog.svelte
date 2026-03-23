@@ -5,9 +5,14 @@
 </script>
 
 
-<div class="overflow-scroll max-h-[calc(100vh-20rem)] shadow-xl p-2 rounded-md bg-white">
+<div class="overflow-scroll max-h-[calc(100vh-20rem)] shadow-xl p-2 rounded-md bg-white border border-gray-300">
 	<table class="w-full border-collapse">
 		<tbody>
+			{#if eventLog.length === 0}
+				<tr>
+					<td colspan="3" class="p-2 text-center">No events yet</td>
+				</tr>
+			{/if}
 			{#each [...eventLog].toReversed() as tick}
 				<tr class="hover:bg-blue-100 transition-colors">
 					<td class="p-2 font-semibold align-top">{tick.tick}</td>
