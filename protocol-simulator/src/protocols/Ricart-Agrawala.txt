@@ -7,6 +7,7 @@
         this.highestSequenceNumber = 0;
 
         this.requestingCS = false;
+        this.accessingCS = false;
         this.messageQueue = createQueue();
 
         this.outstandingReplyCount = 0;
@@ -28,16 +29,9 @@
                 this.accessCS()
             }
         }
-        if (msg.type === "DESIRECS") { //makes a node desire the CS
-            this.requestingCS = true;
-            this.requestCS()
-        }
-        if (msg.type === "INCREASETS") { //increments the clock of the receiver, for playing around
-            this.timestamp++;
-        }
     }
 
-    requestCS(){
+    requestCS() {
         this.requestingCS = true;
         this.ourSequenceNumber = this.highestSequenceNumber + 1;
         this.outstandingReplyCount = getActors() - 1;
@@ -49,14 +43,16 @@
         }
     }
 
-    accessCS(){
+    accessCS() {
         console.log("Accessing CS");
+        this.requestingCS = false;
+        this.accessingCS = true;
         timeout(this, 20, this.exitCS)
     }
 
-    exitCS(){
+    exitCS() {
         console.log("Exiting CS");
-        this.requestingCS = false;
+        this.accessingCS = false;
         while (this.messageQueue.length > 0) {
             let id = this.messageQueue.pop()
             send(this.id, id, "REPLY");
