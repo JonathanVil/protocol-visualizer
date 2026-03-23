@@ -1,7 +1,7 @@
 ﻿class Actor {
     constructor(id) {
         this.id = id;
-        this.alive = true;
+        this.status = "";
         this.leader = null;
         this.leaderIsAlive = false;
         this.coordinationSent = false;
@@ -29,20 +29,22 @@
         }
 
         if (msg.type === "ELECTION") { // sent when the leader is discovered dead
-            if (this.alive) {
-                this.leaderIsAlive = false
-                send(this.id, msg.from, "REPLY", this.incSeq())
-                this.startElection()
-            }
+            this.leaderIsAlive = false
+            send(this.id, msg.from, "REPLY", this.incSeq())
+            this.startElection()
         }
+
         if (msg.type === "REPLY") { // reply to an election message
             this.leaderIsAlive = true;
             if (this.leader === null || this.leader < msg.from) {
                 this.leader = msg.from
+                this.nodeColor = '#1d4ed8';
             }
+            this.status = "Reorganization"
         }
         if (msg.type === "COORDINATE") {
             this.leader = msg.from
+            this.status = "Normal"
         }
 
     }
@@ -50,6 +52,8 @@
     startElection(){
         if (!this.leaderIsAlive) {
             this.leader = this.id
+            this.status = "Election"
+            this.nodeColor = '#82242fff';
 
             for (let i = this.id + 1; i < getActors(); i++) {
                 send(this.id, i, "ELECTION", this.incSeq());
@@ -91,7 +95,5 @@
         }
     }
 }
-
-
 
 return Actor;
