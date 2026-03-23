@@ -78,7 +78,7 @@
             actorRelations[i].push(true); // push new actor to other lists
             actorRelations[nextId].push(true); // push other actors to new actor
         }
-
+        console.log(actorRelations)
 
         let logEntry = "Adding " + protocolName + " actor"
         console.log(logEntry);
@@ -116,7 +116,11 @@
      * @returns {boolean}
      */
     function toggleRelation(source, target) {
+        let newState = !(actorRelations[source][target]);
+        actorRelations[source][target] = newState;
+        actorRelations[target][source] = newState;
 
+        return newState;
     }
 
     function startSimulation() {

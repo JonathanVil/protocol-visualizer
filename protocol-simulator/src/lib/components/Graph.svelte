@@ -355,7 +355,10 @@
     function toggleEdge(evt) {
         let edge = evt.target;
 
-        let active = toggleRelation(edge.source, edge.target);
+        const source = Number(edge.source().id());
+        const target = Number(edge.target().id());
+
+        let active = toggleRelation(source, target);
 
         if (active) {
             edge.style('line-color', '#707075');
@@ -367,6 +370,7 @@
             edge.style('line-style', 'dotted');
         }
     }
+
 
     /**
      * @param {import('cytoscape').EventObject} evt - The Cytoscape event object
