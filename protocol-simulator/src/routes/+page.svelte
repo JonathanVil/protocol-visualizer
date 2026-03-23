@@ -32,6 +32,9 @@
     /** @type {Actor[]} */
     let actors = []; // the list of currently active actors
 
+    /** @type {boolean[][]} */
+    let actorRelations = []
+
     /** @type {{ tick: number, lines: string[], state: any }[]} */
     let eventLog = []
     let messages = new Queue();
@@ -58,14 +61,25 @@
           return;
         }
 
+        let nextId = actors.length
+
         //  svelte automatically updates them in the Graph.svelte
         /** @type {Actor} */
-        let newActor = new actorClass(actors.length);
+        let newActor = new actorClass(nextId);
         newActor.alive = true;
         newActor.protocolName = protocolName;
 
         let actor = watchActor(newActor);
-        actors = [...actors, actor];
+        actors = [...actors, actor]; // Must be this way to be reactive in the UI
+
+        actorRelations.push([true])
+
+        for (let i = 0; i < actorRelations.length - 1; i++) {
+            actorRelations[i].push(true); // push new actor to other lists
+            actorRelations[nextId].push(true); // push other actors to new actor
+        }
+
+
         let logEntry = "Adding " + protocolName + " actor"
         console.log(logEntry);
         addLogEntry(logEntry);
@@ -258,10 +272,6 @@
             }
 
         }
-
-
-
-
 
         for (let i = 0; i < actorsState.length; i++) {
             const savedActor = actorsState[i];
