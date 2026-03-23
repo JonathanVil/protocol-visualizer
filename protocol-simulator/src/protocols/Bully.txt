@@ -16,9 +16,8 @@
         if ( msg.data <= this.expectedSeqNums[msg.from]) {
             console.log("Messages had a lower sequence number... ignoring");
             return;
-        } else {
-            this.expectedSeqNums[msg.from] = msg.data
         }
+        this.expectedSeqNums[msg.from] = msg.data
 
         if (msg.type === "PING") { //an empty message, serves as a heartbeat
             if (this.alive){
