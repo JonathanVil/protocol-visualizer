@@ -127,8 +127,18 @@
         actorRelations[source][target] = newState;
         actorRelations[target][source] = newState;
 
+        let status = "Connected to";
+        if (!newState) {status = "Disconnected from"; }
+
+        let logEntry = `Actor ${source} ${status} Actor ${target}`
+        console.log(logEntry);
+        addLogEntry(logEntry);
+
         return newState;
     }
+
+    /** @type {(source: number, target: number, state: boolean) => void} */
+    let setEdgeState;
 
     function startSimulation() {
         console.log("Starting simulation");
@@ -238,8 +248,8 @@
         let messagesState = messages.toArray().map(m => structuredClone(m)); //we lose methods on clone, so we need an iterable copy in order to restore the queue
         let timeoutsState = timeouts.toArray().map(t => structuredClone(t));
 
-
-        let state = {actorsState: actorsState, messagesState: messagesState, timeoutsState: timeoutsState };
+        let actorRelationsState = structuredClone(actorRelations);
+        let state = {actorsState: actorsState, actorRelationsState: actorRelationsState, messagesState: messagesState, timeoutsState: timeoutsState };
 
         const entry = eventLog.find(e => e.tick === tick);
         if (entry){
@@ -349,6 +359,15 @@
                 changeColor("#525252", actor);
             } else {
                 changeColor(actor.nodeColor, actor);
+            }
+        }
+
+        // restore actorRelations
+        actorRelations = entry.state.actorRelationsState;
+        for (let i = 0; i < actorRelations.length; i++) {
+            for (let j = i; j < actorRelations.length; j++) {
+                if (i === j) continue;
+                setEdgeState(i, j, actorRelations[i][j])
             }
         }
 
@@ -666,6 +685,7 @@
             delayMessage={delayMessage}
             addLogEntry={addLogEntry}
             removeMessage={removeMessage}
+            bind:setEdgeState={setEdgeState}
             bind:changeColor={changeColor}
             bind:addActorNodeManually={addActorNodeManually}
             bind:clearMessageNodes={clearMessageNodes}

@@ -371,6 +371,33 @@
         }
     }
 
+    /**@param {number} source
+     * @param {number} target
+     * @param {boolean} state */
+    export function setEdgeState(source, target, state) {
+        const edgeId = `${source}->${target}`;
+        let edge = cyInstance.getElementById(edgeId);
+
+        if (edge.empty()) {
+            edge = cyInstance.getElementById(`${target}->${source}`);
+        }
+
+        if (edge.empty()) {
+            console.warn("Edge not found:", edgeId);
+            return;
+        }
+
+        if (state) {
+            edge.style('line-color', '#707075');
+            edge.style('target-arrow-color', '#707075');
+            edge.style('line-style', 'solid');
+        } else {
+            edge.style('line-color', '#b8b8bd');
+            edge.style('target-arrow-color', '#b8b8bd');
+            edge.style('line-style', 'dotted');
+        }
+    }
+
 
     /**
      * @param {import('cytoscape').EventObject} evt - The Cytoscape event object
@@ -476,7 +503,7 @@
     }
 
     /** @param {Message} message  */
-    export function dropMessage(message) {
+    function dropMessage(message) {
 
             removeMessageNode(message)
             let logEntry = `Dropped message ${message.type} from ${message.source} to ${message.destination}`;
