@@ -4,6 +4,7 @@
 
     import EditActorState from "$lib/components/EditActorState.svelte";
     import RunActorMethod from "$lib/components/RunActorMethod.svelte";
+    import { timeoutsStore } from "$lib/stores.js";
 
     /** @type {ActorReadable} */
     export let store;

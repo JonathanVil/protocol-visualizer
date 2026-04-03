@@ -8,6 +8,7 @@
     import ManualMessageComponent from "$lib/components/ManualMessageComponent.svelte";
     import Icon from '@iconify/svelte';
     import EventLog from "$lib/components/EventLog.svelte";
+    import {timeoutsStore} from "$lib/stores.js";
 
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
@@ -36,8 +37,6 @@
     let eventLog = []
     let messages = new Queue();
 
-    /** @type {Queue} */
-    let timeouts = new Queue();
     let tick = 0;
 
     let restoringState = false;
@@ -116,7 +115,7 @@
 
     function resetSimulation() {
         messages = new Queue();
-        timeouts = new Queue();
+        $timeoutsStore = new Queue();
         eventLog = [];
         actors = [];
         cachedActors = [];
@@ -202,7 +201,7 @@
         });
 
         let messagesState = messages.toArray().map(m => structuredClone(m)); //we lose methods on clone, so we need an iterable copy in order to restore the queue
-        let timeoutsState = timeouts.toArray().map(t => structuredClone(t));
+        let timeoutsState = $timeoutsStore.toArray().map(t => structuredClone(t));
 
 
         let state = {actorsState: actorsState, messagesState: messagesState, timeoutsState: timeoutsState };
@@ -308,9 +307,9 @@
         }
 
         // restore timeouts
-        timeouts = new Queue();
+        $timeoutsStore = new Queue();
         for (let t of entry.state.timeoutsState) {
-            timeouts.push(t);
+            $timeoutsStore.push(t);
         }
 
         //restore population state. First kill those who need to die and then revive the rest <3
@@ -407,9 +406,9 @@
     }
 
     function handleTimeouts() {
-        let n = timeouts.length;
+        let n = $timeoutsStore.length;
         for (let i = 0; i < n; i++) {
-            let timer = timeouts.pop()
+            let timer = $timeoutsStore.pop()
             if (timer != null){
                 if (timer.ticks === 0){
                     /** @type {Record<string, any>} */
@@ -418,7 +417,7 @@
                     actor[timer.reaction]();
                 } else {
                     timer.ticks -= 1
-                    timeouts.push(timer);
+                    $timeoutsStore.push(timer);
                 }
 
             }
@@ -502,7 +501,7 @@
      * @param {function} reaction
      */
     function timeout(actor, ticks, reaction) { //Example of use: timeout(this, 10, this.fart); function fart() { console.log("fart") }
-        timeouts.push({
+        $timeoutsStore.push({
             ticks,
             actorId: actor.id,
             reaction: reaction.name
@@ -548,7 +547,7 @@
     export function toggleAlive(actor) {
         if (actor.alive) {
             actor.alive = false;
-            timeouts.remove(/** @param {TimeOutEntry} timeout */ timeout => timeout.actorId === actor.id)
+            $timeoutsStore.remove(/** @param {TimeOutEntry} timeout */ timeout => timeout.actorId === actor.id)
             let logEntry = `Actor ${actor.id} was killed`
             console.log(logEntry);
             addLogEntry(logEntry);
