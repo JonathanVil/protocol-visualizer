@@ -419,9 +419,9 @@
                     timer.ticks -= 1
                     $timeoutsStore.push(timer);
                 }
-
             }
         }
+        $timeoutsStore = $timeoutsStore;
     }
 
     /** @param {Message} message */
@@ -503,6 +503,7 @@
     function timeout(actor, ticks, reaction) { //Example of use: timeout(this, 10, this.fart); function fart() { console.log("fart") }
         $timeoutsStore.push({
             ticks,
+            totalTicks: ticks,
             actorId: actor.id,
             reaction: reaction.name
         });
