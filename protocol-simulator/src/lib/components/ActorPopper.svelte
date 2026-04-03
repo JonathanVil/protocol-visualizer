@@ -6,6 +6,8 @@
     import RunActorMethod from "$lib/components/RunActorMethod.svelte";
     import { timeoutsStore } from "$lib/stores.js";
 
+    /** @typedef {import('$lib/types.js').TimeoutEntry} TimeOutEntry */
+
     /** @type {ActorReadable} */
     export let store;
 
@@ -20,6 +22,9 @@
 
     /** @type {() => void} */
     export let reposition;
+
+    /** @type {TimeOutEntry[]} */
+    $: actorTimeouts = $timeoutsStore.toArray().filter(t => t.actorId === actor?.id);
 
     /** @param {any} v */
     export function formatValue(v) {
@@ -220,6 +225,25 @@
         }
     }
 </script>
+
+{#if actorTimeouts.length > 0}
+    <svg width="40" height="40" viewBox="0 0 40 40">
+        {#each actorTimeouts as t, i}
+            {@const radius = 16}
+            {@const circumference = 2 * Math.PI * radius}
+            {@const progress = t.ticks / t.totalTicks}
+            <circle
+                    cx="20" cy="20" r={radius}
+                    fill="none"
+                    stroke="hsl({i * 60}, 80%, 60%)"
+                    stroke-width="3"
+                    stroke-dasharray={circumference}
+                    stroke-dashoffset={circumference * progress}
+                    transform="rotate(-90 20 20)"
+            />
+        {/each}
+    </svg>
+{/if}
 
 <div
     class="pointer-events-auto relative whitespace-nowrap rounded-lg border border-white/10 bg-slate-900/90 pl-2 pr-6 py-1.5 text-[12px] leading-[1.2] text-white shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
