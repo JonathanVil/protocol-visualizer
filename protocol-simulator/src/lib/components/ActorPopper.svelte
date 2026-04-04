@@ -342,28 +342,38 @@
         </div>
     </div>
 
-    <div class="pointer-events-none absolute top-9 right-3">
+    <div class="absolute top-8 right-1 flex flex-col items-end">
         <p class="text-white text-xs font-mono" style="text-shadow: 0 0 3px black, 0 0 3px black;">Timeouts</p>
         {#if actorTimeouts.length > 0}
                 {#each actorTimeouts as t, i}
-                    {@const radius = 16}
+                    {@const radius = 12}
                     {@const circumference = 2 * Math.PI * radius}
                     {@const progress = t.ticks / t.totalTicks}
+                    {@const color = "#e24b4a"}
                     <svg width="40" height="40" viewBox="0 0 40 40">
-                    <circle
-                            cx="20" cy="20" r={radius}
-                            fill="none"
-                            stroke="hsl({i * 60}, 80%, 60%)"
-                            stroke-width="3"
-                            stroke-dasharray={circumference}
-                            stroke-dashoffset={circumference * progress}
-                            transform="rotate(-90 20 20)"
-                    />
+                        <circle cx="18" cy="18" r={radius}
+                                fill="none"
+                                stroke="rgba(255,255,255,0.08)"
+                                stroke-width="3"
+                        />
+                        <!-- countdown arc -->
+                        <circle cx="18" cy="18" r={radius}
+                                fill="none"
+                                stroke={color}
+                                stroke-width="3"
+                                stroke-linecap="round"
+                                stroke-dasharray={circumference}
+                                stroke-dashoffset={circumference * (1 - progress)}
+                                transform="rotate(-90 18 18)"
+                        />
                     </svg>
+                    <span class="text-white font-mono"
+                          style="font-size: 9px; text-shadow: 0 0 3px #000">
+                {t.ticks} ticks
+            </span>
                 {/each}
         {/if}
     </div>
-
 
 </div>
 
