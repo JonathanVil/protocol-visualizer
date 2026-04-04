@@ -33,6 +33,9 @@
     /** @type {Actor[]} */
     let actors = []; // the list of currently active actors
 
+    /** @type {boolean[][]} */
+    let actorRelations = []
+
     /** @type {{ tick: number, lines: string[], state: any }[]} */
     let eventLog = []
     let messages = new Queue();
@@ -57,14 +60,25 @@
           return;
         }
 
+        let nextId = actors.length
+
         //  svelte automatically updates them in the Graph.svelte
         /** @type {Actor} */
-        let newActor = new actorClass(actors.length);
+        let newActor = new actorClass(nextId);
         newActor.alive = true;
         newActor.protocolName = protocolName;
 
         let actor = watchActor(newActor);
-        actors = [...actors, actor];
+        actors = [...actors, actor]; // Must be this way to be reactive in the UI
+
+        actorRelations.push([true])
+
+        for (let i = 0; i < actorRelations.length - 1; i++) {
+            actorRelations[i].push(true); // push new actor to other lists
+            actorRelations[nextId].push(true); // push other actors to new actor
+        }
+        console.log(actorRelations)
+
         let logEntry = "Adding " + protocolName + " actor"
         console.log(logEntry);
         addLogEntry(logEntry);
@@ -78,7 +92,14 @@
     function deliverMessage(message) {
         // if the message is delivered to a inactive Actor, ignore it
         if (!actors[message.destination].alive) {
-            let logEntry = `Actor ${message.destination} recieved msg ${message.type} from Actor ${message.source}, but is dead`
+            let logEntry = `Actor ${message.destination} would have recieved msg ${message.type} from Actor ${message.source}, but is dead`
+            console.log(logEntry);
+            addLogEntry(logEntry);
+            return;
+        }
+
+        if (!(actorRelations[message.source][message.destination])) {
+            let logEntry = `Actor ${message.destination} would have recieved msg ${message.type} from Actor ${message.source}, but connection is severed`
             console.log(logEntry);
             addLogEntry(logEntry);
             return;
@@ -94,6 +115,29 @@
         let msg = {type: message.type, from: message.source, data: message.data};
         actor.receive(msg)
     }
+
+    /**
+     * @param {number} source
+     * @param {number} target
+     * @returns {boolean}
+     */
+    function toggleRelation(source, target) {
+        let newState = !(actorRelations[source][target]);
+        actorRelations[source][target] = newState;
+        actorRelations[target][source] = newState;
+
+        let status = "Connected to";
+        if (!newState) {status = "Disconnected from"; }
+
+        let logEntry = `Actor ${source} ${status} Actor ${target}`
+        console.log(logEntry);
+        addLogEntry(logEntry);
+
+        return newState;
+    }
+
+    /** @type {(source: number, target: number, state: boolean) => void} */
+    let setEdgeState;
 
     function startSimulation() {
         console.log("Starting simulation");
@@ -203,8 +247,8 @@
         let messagesState = messages.toArray().map(m => structuredClone(m)); //we lose methods on clone, so we need an iterable copy in order to restore the queue
         let timeoutsState = $timeoutsStore.toArray().map(t => structuredClone(t));
 
-
-        let state = {actorsState: actorsState, messagesState: messagesState, timeoutsState: timeoutsState };
+        let actorRelationsState = structuredClone(actorRelations);
+        let state = {actorsState: actorsState, actorRelationsState: actorRelationsState, messagesState: messagesState, timeoutsState: timeoutsState };
 
         const entry = eventLog.find(e => e.tick === tick);
         if (entry){
@@ -257,10 +301,6 @@
             }
 
         }
-
-
-
-
 
         for (let i = 0; i < actorsState.length; i++) {
             const savedActor = actorsState[i];
@@ -318,6 +358,15 @@
                 changeColor("#525252", actor);
             } else {
                 changeColor(actor.nodeColor, actor);
+            }
+        }
+
+        // restore actorRelations
+        actorRelations = entry.state.actorRelationsState;
+        for (let i = 0; i < actorRelations.length; i++) {
+            for (let j = i; j < actorRelations.length; j++) {
+                if (i === j) continue;
+                setEdgeState(i, j, actorRelations[i][j])
             }
         }
 
@@ -631,10 +680,12 @@
             bind:removeActorNode={removeActorNode}
             bind:messages={messages}
             toggleAlive={toggleAlive}
+            toggleRelation={toggleRelation}
             deliverMessage={deliverMessage}
             delayMessage={delayMessage}
             addLogEntry={addLogEntry}
             removeMessage={removeMessage}
+            bind:setEdgeState={setEdgeState}
             bind:changeColor={changeColor}
             bind:addActorNodeManually={addActorNodeManually}
             bind:clearMessageNodes={clearMessageNodes}
