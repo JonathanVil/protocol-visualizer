@@ -226,36 +226,18 @@
     }
 </script>
 
-{#if actorTimeouts.length > 0}
-    <svg width="40" height="40" viewBox="0 0 40 40">
-        {#each actorTimeouts as t, i}
-            {@const radius = 16}
-            {@const circumference = 2 * Math.PI * radius}
-            {@const progress = t.ticks / t.totalTicks}
-            <circle
-                    cx="20" cy="20" r={radius}
-                    fill="none"
-                    stroke="hsl({i * 60}, 80%, 60%)"
-                    stroke-width="3"
-                    stroke-dasharray={circumference}
-                    stroke-dashoffset={circumference * progress}
-                    transform="rotate(-90 20 20)"
-            />
-        {/each}
-    </svg>
-{/if}
-
-<div
-    class="pointer-events-auto relative whitespace-nowrap rounded-lg border border-white/10 bg-slate-900/90 pl-2 pr-6 py-1.5 text-[12px] leading-[1.2] text-white shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
->
-    <div class="absolute flex flex-row right-1 top-1">
-        <button
-            type="button"
-            class="inline-flex h-5 w-5 items-center justify-center rounded text-white/80 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-            aria-label={stateCollapsed ? 'Show popper' : 'Hide popper'}
-            title={stateCollapsed ? 'Show state (Shift + Click to show all)' : 'Hide state (Shift + Click to hide all)'}
-            on:click={toggleShowState}
-        >
+<div class="flex flex-row gap-3">
+    <div
+            class="pointer-events-auto relative whitespace-nowrap rounded-lg border border-white/10 bg-slate-900/90 pl-2 pr-6 py-1.5 text-[12px] leading-[1.2] text-white shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
+    >
+        <div class="absolute flex flex-row right-1 top-1">
+            <button
+                    type="button"
+                    class="inline-flex h-5 w-5 items-center justify-center rounded text-white/80 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                    aria-label={stateCollapsed ? 'Show popper' : 'Hide popper'}
+                    title={stateCollapsed ? 'Show state (Shift + Click to show all)' : 'Hide state (Shift + Click to hide all)'}
+                    on:click={toggleShowState}
+            >
                 <!-- "show" icon (eye) -->
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
@@ -266,99 +248,127 @@
                         aria-hidden="true"
                 ></span>
 
-        </button>
+            </button>
 
-        <button
-                type="button"
-                class="inline-flex h-5 w-5 items-center justify-center rounded text-white/80 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                aria-label="Show methods"
-                title={methodsListCollapsed ? 'Show methods (Shift + Click to show all)' : 'Hide methods (Shift + Click to hide all)'}
-                on:click={toggleShowMethods}
-        >
-            <i class="fa fa-terminal"></i>
-            <span
-                    class="absolute h-[2px] w-5 rounded bg-current transition-all duration-200 ease-in-out {methodsListCollapsed ? 'rotate-0 opacity-0 scale-75' : '-rotate-45 opacity-100 scale-100'}"
-                    aria-hidden="true"
-            ></span>
-        </button>
-    </div>
-
-    <div class="pr-6">
-        <div class="flex flex-row items-center gap-28">
-            <div class="mb-0.5 font-semibold opacity-90">Actor {actor?.id} ({actor.protocolName})</div>
-            <button class=" bg-blue-600 text-white rounded hover:bg-blue-700 w-13 h-5 text-xs flex text-center justify-center items-center"
-                    on:click={() =>
-                    {
-                       toggleAlive(actor, originalColor)
-                    }}>
-                {#if actor.alive}
-                    <p>Kill</p>
-                {:else}
-                    <p>Resurrect</p>
-                {/if}
+            <button
+                    type="button"
+                    class="inline-flex h-5 w-5 items-center justify-center rounded text-white/80 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                    aria-label="Show methods"
+                    title={methodsListCollapsed ? 'Show methods (Shift + Click to show all)' : 'Hide methods (Shift + Click to hide all)'}
+                    on:click={toggleShowMethods}
+            >
+                <i class="fa fa-terminal"></i>
+                <span
+                        class="absolute h-[2px] w-5 rounded bg-current transition-all duration-200 ease-in-out {methodsListCollapsed ? 'rotate-0 opacity-0 scale-75' : '-rotate-45 opacity-100 scale-100'}"
+                        aria-hidden="true"
+                ></span>
             </button>
         </div>
 
-        {#if !stateCollapsed}
-            {#if !actor}
-                <div class="font-mono opacity-95"><span class="opacity-90">Actor</span>: <span>null</span></div>
-            {:else}
-                {#each entries as [key, value] (key)}
-                    <div class="font-mono opacity-95 flex items-center gap-1">
-                        <span class="opacity-90">{key}</span>:
-                        {#key versionByKey.get(key) ?? 0}
-                            <span class="flash">{formatValue(value)}</span>
-                        {/key}
+        <div class="pr-6">
+            <div class="flex flex-row items-center gap-28">
+                <div class="mb-0.5 font-semibold opacity-90">Actor {actor?.id} ({actor.protocolName})</div>
+                <button class=" bg-blue-600 text-white rounded hover:bg-blue-700 w-13 h-5 text-xs flex text-center justify-center items-center"
+                        on:click={() =>
+                    {
+                       toggleAlive(actor, originalColor)
+                    }}>
+                    {#if actor.alive}
+                        <p>Kill</p>
+                    {:else}
+                        <p>Resurrect</p>
+                    {/if}
+                </button>
+            </div>
 
-                        <button
-                            type="button"
-                            class="ml-1 inline-flex h-5 w-5 items-center justify-center rounded text-white/70 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                            aria-label={"Edit " + key}
-                            title={"Edit " + key}
-                            on:click={(e) => openEdit(e, key)}
-                        >
-                            <!-- pencil icon -->
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 20h9" />
-                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                            </svg>
-                        </button>
-                    </div>
-                {/each}
-
-                {#if editingKey}
-                    <EditActorState save={v => saveEdit(v)} bind:editingKey={editingKey} bind:editText={editText} bind:editOriginalValue={editOriginalValue} />
-                {/if}
-            {/if}
-        {/if}
-
-        <div class="font-mono">
-            {#if !methodsListCollapsed}
-                {#each methods.entries() as [name, val]}
-                    <div class="font-mono opacity-95 flex items-center gap-1">
-                        <span class="opacity-90">{name}({val.join(', ')})</span>
-
-                        <button
-                                type="button"
-                                class="ml-1 inline-flex h-5 w-5 items-center justify-center rounded text-white/70 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                                aria-label={"Run " + name}
-                                title={"Run " + name}
-                                on:click={() => selectedMethod = [name, val]}
-                        >
-                            <i class="fa fa-play"></i>
-                        </button>
-                    </div>
+            {#if !stateCollapsed}
+                {#if !actor}
+                    <div class="font-mono opacity-95"><span class="opacity-90">Actor</span>: <span>null</span></div>
                 {:else}
-                    <p>No functions found</p>
-                {/each}
+                    {#each entries as [key, value] (key)}
+                        <div class="font-mono opacity-95 flex items-center gap-1">
+                            <span class="opacity-90">{key}</span>:
+                            {#key versionByKey.get(key) ?? 0}
+                                <span class="flash">{formatValue(value)}</span>
+                            {/key}
 
-                {#if selectedMethod}
-                    <RunActorMethod run={args => selectedMethod && runMethod(selectedMethod[0], args)} cancel={() => selectedMethod = null} methodName={selectedMethod[0]} argumentNames={selectedMethod[1]}  />
+                            <button
+                                    type="button"
+                                    class="ml-1 inline-flex h-5 w-5 items-center justify-center rounded text-white/70 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                                    aria-label={"Edit " + key}
+                                    title={"Edit " + key}
+                                    on:click={(e) => openEdit(e, key)}
+                            >
+                                <!-- pencil icon -->
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 20h9" />
+                                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                                </svg>
+                            </button>
+                        </div>
+                    {/each}
+
+                    {#if editingKey}
+                        <EditActorState save={v => saveEdit(v)} bind:editingKey={editingKey} bind:editText={editText} bind:editOriginalValue={editOriginalValue} />
+                    {/if}
                 {/if}
             {/if}
+
+            <div class="font-mono">
+                {#if !methodsListCollapsed}
+                    {#each methods.entries() as [name, val]}
+                        <div class="font-mono opacity-95 flex items-center gap-1">
+                            <span class="opacity-90">{name}({val.join(', ')})</span>
+
+                            <button
+                                    type="button"
+                                    class="ml-1 inline-flex h-5 w-5 items-center justify-center rounded text-white/70 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                                    aria-label={"Run " + name}
+                                    title={"Run " + name}
+                                    on:click={() => selectedMethod = [name, val]}
+                            >
+                                <i class="fa fa-play"></i>
+                            </button>
+                        </div>
+                    {:else}
+                        <p>No functions found</p>
+                    {/each}
+
+                    {#if selectedMethod}
+                        <RunActorMethod run={args => selectedMethod && runMethod(selectedMethod[0], args)} cancel={() => selectedMethod = null} methodName={selectedMethod[0]} argumentNames={selectedMethod[1]}  />
+                    {/if}
+                {/if}
+            </div>
         </div>
     </div>
+
+    <div class="pointer-events-none absolute top-9 right-3">
+        <p class="text-white text-xs font-mono" style="text-shadow: 0 0 3px black, 0 0 3px black;">Timeouts</p>
+        {#if actorTimeouts.length > 0}
+                {#each actorTimeouts as t, i}
+                    {@const radius = 16}
+                    {@const circumference = 2 * Math.PI * radius}
+                    {@const progress = t.ticks / t.totalTicks}
+                    <svg width="40" height="40" viewBox="0 0 40 40">
+                    <circle
+                            cx="20" cy="20" r={radius}
+                            fill="none"
+                            stroke="hsl({i * 60}, 80%, 60%)"
+                            stroke-width="3"
+                            stroke-dasharray={circumference}
+                            stroke-dashoffset={circumference * progress}
+                            transform="rotate(-90 20 20)"
+                    />
+                    </svg>
+                {/each}
+        {/if}
+    </div>
+
+
 </div>
+
+
+
 
 <style>
     @keyframes flash {
