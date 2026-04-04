@@ -226,7 +226,7 @@
     }
 </script>
 
-<div class="flex flex-row gap-3">
+<div class="flex flex-col gap-3">
     <div
             class="pointer-events-auto relative whitespace-nowrap rounded-lg border border-white/10 bg-slate-900/90 pl-2 pr-6 py-1.5 text-[12px] leading-[1.2] text-white shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
     >
@@ -340,11 +340,11 @@
                 {/if}
             </div>
         </div>
-    </div>
 
-    <div class="absolute top-8 right-1 flex flex-col items-end">
-        <p class="text-white text-xs font-mono" style="text-shadow: 0 0 3px black, 0 0 3px black;">Timeouts</p>
-        {#if actorTimeouts.length > 0}
+
+        <p class="text-white text-xs font-mono mt-2" style="text-shadow: 0 0 3px black, 0 0 3px black;">Timeouts</p>
+        <div class="flex flex-row items-end">
+            {#if actorTimeouts.length > 0}
                 {#each actorTimeouts as t, i}
                     {@const radius = 12}
                     {@const circumference = 2 * Math.PI * radius}
@@ -372,7 +372,8 @@
                 {t.ticks} ticks
             </span>
                 {/each}
-        {/if}
+            {/if}
+        </div>
     </div>
 
 </div>
