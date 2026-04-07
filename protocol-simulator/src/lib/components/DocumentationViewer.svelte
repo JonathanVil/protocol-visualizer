@@ -1,14 +1,7 @@
 <script>
-  import { onMount } from 'svelte';
-  import {marked} from "marked";
+    import {marked} from "marked";
 
-
-  let source = '';
-
-  onMount(async () => {
-    const res = await fetch('/BASICS.md');
-    source = await res.text();
-  });
+    export let source = '';
 </script>
 
 <div class="flex h-full flex-col">
@@ -16,7 +9,7 @@
         <h1 class="text-lg font-medium">Guide</h1>
     </div>
 
-    <div class="overflow-scroll max-h-[calc(100vh-20rem)] shadow-xl p-2 rounded-b-md bg-white border border-gray-300 prose">
+    <div class="overflow-scroll max-h-[calc(100vh-10rem)] shadow-xl p-2 rounded-b-md bg-white border border-gray-300 prose max-w-full">
         {@html marked.parse(source)}
     </div>
 </div>

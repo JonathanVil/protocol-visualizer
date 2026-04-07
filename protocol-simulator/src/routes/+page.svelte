@@ -17,9 +17,10 @@
     /** @typedef {import('$lib/types.js').EditorTab} EditorTab */
 
 
-    /**@type {{ protocols: { name: string; content: string }[] }}*/
+    /**@type {{ protocols: { name: string; content: string }[], docs: string }}*/
     export let data; // props from +page.server.js
     let predefinedProtocols = data.protocols;
+    let docs = data.docs;
 
     /** @type {EditorTab[]} */
     let editorTabs = [];
@@ -685,7 +686,7 @@
 
     <div class="absolute top-14 left-14 rounded-lg w-9/20 h-4/5">
         {#if leftPanel === LeftPanelOptions.DOCS}
-            <DocumentationViewer/>
+            <DocumentationViewer source={docs} />
         {:else if leftPanel === LeftPanelOptions.CODE}
             <!--Code block-->
             <MonacoEditor
