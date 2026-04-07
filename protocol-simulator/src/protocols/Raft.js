@@ -12,8 +12,7 @@ class Actor {
         this.nextIndex = {};
         this.matchIndex = {};
 
-
-
+        this.electionTimeout();
     }
 
     receive(msg) {
@@ -45,6 +44,11 @@ class Actor {
             send(this.id, msg.from, [this.currentTerm, vote], 'VOTEREPLY');
         }
 
+    }
+
+    electionTimeout() {
+        let randomTimeout = (150 + Math.floor(Math.random() * 150)) / 3; // Random timeout between 50 and 100 ticks
+        timeout(this, randomTimeout, this.requestVote);
     }
 
     //send a VOTEREQUEST to all other actors. Called upon election timeout.
