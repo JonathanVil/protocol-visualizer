@@ -515,8 +515,8 @@
 
     /** @param {number} from
      *  @param {number} to
-     *  @param {any} data
      *  @param {string} type
+     *  @param {any} data
      * */
     function send(from, to, type, data) { //Example of use: send(this.id, msg.id, "PING", "Hello")
         if (!(to < actors.length && to >= 0)) return; // cant send messages to freaks who are not real

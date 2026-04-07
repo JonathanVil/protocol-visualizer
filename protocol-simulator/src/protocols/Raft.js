@@ -41,7 +41,7 @@ class Actor {
                     vote = true;
                 }
             }
-            send(this.id, msg.from, [this.currentTerm, vote], 'VOTEREPLY');
+            send(this.id, msg.from, 'VOTEREPLY', [this.currentTerm, vote] );
         }
 
     }
@@ -63,7 +63,7 @@ class Actor {
                     lastLogIndex: this.commitIndex,
                     lastLogTerm: lastLogTerm
                 }
-                send(this.id, actorId, voteRequestData, 'VOTEREQUEST');
+                send(this.id, actorId, "VOTEREQUEST", voteRequestData);
             }
         }
     }
