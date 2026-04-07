@@ -54,16 +54,16 @@ class Actor {
     //send a VOTEREQUEST to all other actors. Called upon election timeout.
     requestVote() {
         this.votedFor = this.id
-        for (const actor in actors) {
-            if (actor.id !== this.id) {
-                let lastLogTerm = this.log.length > 0 ? this.log[this.commitIndex - 1].term : 0;
+        let lastLogTerm = this.log.length > 0 ? this.log[this.commitIndex - 1].term : 0;
+        for (let actorId = 0; actorId < getActors(); actorId++) {
+            if (actorId !== this.id) {
                 let voteRequestData = {
                     term: this.currentTerm,
                     candidateId: this.id,
                     lastLogIndex: this.commitIndex,
                     lastLogTerm: lastLogTerm
                 }
-                send(this.id, actor.id, voteRequestData, 'VOTEREQUEST');
+                send(this.id, actorId, voteRequestData, 'VOTEREQUEST');
             }
         }
     }
