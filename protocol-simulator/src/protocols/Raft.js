@@ -54,6 +54,7 @@ class Actor {
     //send a VOTEREQUEST to all other actors. Called upon election timeout.
     requestVote() {
         this.votedFor = this.id
+        this.currentTerm = this.currentTerm + 1;
         let lastLogTerm = this.log.length > 0 ? this.log[this.commitIndex - 1].term : 0;
         for (let actorId = 0; actorId < getActors(); actorId++) {
             if (actorId !== this.id) {
