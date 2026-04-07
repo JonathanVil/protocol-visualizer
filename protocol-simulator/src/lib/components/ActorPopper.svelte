@@ -5,6 +5,7 @@
     import EditActorState from "$lib/components/EditActorState.svelte";
     import RunActorMethod from "$lib/components/RunActorMethod.svelte";
     import { timeoutsStore } from "$lib/stores.js";
+    import ProgressCircle from "$lib/components/ProgressCircle.svelte";
 
     /** @typedef {import('$lib/types.js').TimeoutEntry} TimeOutEntry */
 
@@ -346,27 +347,7 @@
             <p class="text-white text-xs font-mono mt-2" style="text-shadow: 0 0 3px black, 0 0 3px black;">Timeouts</p>
             <div class="flex flex-row items-end">
                 {#each actorTimeouts as t, i}
-                    {@const radius = 12}
-                    {@const circumference = 2 * Math.PI * radius}
-                    {@const progress = t.ticks / t.totalTicks}
-                    {@const color = "#e24b4a"}
-                    <svg width="40" height="40" viewBox="0 0 40 40">
-                        <circle cx="18" cy="18" r={radius}
-                                fill="none"
-                                stroke="rgba(255,255,255,0.08)"
-                                stroke-width="3"
-                        />
-                        <!-- countdown arc -->
-                        <circle cx="18" cy="18" r={radius}
-                                fill="none"
-                                stroke={color}
-                                stroke-width="3"
-                                stroke-linecap="round"
-                                stroke-dasharray={circumference}
-                                stroke-dashoffset={circumference * (1 - progress)}
-                                transform="rotate(-90 18 18)"
-                        />
-                    </svg>
+                    <ProgressCircle progress={t.ticks / t.totalTicks} />
                     <span class="text-white font-mono" style="font-size: 9px; text-shadow: 0 0 3px #000">
                         {t.ticks} ticks
                     </span>
