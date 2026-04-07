@@ -342,9 +342,9 @@
         </div>
 
 
-        <p class="text-white text-xs font-mono mt-2" style="text-shadow: 0 0 3px black, 0 0 3px black;">Timeouts</p>
-        <div class="flex flex-row items-end">
-            {#if actorTimeouts.length > 0}
+        {#if actorTimeouts.length > 0}
+            <p class="text-white text-xs font-mono mt-2" style="text-shadow: 0 0 3px black, 0 0 3px black;">Timeouts</p>
+            <div class="flex flex-row items-end">
                 {#each actorTimeouts as t, i}
                     {@const radius = 12}
                     {@const circumference = 2 * Math.PI * radius}
@@ -367,13 +367,12 @@
                                 transform="rotate(-90 18 18)"
                         />
                     </svg>
-                    <span class="text-white font-mono"
-                          style="font-size: 9px; text-shadow: 0 0 3px #000">
-                {t.ticks} ticks
-            </span>
+                    <span class="text-white font-mono" style="font-size: 9px; text-shadow: 0 0 3px #000">
+                        {t.ticks} ticks
+                    </span>
                 {/each}
-            {/if}
-        </div>
+            </div>
+        {/if}
     </div>
 
 </div>
