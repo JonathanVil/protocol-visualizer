@@ -4,6 +4,7 @@ class Actor {
         this.id = id;
 
         // STATE
+        this.state = "FOLLOWER"
         this.currentTerm = 0;
         this.votedFor = null;
         this.log = [];
@@ -11,6 +12,7 @@ class Actor {
         this.lastApplied = 0;
         this.nextIndex = {};
         this.matchIndex = {};
+        this.votes = 0;
 
         this.electionTimeout();
     }
@@ -42,7 +44,16 @@ class Actor {
                 }
             }
             send(this.id, msg.from, 'VOTEREPLY', [this.currentTerm, vote] );
+        } else if (msg.type === 'VOTEREPLY') {
+            this.votes++;
+            // If votes received from majority of actors
+            if (this.votes > Math.floor(getActors() + 1 / 2)) {
+                this.state = "LEADER";
+            }
+        } else if (msg.type === 'APPENDENTRIESEQUEST') {
+
         }
+
 
     }
 
@@ -53,6 +64,8 @@ class Actor {
 
     //send a VOTEREQUEST to all other actors. Called upon election timeout.
     requestVote() {
+        if (this.votedFor !== null) return; // already voted for someone else, do not start election
+        this.state = "CANDIDATE";
         this.votedFor = this.id
         this.currentTerm = this.currentTerm + 1;
         let lastLogTerm = this.log.length > 0 ? this.log[this.commitIndex - 1].term : 0;
@@ -66,6 +79,18 @@ class Actor {
                 }
                 send(this.id, actorId, "VOTEREQUEST", voteRequestData);
             }
+        }
+    }
+
+    sendAppendEntries() {
+
+
+        let appendEntryData = {
+            term: this.currentTerm,
+            candidateId: this.id,
+            prevLogIndex: this.prevLogIndex,
+            prevLogTerm: this.prevLogTerm,
+            entries: this.log
         }
     }
 }
