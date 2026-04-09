@@ -679,7 +679,7 @@
     >
         <button
                 class:active={leftPanel === LeftPanelOptions.DOCS}
-                class="rounded-none p-2 text-slate-300 hover:rounded-md hover:bg-blue-200 aria-pressed:border-l-3 border-blue-500"
+                class="p-2 text-slate-300 rounded-md hover:bg-blue-200 aria-pressed:bg-blue-200 border-blue-500"
                 aria-label="Log"
                 aria-pressed={leftPanel === LeftPanelOptions.DOCS}
                 on:click={() => (leftPanel = LeftPanelOptions.DOCS)}
@@ -689,7 +689,7 @@
 
         <button
                 class:active={leftPanel === LeftPanelOptions.CODE}
-                class="rounded-none p-2 text-slate-300 hover:rounded-md hover:bg-blue-200 aria-pressed:border-l-3 border-blue-500"
+                class="p-2 text-slate-300 rounded-md hover:bg-blue-200 aria-pressed:bg-blue-200 border-blue-500"
                 aria-label="Code"
                 aria-pressed={leftPanel === LeftPanelOptions.CODE}
                 on:click={() => (leftPanel = LeftPanelOptions.CODE)}
@@ -699,7 +699,7 @@
 
         <button
                 class:active={leftPanel === LeftPanelOptions.LOG}
-                class="rounded-none p-2 text-slate-300 hover:rounded-md hover:bg-blue-200 aria-pressed:border-l-3 border-blue-500"
+                class="p-2 text-slate-300 rounded-md hover:bg-blue-200 aria-pressed:bg-blue-200 border-blue-500"
                 aria-label="Log"
                 aria-pressed={leftPanel === LeftPanelOptions.LOG}
                 on:click={() => (leftPanel = LeftPanelOptions.LOG)}
