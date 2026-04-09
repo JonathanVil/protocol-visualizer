@@ -60,9 +60,11 @@
 		"@floating-ui/dom": "^1.7.5",
 		"@iconify/svelte": "^5.2.1",
 		"@popperjs/core": "^2.11.8",
+		"@tailwindcss/typography": "^0.5.19",
 		"cytoscape": "^3.33.1",
 		"cytoscape-popper": "^4.0.1",
 		"markdown-it": "^14.1.1",
+		"marked": "^18.0.0",
 		"monaco-editor": "^0.55.1"
 	}
 }
