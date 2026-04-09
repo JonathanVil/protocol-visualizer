@@ -9,12 +9,13 @@ class Actor {
         this.votedFor = null;
         this.log = [];
         this.commitIndex = 0;
-        this.lastApplied = 0;
+        this.lastApplied = 0; //TODO
         this.nextIndex = [];
-        this.matchIndex = [];
+        this.matchIndex = []; //TODO
         this.votes = 0;
+        this.timeoutId = null
+        this.startElectionTimeout();
 
-        this.electionTimeout();
     }
 
     receive(msg) {
@@ -36,6 +37,7 @@ class Actor {
                 vote = false;
             } else if (this.votedFor === null || this.votedFor === msg.data.candidateId) { // "Each server will vote for at most one candidate in a given term"
 
+                this.startElectionTimeout();
                 // Check if candidate's log is at least as up-to-date as receiver's log
                 let upToDate = false;
                 let lastLogTerm = this.log.length > 0 ? this.log[this.commitIndex - 1].term : 0;
@@ -62,7 +64,7 @@ class Actor {
 
             this.votes++;
             // If votes received from majority of actors. It wins the election (a)
-            if (this.votes > Math.floor(getActors() + 1 / 2)) {
+            if (this.votes >= Math.floor(getActors() / 2) + 1) {
                 this.becomeLeader();
                 // BEGIN SENDING HEARTBEATS
             }
@@ -71,7 +73,7 @@ class Actor {
             msg.data: { term: number; prevLogIndex: number; prevLogTerm: number; entries: []; leaderCommit: number; }
              */
 
-            this.electionTimeout();
+            this.startElectionTimeout();
 
             // "While waiting for votes, a candidate may receive an AppendEntries RPC from another server claiming to be leader. If the leader’s term (included in its RPC) is at least
             // as large as the candidate’s current term, then the candidate recognizes the leader as legitimate and returns to follower state." (b)
@@ -146,6 +148,8 @@ class Actor {
 
         this.nextIndex = Array(getActors()).fill(this.log.length);
         this.matchIndex = Array(getActors()).fill(0);
+        deleteTimeout(this.timeoutId);
+        this.timeoutId = null;
         this.nodeColor = 'red';
         this.broadcastAppendEntries()
     }
@@ -154,12 +158,14 @@ class Actor {
         this.state = "CANDIDATE";
         this.currentTerm = this.currentTerm + 1;
         this.votedFor = this.id
-        this.nodeColor = 'yellow';
+        this.votes = 1;
+        this.nodeColor = 'orange';
     }
 
-    electionTimeout() {
-        let randomTimeout = (100 + Math.floor(Math.random() * 300)); // Random timeout between 50 and 100 ticks
-        timeout(this, randomTimeout, this.requestVotes);
+    startElectionTimeout() {
+        let randomTimeout = (100 + Math.floor(Math.random() * 100)); // Random timeout between 50 and 100 ticks
+        deleteTimeout(this.timeoutId);
+        this.timeoutId = timeout(this, randomTimeout, this.requestVotes);
     }
 
     // send a VOTE_REQUEST to all other actors. Called upon election timeout.
@@ -168,9 +174,9 @@ class Actor {
     // (b) another server establishes itself as leader, or
     // (c) a period of time goes by with no winner."
     requestVotes() {
-        if (this.votedF or !== null && this.votedFor !== this.id) return; // already voted for someone else, do not start election.
+        if (this.votedFor !== null && this.votedFor !== this.id) return; // already voted for someone else, do not start election.
         this.becomeCandidate();
-        this.electionTimeout() // (c)
+        this.startElectionTimeout() // (c)
         let lastLogTerm = this.log.length > 0 ? this.log[this.commitIndex - 1].term : 0;
         for (let actorId = 0; actorId < getActors(); actorId++) {
             if (actorId !== this.id) {
@@ -191,16 +197,17 @@ class Actor {
 
         for (let actorId = 0; actorId < getActors(); actorId++) {
             if (actorId !== this.id) {
-                this.sendAppendEntry(actorId);
+                this.sendAppendEntries(actorId);
 
             }
         }
-        timeout(this, 50, this.broadcastAppendEntries); //might want to adjust all the timeouts to make it seem less busy
+
+        this.timeoutId = timeout(this, 50, this.broadcastAppendEntries); //might want to adjust all the timeouts to make it seem less busy
     }
 
     sendAppendEntries(actorId) {
         let prevLogIndex = this.nextIndex[actorId] - 1;
-        let prevLogTerm = this.log[this.nextIndex[actorId] - 1].term;
+        let prevLogTerm = this.log[prevLogIndex].term;
         let appendEntriesData = {
             term: this.currentTerm,
             leaderId: this.id,
