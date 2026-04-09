@@ -16,7 +16,7 @@ class Actor {
         this.timeoutId = null
         this.startElectionTimeout();
 
-    } // we are still figuring out how to make it work while the log is empty. Last changes were
+    } // we are still figuring out how to make it work while the log is empty. Last changes were 
 
     receive(msg) {
 
