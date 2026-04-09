@@ -2,7 +2,7 @@
 
 /** @typedef {{ id: number, source: number, destination: number, type: string, sentTick: number, arrivalTick: number, data?: any}} Message */
 
-/** @typedef {{ actorId: number, ticks: number, reaction: function}} TimeoutEntry */
+/** @typedef {{ actorId: number, ticks: number, totalTicks: number, reaction: function}} TimeoutEntry */
 
 
 /**
