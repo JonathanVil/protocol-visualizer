@@ -16,7 +16,7 @@ class Actor {
         this.timeoutId = null
         this.startElectionTimeout();
 
-    }
+    } // we are still figuring out how to make it work while the log is empty. Last changes were
 
     receive(msg) {
 
@@ -92,7 +92,7 @@ class Actor {
             }
 
             //  2. Reply false if log doesn’t contain an entry at prevLogIndex whose term matches prevLogTerm (§5.3)
-            if (this.log.length <= msg.data.prevLogIndex || this.log[msg.data.prevLogIndex].term !== msg.data.prevLogTerm) {
+            if (msg.data.prevLogIndex !== null && (this.log.length <= msg.data.prevLogIndex || this.log[msg.data.prevLogIndex].term !== msg.data.prevLogTerm)) {
                 let result = {
                     term: this.currentTerm,
                     success: false
@@ -102,6 +102,7 @@ class Actor {
             }
 
             // 3. If an existing entry conflicts with a new one (same index but different terms), delete the existing entry and all that follow it (§5.3)
+            if (msg.data.prevLogIndex === null) {this.log = []} // if the whole log is bad
             if (this.log.length > msg.data.prevLogIndex + 1 && this.log[msg.data.prevLogIndex + 1].term !== msg.data.term) {
                 this.log = this.log.slice(0, msg.data.prevLogIndex + 1);
             }
@@ -206,14 +207,21 @@ class Actor {
     }
 
     sendAppendEntries(actorId) {
-        let prevLogIndex = this.nextIndex[actorId] - 1;
-        let prevLogTerm = this.log[prevLogIndex].term;
+        let prevLogIndex = null
+        let prevLogTerm = null
+        let entries = []
+        if (this.nextIndex[actorId] !== 0)  {
+            prevLogIndex = this.nextIndex[actorId] - 1;
+            prevLogTerm = this.log[prevLogIndex].term;
+            entries = this.log.slice(this.nextIndex[actorId])
+        }
+
         let appendEntriesData = {
             term: this.currentTerm,
             leaderId: this.id,
             prevLogIndex: prevLogIndex,
             prevLogTerm: prevLogTerm,
-            entries: this.log.slice(this.nextIndex[actorId])
+            entries: entries
         }
         send(this.id, actorId, "APPEND_ENTRIES_REQUEST", appendEntriesData);
     }
