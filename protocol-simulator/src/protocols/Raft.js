@@ -129,7 +129,7 @@ class Actor {
             }
 
             if (msg.data.leaderCommit > this.commitIndex) {
-                this.commitIndex = Math.min(msg.data.leaderCommit, this.log.length);
+                this.commitIndex = Math.min(msg.data.leaderCommit, this.log.length - 1);
                 if (this.commitIndex > this.lastApplied) {
                     this.applyCommand()
                 }
