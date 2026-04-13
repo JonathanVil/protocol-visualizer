@@ -140,6 +140,8 @@ class Actor {
             msg.data: { term: number; success: boolean; }
              */
 
+            if (this.state !== "LEADER") return; // only leaders process append entries replies
+
             // if the follower's term is higher than current leaders term
             if (msg.data.term > this.currentTerm) {
                 this.becomeFollower();
@@ -148,7 +150,7 @@ class Actor {
             // Only true, if the followers log matches the leaders log.
             if (msg.data.success) {
                 this.nextIndex[msg.from] = this.log.length;
-                this.matchIndex[msg.from] = this.log[msg.from];
+                this.matchIndex[msg.from] = this.log.length - 1;
 
                 // If there exists an N such that N > commitIndex ,a majority
                 // of match Index[i] ≥= N,and log[N].term == currentTerm:
@@ -174,6 +176,10 @@ class Actor {
             }
 
         }
+    }
+
+    recieveClientRequest(data) {
+        
     }
 
     becomeFollower() {
