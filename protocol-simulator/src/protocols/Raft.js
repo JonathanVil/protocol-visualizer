@@ -16,6 +16,8 @@ class Actor {
         this.timeoutId = null
         this.startElectionTimeout();
 
+        this.stateCounter = 0;
+
     } // we are still figuring out how to make it work while the log is empty. Last changes were 
 
     receive(msg) {
@@ -89,6 +91,7 @@ class Actor {
 
             // 1. Reply false if term < currentTerm (§5.1)
             if (msg.data.term < this.currentTerm) {
+                console.log("Crungo")
                 let result = {
                     term: this.currentTerm,
                     success: false
@@ -99,6 +102,7 @@ class Actor {
 
             //  2. Reply false if log doesn’t contain an entry at prevLogIndex whose term matches prevLogTerm (§5.3)
             if (msg.data.prevLogIndex !== null && (this.log.length <= msg.data.prevLogIndex || this.log[msg.data.prevLogIndex].term !== msg.data.prevLogTerm)) {
+                console.log(msg.data.prevLogIndex, msg.data.prevLogTerm, this.id);
                 let result = {
                     term: this.currentTerm,
                     success: false
@@ -118,7 +122,7 @@ class Actor {
             // 4. Append any new entries not already in the log
             // [1, 2, 3] <- [2, 3, 4] = [1, 2, 3, 2, 3, 4]
             this.log = this.log.concat(msg.data.entries);
-
+            console.log("pog ", this.id)
             let result = {
                 term: this.currentTerm,
                 success: true
@@ -127,8 +131,7 @@ class Actor {
             if (msg.data.leaderCommit > this.commitIndex) {
                 this.commitIndex = Math.min(msg.data.leaderCommit, this.log.length);
                 if (this.commitIndex > this.lastApplied) {
-                    this.lastApplied++;
-                    // TODO: apply log[this.lastApplied] to state machine
+                    this.applyCommand()
                 }
             }
 
@@ -150,6 +153,7 @@ class Actor {
             // Only true, if the followers log matches the leaders log.
             if (msg.data.success) {
                 this.nextIndex[msg.from] = this.log.length;
+                console.log("loglength ", this.log.length)
                 this.matchIndex[msg.from] = this.log.length - 1;
 
                 // If there exists an N such that N > commitIndex ,a majority
@@ -165,8 +169,7 @@ class Actor {
                 }
 
                 if (this.commitIndex > this.lastApplied) {
-                    this.lastApplied++;
-                    // TODO: apply log[this.lastApplied] to state machine
+                    this.applyCommand()
                 }
             } else {
                 if (this.nextIndex[msg.from] > 0) {
@@ -175,11 +178,40 @@ class Actor {
                 this.sendAppendEntries(msg.from)
             }
 
+        } else if (msg.type === "REDIRECT") {
+            this.receiveClientRequest(msg.data.command);
         }
     }
 
-    recieveClientRequest(data) {
-        
+    receiveClientRequest(command) {
+        // only leaders can receive client requests
+        if (this.state !== "LEADER") {
+            send(this.id, this.votedFor, "REDIRECT", command);
+            return;
+        }
+
+        //1. Append command to the log
+        this.log.push({ term: this.currentTerm, command: command });
+        this.broadcastAppendEntries()
+    }
+
+    applyCommand() {
+        console.log("Applying command");
+
+        this.lastApplied++;
+        let command = this.log[this.lastApplied].command;
+        if (command === "ADD") {
+            this.stateCounter++;
+        } else if (command === "SUBTRACT") {
+            this.stateCounter--;
+        } else if (command !== "SHOW") {
+            return
+        }
+        if (this.state === "LEADER") {
+            console.log("Leader " + this.id + " applied command: " + command + ". Counter: " + this.stateCounter);
+        }
+
+
     }
 
     becomeFollower() {
@@ -254,6 +286,7 @@ class Actor {
         let prevLogTerm = null
         let entries = []
         if (this.nextIndex[actorId] > 0)  {
+            console.log("sending ", actorId, this.nextIndex[actorId]);
             prevLogIndex = this.nextIndex[actorId] - 1;
             prevLogTerm = this.log[prevLogIndex].term;
             entries = this.log.slice(this.nextIndex[actorId]);
