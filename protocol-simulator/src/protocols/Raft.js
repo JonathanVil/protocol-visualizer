@@ -14,10 +14,8 @@ class Actor {
         this.matchIndex = [];
         this.votes = 0;
         this.timeoutId = null
-        this.startElectionTimeout();
-
         this.stateCounter = 0;
-
+        this.startElectionTimeout();
     } // we are still figuring out how to make it work while the log is empty. Last changes were 
 
     receive(msg) {
@@ -123,6 +121,8 @@ class Actor {
             // [1, 2, 3] <- [2, 3, 4] = [1, 2, 3, 2, 3, 4]
             this.log = this.log.concat(msg.data.entries);
             console.log("pog ", this.id)
+            console.log(this.log)
+            console.log(msg.data.entries)
             let result = {
                 term: this.currentTerm,
                 success: true,
@@ -193,7 +193,12 @@ class Actor {
 
         //1. Append command to the log
         this.log.push({ term: this.currentTerm, command: command });
-        this.broadcastAppendEntries()
+
+        for (let actorId = 0; actorId < getActors(); actorId++) {
+            if (actorId !== this.id) {
+                this.sendAppendEntries(actorId);
+            }
+        }
     }
 
     applyCommand() {
@@ -202,9 +207,10 @@ class Actor {
         this.lastApplied++;
         let command = this.log[this.lastApplied].command;
         if (command === "ADD") {
-            this.stateCounter++;
+            console.log("GOONERINO")
+            this.stateCounter += 1;
         } else if (command === "SUBTRACT") {
-            this.stateCounter--;
+            this.stateCounter -= 1;
         } else if (command !== "SHOW") {
             return
         }
@@ -241,7 +247,7 @@ class Actor {
     }
 
     startElectionTimeout() {
-        let randomTimeout = (100 + Math.floor(Math.random() * 100)); // Random timeout between 50 and 100 ticks
+        let randomTimeout = (50 + Math.floor(Math.random() * 50)); // Random timeout between 50 and 100 ticks
         deleteTimeout(this.timeoutId);
         this.timeoutId = timeout(this, randomTimeout, this.requestVotes);
     }
@@ -285,12 +291,11 @@ class Actor {
     sendAppendEntries(actorId) {
         let prevLogIndex = null
         let prevLogTerm = null
-        let entries = []
+        let entries = this.log.slice(this.nextIndex[actorId]);
         if (this.nextIndex[actorId] > 0)  {
             console.log("sending ", actorId, this.nextIndex[actorId]);
             prevLogIndex = this.nextIndex[actorId] - 1;
             prevLogTerm = this.log[prevLogIndex].term;
-            entries = this.log.slice(this.nextIndex[actorId]);
         }
 
         let appendEntriesData = {
