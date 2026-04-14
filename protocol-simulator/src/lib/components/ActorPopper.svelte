@@ -74,7 +74,7 @@
         }
     }
 
-    let stateCollapsed = false;
+    let stateCollapsed = true;
 
     /**
      * @param {MouseEvent} event
@@ -134,7 +134,7 @@
         console.log(`Saving ${editingKey} = ${newValue}`);
     }
 
-    let methodsListCollapsed = false;
+    let methodsListCollapsed = true;
 
     /** @type {[string, string[]] | null} */
     let selectedMethod = null;
