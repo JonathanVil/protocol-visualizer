@@ -45,7 +45,7 @@ class Actor {
                 if (lastLogTerm < msg.data.lastLogTerm) {
                     // The last entry in the candidate's log has a higher term than the last entry in the receiver's log, see $5.4.1
                     upToDate = true;
-                } else if (lastLogTerm === msg.data.lastLogTerm && this.commitIndex <= msg.data.lastLogIndex) {
+                } else if (lastLogTerm === msg.data.lastLogTerm && this.log.length - 1 <= msg.data.lastLogIndex) {
                     // The last entry in both logs have the same term AND the candidate's log is at least as long as receiver's log
                     upToDate = true;
                 }
@@ -99,7 +99,7 @@ class Actor {
             }
 
             //  2. Reply false if log doesn’t contain an entry at prevLogIndex whose term matches prevLogTerm (§5.3)
-            if (msg.data.prevLogIndex !== null && (this.log.length <= msg.data.prevLogIndex || this.log[msg.data.prevLogIndex].term !== msg.data.prevLogTerm)) {
+            if (msg.data.prevLogIndex > 0 && (this.log.length <= msg.data.prevLogIndex || this.log[msg.data.prevLogIndex].term !== msg.data.prevLogTerm)) {
                 console.log(msg.data.prevLogIndex, msg.data.prevLogTerm, this.id);
                 let result = {
                     term: this.currentTerm,
@@ -173,7 +173,7 @@ class Actor {
                     this.applyCommand()
                 }
             } else {
-                if (this.nextIndex[msg.from] > 0) {
+                if (this.nextIndex[msg.from] > 1) {
                     this.nextIndex[msg.from] -= 1;
                 }
                 this.sendAppendEntries(msg.from)
@@ -192,7 +192,7 @@ class Actor {
         }
 
         //1. Append command to the log
-        this.log.push({ term: this.currentTerm, command: command });
+        this.log = [...this.log, { term: this.currentTerm, command: command }];
 
         for (let actorId = 0; actorId < getActors(); actorId++) {
             if (actorId !== this.id) {
@@ -206,6 +206,7 @@ class Actor {
 
         this.lastApplied++;
         let command = this.log[this.lastApplied].command;
+        console.log(command)
         if (command === "ADD") {
             console.log("GOONERINO")
             this.stateCounter += 1;
@@ -261,13 +262,13 @@ class Actor {
         if (this.votedFor !== null && this.votedFor !== this.id) return; // already voted for someone else, do not start election.
         this.becomeCandidate();
         this.startElectionTimeout() // (c)
-        let lastLogTerm = this.log.length > 0 ? this.log[this.commitIndex - 1].term : 0;
+        let lastLogTerm = this.log.length > 1 ? this.log[this.log.length - 1].term : 0;
         for (let actorId = 0; actorId < getActors(); actorId++) {
             if (actorId !== this.id) {
                 let voteRequestData = {
                     term: this.currentTerm,
                     candidateId: this.id,
-                    lastLogIndex: this.commitIndex,
+                    lastLogIndex: this.log.length - 1,
                     lastLogTerm: lastLogTerm
                 }
                 send(this.id, actorId, "VOTE_REQUEST", voteRequestData);
@@ -292,9 +293,7 @@ class Actor {
         let prevLogIndex = null
         let prevLogTerm = null
         let entries = this.log.slice(this.nextIndex[actorId]);
-        if (this.nextIndex[actorId] > 0)  {
-            console.log("sending ", actorId, this.nextIndex[actorId]);
-            prevLogIndex = this.nextIndex[actorId] - 1;
+        if (prevLogIndex > 0)  {
             prevLogTerm = this.log[prevLogIndex].term;
         }
 
