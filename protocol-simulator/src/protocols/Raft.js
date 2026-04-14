@@ -125,7 +125,8 @@ class Actor {
             console.log("pog ", this.id)
             let result = {
                 term: this.currentTerm,
-                success: true
+                success: true,
+								newLogLength: this.log.length
             }
 
             if (msg.data.leaderCommit > this.commitIndex) {
@@ -140,7 +141,7 @@ class Actor {
 
         } else if (msg.type === "APPEND_ENTRIES_REPLY") {
             /*
-            msg.data: { term: number; success: boolean; }
+            msg.data: { term: number; success: boolean; newLogLength; }
              */
 
             if (this.state !== "LEADER") return; // only leaders process append entries replies
@@ -152,9 +153,9 @@ class Actor {
 
             // Only true, if the followers log matches the leaders log.
             if (msg.data.success) {
-                this.nextIndex[msg.from] = this.log.length;
-                console.log("loglength ", this.log.length)
-                this.matchIndex[msg.from] = this.log.length - 1;
+                this.nextIndex[msg.from] = msg.data.newLogLength;
+                console.log('loglength ', this.data.newLogLength);
+                this.matchIndex[msg.from] = this.data.newLogLength - 1;
 
                 // If there exists an N such that N > commitIndex ,a majority
                 // of match Index[i] ≥= N,and log[N].term == currentTerm:
