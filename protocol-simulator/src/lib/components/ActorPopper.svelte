@@ -220,7 +220,7 @@
         if (typeof method === 'function') {
             /** @type {Record<string, any>} */
             const jank = actor; // reassign to please the type checker
-            jank[method.name](args);
+            jank[method.name](...args);
         } else {
             console.error(`Method ${name} is not a function`);
         }
