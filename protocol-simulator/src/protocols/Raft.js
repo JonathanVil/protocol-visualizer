@@ -7,7 +7,7 @@ class Actor {
         this.state = "FOLLOWER"
         this.currentTerm = 0;
         this.votedFor = null;
-        this.log = [];
+        this.log = [""];
         this.commitIndex = 0;
         this.lastApplied = 0;
         this.nextIndex = [];
@@ -40,7 +40,7 @@ class Actor {
                 this.startElectionTimeout();
                 // Check if candidate's log is at least as up-to-date as receiver's log
                 let upToDate = false;
-                let lastLogTerm = this.log.length > 0 ? this.log[this.commitIndex - 1].term : 0;
+                let lastLogTerm = this.log.length > 1 ? this.log[this.log.length - 1].term : 0;
 
                 if (lastLogTerm < msg.data.lastLogTerm) {
                     // The last entry in the candidate's log has a higher term than the last entry in the receiver's log, see $5.4.1
@@ -110,10 +110,10 @@ class Actor {
             }
 
             // 3. If an existing entry conflicts with a new one (same index but different terms), delete the existing entry and all that follow it (§5.3)
-            if (msg.data.prevLogIndex === null) { // if the whole log is bad
-                this.log = []
+            if (msg.data.prevLogIndex === 0) { // if the whole log is bad
+                this.log = [""];
             }
-            if (this.log.length > msg.data.prevLogIndex + 1 && this.log[msg.data.prevLogIndex + 1].term !== msg.data.term) {
+            if (this.log.length - 1 > msg.data.prevLogIndex && this.log[msg.data.prevLogIndex + 1].term !== msg.data.term) {
                 this.log = this.log.slice(0, msg.data.prevLogIndex + 1);
             }
 
@@ -141,7 +141,7 @@ class Actor {
 
         } else if (msg.type === "APPEND_ENTRIES_REPLY") {
             /*
-            msg.data: { term: number; success: boolean; newLogLength; }
+            msg.data: { term: number; success: boolean; newLogLength: number?; }
              */
 
             if (this.state !== "LEADER") return; // only leaders process append entries replies
@@ -162,7 +162,7 @@ class Actor {
                 // set commitIndex = N (§5.3,§5.4).
                 // - Sort matchIndex to find the median matchIndex. Decrement if terms does not match && i > commitIndex
                 let sorted = this.matchIndex.toSorted();
-                for (let i = sorted[Math.floor(getActors() / 2)]; i > this.commitIndex; i--) {
+                for (let i = sorted[Math.floor(sorted.length / 2)]; i > this.commitIndex; i--) {
                     if (this.log[i].term === this.currentTerm) {
                         this.commitIndex = i;
                         break;
@@ -242,7 +242,7 @@ class Actor {
     becomeCandidate() {
         this.state = "CANDIDATE";
         this.currentTerm = this.currentTerm + 1;
-        this.votedFor = this.id
+        this.votedFor = this.id;
         this.votes = 1;
         this.nodeColor = 'orange';
     }
@@ -290,8 +290,13 @@ class Actor {
     }
 
     sendAppendEntries(actorId) {
-        let prevLogIndex = null
-        let prevLogTerm = null
+        if (actorId > this.nextIndex.length - 1) {
+            this.nextIndex[actorId] = this.log.length;
+        }
+
+        let prevLogIndex = this.nextIndex[actorId] - 1;
+        console.log(prevLogIndex);
+        let prevLogTerm = 0
         let entries = this.log.slice(this.nextIndex[actorId]);
         if (prevLogIndex > 0)  {
             prevLogTerm = this.log[prevLogIndex].term;
