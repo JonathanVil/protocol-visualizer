@@ -83,7 +83,8 @@ class Actor {
 
             // "While waiting for votes, a candidate may receive an AppendEntries RPC from another server claiming to be leader. If the leader’s term (included in its RPC) is at least
             // as large as the candidate’s current term, then the candidate recognizes the leader as legitimate and returns to follower state." (b)
-            if (this.state === "CANDIDATE" && this.currentTerm <= msg.data.term) {
+            if ((this.state === "CANDIDATE" || this.state === "LEADER") && this.currentTerm <= msg.data.term) {
+                this.currentTerm = msg.data.term;
                 this.becomeFollower();
             }
 
@@ -148,6 +149,7 @@ class Actor {
 
             // if the follower's term is higher than current leaders term
             if (msg.data.term > this.currentTerm) {
+                this.currentTerm = msg.data.term;
                 this.becomeFollower();
             }
 
@@ -226,6 +228,7 @@ class Actor {
         this.state = "FOLLOWER";
         this.votes = 0;
         this.nodeColor = 'blue';
+        this.startElectionTimeout()
     }
 
     becomeLeader() {
@@ -245,6 +248,7 @@ class Actor {
         this.votedFor = this.id;
         this.votes = 1;
         this.nodeColor = 'orange';
+        this.startElectionTimeout()
     }
 
     startElectionTimeout() {
@@ -259,7 +263,6 @@ class Actor {
     // (b) another server establishes itself as leader, or
     // (c) a period of time goes by with no winner."
     requestVotes() {
-        if (this.votedFor !== null && this.votedFor !== this.id) return; // already voted for someone else, do not start election.
         this.becomeCandidate();
         this.startElectionTimeout() // (c)
         let lastLogTerm = this.log.length > 1 ? this.log[this.log.length - 1].term : 0;
