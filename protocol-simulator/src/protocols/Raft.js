@@ -92,7 +92,6 @@ class Actor {
 
             // 1. Reply false if term < currentTerm (§5.1)
             if (msg.data.term < this.currentTerm) {
-                console.log("Crungo")
                 let result = {
                     term: this.currentTerm,
                     success: false
@@ -103,7 +102,6 @@ class Actor {
 
             //  2. Reply false if log doesn’t contain an entry at prevLogIndex whose term matches prevLogTerm (§5.3)
             if (msg.data.prevLogIndex > 0 && (this.log.length <= msg.data.prevLogIndex || this.log[msg.data.prevLogIndex].term !== msg.data.prevLogTerm)) {
-                console.log(msg.data.prevLogIndex, msg.data.prevLogTerm, this.id);
                 let result = {
                     term: this.currentTerm,
                     success: false
@@ -123,9 +121,6 @@ class Actor {
             // 4. Append any new entries not already in the log
             // [1, 2, 3] <- [2, 3, 4] = [1, 2, 3, 2, 3, 4]
             this.log = this.log.concat(msg.data.entries);
-            console.log("pog ", this.id)
-            console.log(this.log)
-            console.log(msg.data.entries)
             let result = {
                 term: this.currentTerm,
                 success: true,
@@ -160,7 +155,6 @@ class Actor {
             // Only true, if the followers log matches the leaders log.
             if (msg.data.success) {
                 this.nextIndex[msg.from] = msg.data.newLogLength;
-                console.log('loglength ', msg.data.newLogLength);
                 this.matchIndex[msg.from] = msg.data.newLogLength - 1;
 
                 // If there exists an N such that N > commitIndex ,a majority
@@ -208,13 +202,10 @@ class Actor {
     }
 
     applyCommand() {
-        console.log("Applying command");
 
         this.lastApplied++;
         let command = this.log[this.lastApplied].command;
-        console.log(command)
         if (command === "ADD") {
-            console.log("GOONERINO")
             this.stateCounter += 1;
         } else if (command === "SUBTRACT") {
             this.stateCounter -= 1;
@@ -303,7 +294,6 @@ class Actor {
         }
 
         let prevLogIndex = this.nextIndex[actorId] - 1;
-        console.log(prevLogIndex);
         let prevLogTerm = 0
         let entries = this.log.slice(this.nextIndex[actorId]);
         if (prevLogIndex > 0)  {
