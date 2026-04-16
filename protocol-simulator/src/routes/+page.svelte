@@ -682,7 +682,7 @@
                 class="p-2 text-slate-300 rounded-md hover:bg-blue-200 aria-pressed:bg-blue-200 border-blue-500"
                 aria-label="Log"
                 aria-pressed={leftPanel === LeftPanelOptions.DOCS}
-                on:click={() => (leftPanel = LeftPanelOptions.DOCS)}
+                on:click={() => toggleLeftPanel(LeftPanelOptions.DOCS)}
         >
             <Icon icon="mdi:help" class="w-6 h-6 text-black" />
         </button>
@@ -692,7 +692,7 @@
                 class="p-2 text-slate-300 rounded-md hover:bg-blue-200 aria-pressed:bg-blue-200 border-blue-500"
                 aria-label="Code"
                 aria-pressed={leftPanel === LeftPanelOptions.CODE}
-                on:click={() => (leftPanel = LeftPanelOptions.CODE)}
+                on:click={() => toggleLeftPanel(LeftPanelOptions.CODE)}
         >
             <Icon icon="mdi:code-tags" class="w-6 h-6 text-black" />
         </button>
@@ -702,7 +702,7 @@
                 class="p-2 text-slate-300 rounded-md hover:bg-blue-200 aria-pressed:bg-blue-200 border-blue-500"
                 aria-label="Log"
                 aria-pressed={leftPanel === LeftPanelOptions.LOG}
-                on:click={() => (leftPanel = LeftPanelOptions.LOG)}
+                on:click={() => toggleLeftPanel(LeftPanelOptions.LOG)}
         >
             <Icon icon="mdi:clipboard-text-outline" class="w-6 h-6 text-black" />
         </button>
