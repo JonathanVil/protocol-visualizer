@@ -16,7 +16,7 @@ class Actor {
         this.timeoutId = null
         this.stateCounter = 0;
         this.startElectionTimeout();
-    } // we are still figuring out how to make it work while the log is empty. Last changes were 
+    }
 
     receive(msg) {
 
@@ -145,13 +145,15 @@ class Actor {
             msg.data: { term: number; success: boolean; newLogLength: number?; }
              */
 
-            if (this.state !== "LEADER") return; // only leaders process append entries replies
+
 
             // if the follower's term is higher than current leaders term
             if (msg.data.term > this.currentTerm) {
                 this.currentTerm = msg.data.term;
                 this.becomeFollower();
             }
+
+            if (this.state !== "LEADER") return; // only leaders process append entries replies
 
             // Only true, if the followers log matches the leaders log.
             if (msg.data.success) {
@@ -186,7 +188,7 @@ class Actor {
         }
     }
 
-    receiveClientRequest(command) {
+    receiveClientRequest(command) { // We have chosen not to represent the client node for this simulation. This is how we make requests instead
         // only leaders can receive client requests
         if (this.state !== "LEADER") {
             send(this.id, this.votedFor, "REDIRECT", command);
@@ -217,7 +219,7 @@ class Actor {
         } else if (command !== "SHOW") {
             return
         }
-        if (this.state === "LEADER") {
+        if (this.state === "LEADER") { // if there were a client node, this is where the leader would reply to their request
             console.log("Leader " + this.id + " applied command: " + command + ". Counter: " + this.stateCounter);
         }
 
@@ -252,7 +254,7 @@ class Actor {
     }
 
     startElectionTimeout() {
-        let randomTimeout = (50 + Math.floor(Math.random() * 50)); // Random timeout between 50 and 100 ticks
+        let randomTimeout = (80 + Math.floor(Math.random() * 80)); // Random timeout between 80 and 160 ticks
         deleteTimeout(this.timeoutId);
         this.timeoutId = timeout(this, randomTimeout, this.requestVotes);
     }
