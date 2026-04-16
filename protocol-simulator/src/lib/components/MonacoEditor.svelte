@@ -38,21 +38,6 @@
 
     const newTabName = "Ping";
 
-
-    /*!!!                Built-in functions                 !!!*/
-    /** @type {boolean} */
-    let showBuiltInFunctions = false;
-    /** @type {HTMLElement | null} */
-    let builtInFunctionsEditorDiv = null;
-    /** @type {import('monaco-editor').editor.IStandaloneCodeEditor} */
-    let builtInEditorInstance;
-
-    let file;
-    /** @type {String} */
-    let builtInFunctions = ""
-
-
-
     onMount(async () => {
         self.MonacoEnvironment = {
             getWorker(_, label) {
@@ -75,9 +60,6 @@
         document.addEventListener("click", handleDocumentClick);
 
         monaco = await import("monaco-editor");
-        // dynamic import only runs in the browser
-        file = await fetch("BASICS.md");
-        builtInFunctions = await file.text();
 
         if (!editorDiv) return;
 
@@ -153,21 +135,6 @@
             setTab(tabs[i - 1] ?? tabs[0] ?? null);
         }
     }
-
-    $: if (builtInFunctionsEditorDiv && showBuiltInFunctions) {
-        if (monaco) {
-            builtInEditorInstance = monaco.editor.create(builtInFunctionsEditorDiv, {
-                value: builtInFunctions,
-                language: "markdown",
-                theme: "vs-dark",
-                automaticLayout: true,
-                minimap: { enabled: false },
-                fontSize: 14,
-                readOnly: true
-            });
-        }
-    }
-
 
 </script>
 
@@ -260,18 +227,12 @@
                     {/each}
                 </div>
             {/if}
-            <button
-                    class="rounded-md border border-gray-300 bg-white px-1 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:bg-gray-50"
-                    aria-label="Built-in functions" title="See built-in functions"
-                    on:click={() => showBuiltInFunctions = !showBuiltInFunctions}>
-                <img src="icon_func.png" class="w-8" alt="Italian Trulli">
-            </button>
         </div>
     </div>
 
     <div bind:this={editorDiv} class="min-h-0 flex-1 border border-gray-300"></div>
 
-    <div class="flex items-center justify-between gap-3 rounded-b-md border border-b-0 border-gray-300 bg-gray-100 px-3 py-2">
+    <div class="flex items-center justify-between gap-3 rounded-b-md border border-gray-300 bg-gray-100 px-3 py-2">
         <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 inline-flex items-center text-sm font-medium" on:click={() => spawnActor(selectedTab?.name ?? null)}>
             <i class="fa fa-plus-circle mr-2" aria-hidden="true"></i>
             <span>Spawn '{selectedTab?.name ?? "new"}' actor</span>
@@ -279,10 +240,6 @@
     </div>
 
 </div>
-
-{#if showBuiltInFunctions}
-    <div bind:this={builtInFunctionsEditorDiv} class="absolute top-15 right-2 w-2/3 h-4/5 border-2 rounded-md "></div>
-{/if}
 
 
 
