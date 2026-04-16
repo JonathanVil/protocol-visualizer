@@ -2,6 +2,7 @@
 class Actor {
     constructor(id) {
         this.id = id;
+        this.nodeColor = 'blue';
 
         // STATE
         this.state = "FOLLOWER"
@@ -15,6 +16,7 @@ class Actor {
         this.votes = 0;
         this.timeoutId = null
         this.stateCounter = 0;
+        this.maxTransitTime = 40; // Used in setting timers. If the maximum transit time is higher than this, the system may fail
         this.startElectionTimeout();
     }
 
@@ -254,7 +256,8 @@ class Actor {
     }
 
     startElectionTimeout() {
-        let randomTimeout = (80 + Math.floor(Math.random() * 80)); // Random timeout between 80 and 160 ticks
+        //the minimum time here should be heartbeat timer + max transit time.
+        let randomTimeout = (10 + 3 * this.maxTransitTime + Math.floor(Math.random() * (2 * this.maxTransitTime))); // Random timeout between 80 and 160 ticks
         deleteTimeout(this.timeoutId);
         this.timeoutId = timeout(this, randomTimeout, this.requestVotes);
     }
@@ -291,7 +294,7 @@ class Actor {
             }
         }
 
-        this.timeoutId = timeout(this, 50, this.broadcastAppendEntries); //might want to adjust all the timeouts to make it seem less busy
+        this.timeoutId = timeout(this, (10 + 2 * this.maxTransitTime), this.broadcastAppendEntries); //should be set to at least 2x the maximum delivery time
     }
 
     sendAppendEntries(actorId) {
