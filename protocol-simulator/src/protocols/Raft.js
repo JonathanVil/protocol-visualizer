@@ -32,6 +32,8 @@ class Actor {
             // a vote request in a new term, reset.
             if (msg.data.term > this.currentTerm) {
                 this.votedFor = null;
+                this.currentTerm = msg.data.term;
+                this.becomeFollower()
             }
 
             // Reply false if term < currentTerm (§5.1)
@@ -64,6 +66,11 @@ class Actor {
             msg.data: { term: number; voteGranted: boolean; }
              */
 
+            if (msg.data.term > this.currentTerm) {
+                this.currentTerm = msg.data.term;
+                this.becomeFollower()
+            }
+
             if (msg.data.voteGranted) {
                 this.votes++;
                 // If votes received from majority of actors. It wins the election (a)
@@ -71,8 +78,6 @@ class Actor {
                     this.becomeLeader();
                     // BEGIN SENDING HEARTBEATS
                 }
-            } else if (msg.data.term > this.currentTerm) {
-                this.currentTerm = msg.data.term;
             }
 
 
@@ -81,15 +86,15 @@ class Actor {
             msg.data: { term: number; prevLogIndex: number; prevLogTerm: number; entries: []; leaderCommit: number; }
              */
 
-            this.startElectionTimeout();
-
             // "While waiting for votes, a candidate may receive an AppendEntries RPC from another server claiming to be leader. If the leader’s term (included in its RPC) is at least
             // as large as the candidate’s current term, then the candidate recognizes the leader as legitimate and returns to follower state." (b)
-            if ((this.state === "CANDIDATE" || this.state === "LEADER") && this.currentTerm <= msg.data.term) {
+            if (this.currentTerm <= msg.data.term) {
                 this.currentTerm = msg.data.term;
                 this.becomeFollower();
             }
+            if (this.state !== "FOLLOWER") {return}
 
+            this.startElectionTimeout()
             // 1. Reply false if term < currentTerm (§5.1)
             if (msg.data.term < this.currentTerm) {
                 let result = {
@@ -114,7 +119,7 @@ class Actor {
             if (msg.data.prevLogIndex === 0) { // if the whole log is bad
                 this.log = [""];
             }
-            if (this.log.length - 1 > msg.data.prevLogIndex && this.log[msg.data.prevLogIndex + 1].term !== msg.data.term) {
+            if (this.log.length - 1 > msg.data.prevLogIndex) {
                 this.log = this.log.slice(0, msg.data.prevLogIndex + 1);
             }
 
@@ -129,9 +134,9 @@ class Actor {
 
             if (msg.data.leaderCommit > this.commitIndex) {
                 this.commitIndex = Math.min(msg.data.leaderCommit, this.log.length - 1);
-                if (this.commitIndex > this.lastApplied) {
-                    this.applyCommand()
-                }
+            }
+            if (this.commitIndex > this.lastApplied) {
+                this.applyCommand()
             }
 
             send(this.id, msg.from, 'APPEND_ENTRIES_REPLY', result);
