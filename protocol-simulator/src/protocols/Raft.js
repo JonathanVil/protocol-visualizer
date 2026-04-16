@@ -94,6 +94,7 @@ class Actor {
             }
             if (this.state !== "FOLLOWER") {return}
 
+
             this.startElectionTimeout()
             // 1. Reply false if term < currentTerm (§5.1)
             if (msg.data.term < this.currentTerm) {
