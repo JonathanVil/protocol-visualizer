@@ -8,6 +8,7 @@
     import ManualMessageComponent from "$lib/components/ManualMessageComponent.svelte";
     import Icon from '@iconify/svelte';
     import EventLog from "$lib/components/EventLog.svelte";
+    import DocumentationViewer from "$lib/components/DocumentationViewer.svelte";
     import {timeoutsStore} from "$lib/stores.js";
 
     /** @typedef {import('$lib/types.js').Message} Message */
@@ -17,9 +18,10 @@
     /** @typedef {import('$lib/types.js').EditorTab} EditorTab */
 
 
-    /**@type {{ protocols: { name: string; content: string }[] }}*/
+    /**@type {{ protocols: { name: string; content: string }[], docs: string }}*/
     export let data; // props from +page.server.js
     let predefinedProtocols = data.protocols;
+    let docs = data.docs;
 
     /** @type {EditorTab[]} */
     let editorTabs = [];
@@ -561,11 +563,12 @@
     let settingsPanelOpen = false;
 
     export const LeftPanelOptions = {
+        DOCS: "docs",
         CODE: "code",
         LOG: "log",
         NONE: "none"
     };
-    let leftPanel = LeftPanelOptions.CODE;
+    let leftPanel = LeftPanelOptions.DOCS;
 
     /** @param {string} panel */
     function toggleLeftPanel(panel) {
@@ -667,113 +670,125 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
-<!--Top navigation bar-->
-<NavigationBar></NavigationBar>
+<div class="min-h-screen">
+    <!--Top navigation bar-->
+    <NavigationBar/>
 
-<!--Dotted graph (background)-->
-<div class="cy-wrapper">
-    <Graph
-            bind:resetGraph={resetGraph}
-            bind:animateMessage={animateMessage}
-            bind:updateActorStatePopper={updateActorStatePopper}
-            bind:removeMessageNode={removeMessageNode}
-            bind:removeActorNode={removeActorNode}
-            bind:messages={messages}
-            toggleAlive={toggleAlive}
-            toggleRelation={toggleRelation}
-            deliverMessage={deliverMessage}
-            delayMessage={delayMessage}
-            addLogEntry={addLogEntry}
-            removeMessage={removeMessage}
-            bind:setEdgeState={setEdgeState}
-            bind:changeColor={changeColor}
-            bind:addActorNodeManually={addActorNodeManually}
-            bind:clearMessageNodes={clearMessageNodes}
-            actors={actors}
-            tickSize={tickSize}
-            tick={tick}
+    <aside
+            class="fixed left-0 top-14 z-50 flex h-full w-14 flex-col items-center gap-2 border-r border-slate-200 bg-white/80 py-3"
+    >
+        <button
+                class:active={leftPanel === LeftPanelOptions.DOCS}
+                class="p-2 text-slate-300 rounded-md hover:bg-blue-200 aria-pressed:bg-blue-200 border-blue-500"
+                aria-label="Log"
+                aria-pressed={leftPanel === LeftPanelOptions.DOCS}
+                on:click={() => (leftPanel = LeftPanelOptions.DOCS)}
+        >
+            <Icon icon="mdi:help" class="w-6 h-6 text-black" />
+        </button>
+
+        <button
+                class:active={leftPanel === LeftPanelOptions.CODE}
+                class="p-2 text-slate-300 rounded-md hover:bg-blue-200 aria-pressed:bg-blue-200 border-blue-500"
+                aria-label="Code"
+                aria-pressed={leftPanel === LeftPanelOptions.CODE}
+                on:click={() => (leftPanel = LeftPanelOptions.CODE)}
+        >
+            <Icon icon="mdi:code-tags" class="w-6 h-6 text-black" />
+        </button>
+
+        <button
+                class:active={leftPanel === LeftPanelOptions.LOG}
+                class="p-2 text-slate-300 rounded-md hover:bg-blue-200 aria-pressed:bg-blue-200 border-blue-500"
+                aria-label="Log"
+                aria-pressed={leftPanel === LeftPanelOptions.LOG}
+                on:click={() => (leftPanel = LeftPanelOptions.LOG)}
+        >
+            <Icon icon="mdi:clipboard-text-outline" class="w-6 h-6 text-black" />
+        </button>
+    </aside>
+
+    <!--Dotted graph (background)-->
+    <div class="cy-wrapper">
+        <Graph
+                bind:resetGraph={resetGraph}
+                bind:animateMessage={animateMessage}
+                bind:updateActorStatePopper={updateActorStatePopper}
+                bind:removeMessageNode={removeMessageNode}
+                bind:removeActorNode={removeActorNode}
+                bind:messages={messages}
+                toggleAlive={toggleAlive}
+                toggleRelation={toggleRelation}
+                deliverMessage={deliverMessage}
+                delayMessage={delayMessage}
+                addLogEntry={addLogEntry}
+                removeMessage={removeMessage}
+                bind:setEdgeState={setEdgeState}
+                bind:changeColor={changeColor}
+                bind:addActorNodeManually={addActorNodeManually}
+                bind:clearMessageNodes={clearMessageNodes}
+                actors={actors}
+                tickSize={tickSize}
+                tick={tick}
+        />
+    </div>
+
+    <div id="ui-layer"></div>
+
+    <div class="absolute top-14 left-14 rounded-lg w-9/20 h-4/5">
+        {#if leftPanel === LeftPanelOptions.DOCS}
+            <DocumentationViewer source={docs} />
+        {:else if leftPanel === LeftPanelOptions.CODE}
+            <!--Code block-->
+            <MonacoEditor
+                    bind:tabs={editorTabs}
+                    bind:selectedTab={selectedEditorTab}
+                    bind:openNewTab={openNewEditorTab}
+                    bind:predefinedProtocols={predefinedProtocols}
+                    spawnActor={spawnActor}
+            />
+        {:else if leftPanel === LeftPanelOptions.LOG}
+            <!--Log block-->
+            <EventLog
+                    eventLog={eventLog}
+                    restoreState={restoreState}
+            />
+        {/if}
+    </div>
+
+    <button on:click={() => settingsPanelOpen = !settingsPanelOpen} class="absolute top-14 right-5 p-1 rounded-lg hover:bg-blue-200">
+        <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
+    </button>
+
+    {#if settingsPanelOpen}
+        <!--Settings block-->
+        <SettingsPanel bind:tickSpeed={
+            () => Math.floor(1000 / tickSize),
+            (v) => {
+                tickSize = Math.floor(1000 / v);
+            }}
+
+           bind:transitLower={transitTimeLowerBound}
+           bind:transitUpper={transitTimeUpperBound}>
+        </SettingsPanel>
+    {/if}
+
+    <!--Message block-->
+    <div class="absolute bottom-2 left-14">
+        <ManualMessageComponent
+                send={send}
+        />
+    </div>
+
+    <!-- 🔹 Bottom Right Buttons -->
+    <ControlsPanel
+            paused={paused}
+            startSimulation={startSimulation}
+            tickByOne={tickByOne}
+            pauseSimulation={pauseSimulation}
+            resetSimulation={resetSimulation}
     />
 </div>
-
-<div id="ui-layer"></div>
-
-{#if leftPanel === LeftPanelOptions.CODE}
-    <!--Code block-->
-    <div class="absolute top-24 left-1 rounded-lg w-9/20 h-4/5">
-        <MonacoEditor
-                bind:tabs={editorTabs}
-                bind:selectedTab={selectedEditorTab}
-                bind:openNewTab={openNewEditorTab}
-                bind:predefinedProtocols={predefinedProtocols}
-                spawnActor={spawnActor}
-        />
-    </div>
-{:else if leftPanel === LeftPanelOptions.LOG}
-    <!--Log block-->
-    <div class="absolute top-24 left-1 rounded-lg w-9/20">
-        <EventLog
-            eventLog={eventLog}
-            restoreState={restoreState}
-        />
-
-    </div>
-{/if}
-
-<!--Left panel selector-->
-<div class="absolute top-14 left-5 flex items-center gap-1 rounded-lg bg-white/80 backdrop-blur p-1 shadow">
-    <button
-            type="button"
-            class="p-1 rounded-md hover:bg-blue-200 aria-[pressed=true]:bg-blue-200"
-            aria-label="Toggle Source Code panel"
-            title="Source Code"
-            aria-pressed={leftPanel === LeftPanelOptions.CODE}
-            on:click={() => toggleLeftPanel(LeftPanelOptions.CODE)}
-    >
-        <Icon icon="mdi:code-tags" class="w-6 h-6 text-black" />
-    </button>
-
-    <button
-            type="button"
-            class="p-1 rounded-md hover:bg-blue-200 aria-[pressed=true]:bg-blue-200"
-            aria-label="Toggle Log panel"
-            title="Log"
-            aria-pressed={leftPanel === LeftPanelOptions.LOG}
-            on:click={() => toggleLeftPanel(LeftPanelOptions.LOG)}
-    >
-        <Icon icon="mdi:clipboard-text-outline" class="w-6 h-6 text-black" />
-    </button>
-</div>
-
-<button on:click={() => settingsPanelOpen = !settingsPanelOpen} class="absolute top-14 right-5 p-1 rounded-lg hover:bg-blue-200">
-    <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
-</button>
-
-{#if settingsPanelOpen}
-    <!--Settings block-->
-    <SettingsPanel bind:tickSpeed={
-        () => Math.floor(1000 / tickSize),
-        (v) => {
-            tickSize = Math.floor(1000 / v);
-        }}
-
-       bind:transitLower={transitTimeLowerBound}
-       bind:transitUpper={transitTimeUpperBound}>
-    </SettingsPanel>
-{/if}
-
-<!--Message block-->
-<ManualMessageComponent
-        send={send}
-/>
-
-<!-- 🔹 Bottom Right Buttons -->
-<ControlsPanel
-        paused={paused}
-        startSimulation={startSimulation}
-        tickByOne={tickByOne}
-        pauseSimulation={pauseSimulation}
-        resetSimulation={resetSimulation}
-/>
 
 <style>
     .cy-wrapper {

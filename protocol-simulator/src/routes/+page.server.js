@@ -18,5 +18,7 @@ export async function load() {
         });
     }
 
-    return { protocols };
+		const docs = fs.readFileSync(path.join('..', 'docs', 'BASICS.md'), 'utf-8').substring(1);
+
+    return { protocols, docs };
 }
