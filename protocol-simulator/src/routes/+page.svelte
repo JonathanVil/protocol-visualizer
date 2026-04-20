@@ -752,6 +752,7 @@
             <EventLog
                     eventLog={eventLog}
                     restoreState={restoreState}
+                    previewingTick={previewingRewind ? tick : null}
             />
         {/if}
     </div>
