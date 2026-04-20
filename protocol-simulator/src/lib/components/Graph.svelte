@@ -347,7 +347,7 @@
     export let toggleAlive;
 
     /** @type {(source: number, target: number) => boolean}  */
-    export let toggleRelation;
+    export let toggleConnection;
 
     /**
      * @param {import('cytoscape').EventObject} evt - The Cytoscape event object
@@ -358,7 +358,7 @@
         const source = Number(edge.source().id());
         const target = Number(edge.target().id());
 
-        let active = toggleRelation(source, target);
+        let active = toggleConnection(source, target);
 
         if (active) {
             edge.style('line-color', '#707075');
