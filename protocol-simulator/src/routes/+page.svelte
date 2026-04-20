@@ -81,9 +81,9 @@
         }
         console.log(actorRelations)
 
-        let logEntry = "Adding " + protocolName + " actor"
-        console.log(logEntry);
-        addLogEntry(logEntry);
+        let event = "Adding " + protocolName + " actor"
+        console.log(event);
+        logEvent(event);
     }
 
 
@@ -94,25 +94,25 @@
     function deliverMessage(message) {
         // if the message is delivered to a inactive Actor, ignore it
         if (!actors[message.destination].alive) {
-            let logEntry = `Actor ${message.destination} would have recieved msg ${message.type} from Actor ${message.source}, but is dead`
-            console.log(logEntry);
-            addLogEntry(logEntry);
+            let event = `Actor ${message.destination} would have recieved msg ${message.type} from Actor ${message.source}, but is dead`
+            console.log(event);
+            logEvent(event);
             return;
         }
 
         if (!(actorRelations[message.source][message.destination])) {
-            let logEntry = `Actor ${message.destination} would have recieved msg ${message.type} from Actor ${message.source}, but connection is severed`
-            console.log(logEntry);
-            addLogEntry(logEntry);
+            let event = `Actor ${message.destination} would have recieved msg ${message.type} from Actor ${message.source}, but connection is severed`
+            console.log(event);
+            logEvent(event);
             return;
         }
 
-        let logEntry = `Actor ${message.destination} received msg ${message.type} from Actor ${message.source}`
+        let event = `Actor ${message.destination} received msg ${message.type} from Actor ${message.source}`
         if (message.data) {
-            logEntry = `Actor ${message.destination} received msg ${message.type} with data ${message.data} from Actor ${message.source}`
+            event = `Actor ${message.destination} received msg ${message.type} with data ${message.data} from Actor ${message.source}`
         }
-        console.log(logEntry);
-        addLogEntry(logEntry);
+        console.log(event);
+        logEvent(event);
         let actor = actors[message.destination];
         let msg = {type: message.type, from: message.source, data: message.data};
         actor.receive(msg)
@@ -131,9 +131,9 @@
         let status = "Connected to";
         if (!newState) {status = "Disconnected from"; }
 
-        let logEntry = `Actor ${source} ${status} Actor ${target}`
-        console.log(logEntry);
-        addLogEntry(logEntry);
+        let event = `Actor ${source} ${status} Actor ${target}`
+        console.log(event);
+        logEvent(event);
 
         return newState;
     }
@@ -208,17 +208,17 @@
     }
 
     /**
-     * @param {string} line
+     * @param {string} event
      */
-    export function addLogEntry(line) {
+    export function logEvent(event) {
         if (previewingRewind) {
             finalizeRewind()
         }
         const entry = eventLog.find(e => e.tick === tick);
         if (!entry) {
-            eventLog = [...eventLog, {tick, lines: [line], state: null}];
+            eventLog = [...eventLog, {tick, lines: [event], state: null}];
         } else {
-            entry.lines = [...entry.lines, line];
+            entry.lines = [...entry.lines, event];
             eventLog = [...eventLog.slice(0, eventLog.length - 1), entry]
         }
     }
@@ -491,9 +491,9 @@
                 const success = Reflect.set(target, prop, value);
 
                 if (success && prev !== value && !restoringState) { //make sure restoring state is false, so we dont log rewinding
-                    let logEntry = `Actor ${target.id} ${String(prop)} changed from ${prev} to ${value}`;
-                    console.log(logEntry);
-                    addLogEntry(logEntry);
+                    let event = `Actor ${target.id} ${String(prop)} changed from ${prev} to ${value}`;
+                    console.log(event);
+                    logEvent(event);
                     updateActorStatePopper(receiver);
 
                     // reflect nodeColor in graph
@@ -524,12 +524,12 @@
         if (!(from < actors.length && from >= 0)) return;
 
 
-        let logEntry = `Actor ${from} sent msg ${type} to Actor ${to}`
+        let event = `Actor ${from} sent msg ${type} to Actor ${to}`
         if (data){
-            logEntry = `Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
+            event = `Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
         }
-        console.log(logEntry);
-        addLogEntry(logEntry);
+        console.log(event);
+        logEvent(event);
         let transitTime = getTransitTime();
         let arrivalTick = tick + transitTime;
         let message = {id: getNextMessageId(), source: Number(from), destination: Number(to), type: type, sentTick: tick, arrivalTick: arrivalTick, data: data}
@@ -584,9 +584,9 @@
         if (message.arrivalTick - tick + delay <= 0) {
             deliverMessage(message);
         } else {
-            let logEntry = `Message ${message.type} delayed by ${delay} ticks`
-            console.log(logEntry);
-            addLogEntry(logEntry);
+            let event = `Message ${message.type} delayed by ${delay} ticks`
+            console.log(event);
+            logEvent(event);
             message.arrivalTick = Number(message.arrivalTick) + Number(delay);
             animateMessage(message, true);
         }
@@ -601,16 +601,16 @@
         if (actor.alive) {
             actor.alive = false;
             $timeoutsStore.remove(/** @param {TimeOutEntry} timeout */ timeout => timeout.actorId === actor.id)
-            let logEntry = `Actor ${actor.id} was killed`
-            console.log(logEntry);
-            addLogEntry(logEntry);
+            let event = `Actor ${actor.id} was killed`
+            console.log(event);
+            logEvent(event);
 
         } else
         {
             actor.alive = true;
-            let logEntry = `Actor ${actor.id} was revived`
-            console.log(logEntry);
-            addLogEntry(logEntry);
+            let event = `Actor ${actor.id} was revived`
+            console.log(event);
+            logEvent(event);
         }
 
     }
@@ -721,7 +721,7 @@
                 toggleRelation={toggleRelation}
                 deliverMessage={deliverMessage}
                 delayMessage={delayMessage}
-                addLogEntry={addLogEntry}
+                logEvent={logEvent}
                 removeMessage={removeMessage}
                 bind:setEdgeState={setEdgeState}
                 bind:changeColor={changeColor}
