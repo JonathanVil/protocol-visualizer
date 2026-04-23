@@ -2,6 +2,8 @@
     /** @type {{ tick: number, lines: string[] }[]} */
     export let eventLog = [];
     export let restoreState;
+	/** @type {number | null} */
+	export let previewingTick;
 </script>
 
 
@@ -22,12 +24,16 @@
 					<tr class="hover:bg-blue-100 transition-colors">
 						<td class="p-2 font-semibold align-top">{tick.tick}</td>
 						<td class="p-2 align-top">
-							<button
-								class="fa fa-fast-backward cursor-pointer"
-								aria-label="Rewind"
-								title="Rewind"
-								on:click={() => restoreState(tick.tick)}
-							></button>
+							{#if previewingTick === tick.tick}
+								<p>{previewingTick === tick.tick ? 'Previewing' : ''}</p>
+							{:else}
+								<button
+									class="fa fa-fast-backward cursor-pointer"
+									aria-label="Rewind"
+									title="Rewind"
+									on:click={() => restoreState(tick.tick)}
+								></button>
+							{/if}
 						</td>
 						<td class="p-2">
 							{#each tick.lines.toReversed() as line}
