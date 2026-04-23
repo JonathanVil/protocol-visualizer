@@ -667,6 +667,8 @@
         const source = cyInstance.getElementById(message.source).position();
         const target = cyInstance.getElementById(message.destination).position();
 
+        if (source == null || target == null) return;
+
         //Create the message node in graph, if it does not exist.
         let msg = cyInstance.getElementById(message.id)
         if (msg.empty()) {

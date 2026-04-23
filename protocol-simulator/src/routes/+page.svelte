@@ -44,6 +44,8 @@
 
     let tick = 0;
 
+    let nextTimeoutId = 0;
+
     let restoringState = false;
     let paused = true;
     let previewingRewind = false;
@@ -55,7 +57,7 @@
         if (selectedEditorTab?.model.getValue() == null) return;
 
         /** @type {ActorConstructor|null} */
-        const actorClass = parseProtocolCode(selectedEditorTab?.model.getValue(), send, getActors, createQueue, timeout); // we need to give send here so the actor "knows" it
+        const actorClass = parseProtocolCode(selectedEditorTab?.model.getValue(), send, getActors, deleteTimeout, createQueue, timeout); // we need to give send here so the actor "knows" it
 
         if (actorClass == null) {
           console.error("Actor class not defined");
@@ -165,6 +167,7 @@
         eventLog = [];
         actors = [];
         cachedActors = [];
+        actorConnections = []
         previewingRewind = false;
         nextMessageId = -1;
         tick = 0;
@@ -516,8 +519,8 @@
 
     /** @param {number} from
      *  @param {number} to
-     *  @param {any} data
      *  @param {string} type
+     *  @param {any} data
      * */
     function send(from, to, type, data) { //Example of use: send(this.id, msg.id, "PING", "Hello")
         if (!(to < actors.length && to >= 0)) return; // cant send messages to freaks who are not real
@@ -551,13 +554,22 @@
      * @param {number} ticks
      * @param {function} reaction
      */
-    function timeout(actor, ticks, reaction) { //Example of use: timeout(this, 10, this.fart); function fart() { console.log("fart") }
+    function timeout(actor, ticks, reaction) { //Example of use: timeout(this, 10, this.helloWorld); function helloWorld() { console.log("helloWorld") }
         $timeoutsStore.push({
+            id: nextTimeoutId,
             ticks,
             totalTicks: ticks,
             actorId: actor.id,
             reaction: reaction.name
         });
+        return nextTimeoutId++;
+    }
+
+    /**
+     * @param {number} timerId
+     */
+    function deleteTimeout(timerId) { //Example of use: timeout(this, 10, this.helloWorld); function helloWorld() { console.log("helloWorld") }
+        $timeoutsStore.remove(/** @param {TimeOutEntry} t */ t => t.id === timerId)
     }
 
     let settingsPanelOpen = false;
@@ -621,21 +633,23 @@
      * @param {string} codeString
      * @param {function} send
      * @param {function} getActors
+     * @param {function} deleteTimeout
      * @param {function} createQueue
      * @param {function} timeout
      * @returns {ActorConstructor|null}
      */
-    export function parseProtocolCode(codeString, send, getActors, createQueue, timeout) {
+    export function parseProtocolCode(codeString, send, getActors, deleteTimeout, createQueue, timeout) {
 
         try {
 
             return new Function(
                 "send",
                 "getActors",
+                "deleteTimeout",
                 "createQueue",
                 "timeout",
                 codeString
-            )(send, getActors, createQueue, timeout);
+            )(send, getActors, deleteTimeout, createQueue, timeout);
 
         } catch (e) {
             console.error('Error parsing code:', e);
