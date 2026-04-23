@@ -167,7 +167,7 @@
         eventLog = [];
         actors = [];
         cachedActors = [];
-        actorRelations = []
+        actorConnections = []
         previewingRewind = false;
         nextMessageId = -1;
         tick = 0;
