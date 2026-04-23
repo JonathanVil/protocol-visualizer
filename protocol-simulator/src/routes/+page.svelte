@@ -554,7 +554,7 @@
      * @param {number} ticks
      * @param {function} reaction
      */
-    function timeout(actor, ticks, reaction) { //Example of use: timeout(this, 10, this.fart); function fart() { console.log("fart") }
+    function timeout(actor, ticks, reaction) { //Example of use: timeout(this, 10, this.helloWorld); function helloWorld() { console.log("helloWorld") }
         $timeoutsStore.push({
             id: nextTimeoutId,
             ticks,
@@ -568,7 +568,7 @@
     /**
      * @param {number} timerId
      */
-    function deleteTimeout(timerId) { //Example of use: timeout(this, 10, this.fart); function fart() { console.log("fart") }
+    function deleteTimeout(timerId) { //Example of use: timeout(this, 10, this.helloWorld); function helloWorld() { console.log("helloWorld") }
         $timeoutsStore.remove(/** @param {TimeOutEntry} t */ t => t.id === timerId)
     }
 
