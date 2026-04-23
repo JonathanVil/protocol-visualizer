@@ -36,7 +36,7 @@
     let actors = []; // the list of currently active actors
 
     /** @type {boolean[][]} */
-    let actorRelations = []
+    let actorConnections = []
 
     /** @type {{ tick: number, lines: string[], state: any }[]} */
     let eventLog = []
@@ -75,17 +75,17 @@
         let actor = watchActor(newActor);
         actors = [...actors, actor]; // Must be this way to be reactive in the UI
 
-        actorRelations.push([true])
+        actorConnections.push([true])
 
-        for (let i = 0; i < actorRelations.length - 1; i++) {
-            actorRelations[i].push(true); // push new actor to other lists
-            actorRelations[nextId].push(true); // push other actors to new actor
+        for (let i = 0; i < actorConnections.length - 1; i++) {
+            actorConnections[i].push(true); // push new actor to other lists
+            actorConnections[nextId].push(true); // push other actors to new actor
         }
-        console.log(actorRelations)
+        console.log(actorConnections)
 
-        let logEntry = "Adding " + protocolName + " actor"
-        console.log(logEntry);
-        addLogEntry(logEntry);
+        let event = "Adding " + protocolName + " actor"
+        console.log(event);
+        logEvent(event);
     }
 
 
@@ -96,25 +96,25 @@
     function deliverMessage(message) {
         // if the message is delivered to a inactive Actor, ignore it
         if (!actors[message.destination].alive) {
-            let logEntry = `Actor ${message.destination} would have recieved msg ${message.type} from Actor ${message.source}, but is dead`
-            console.log(logEntry);
-            addLogEntry(logEntry);
+            let event = `Actor ${message.destination} would have recieved msg ${message.type} from Actor ${message.source}, but is dead`
+            console.log(event);
+            logEvent(event);
             return;
         }
 
-        if (!(actorRelations[message.source][message.destination])) {
-            let logEntry = `Actor ${message.destination} would have recieved msg ${message.type} from Actor ${message.source}, but connection is severed`
-            console.log(logEntry);
-            addLogEntry(logEntry);
+        if (!(actorConnections[message.source][message.destination])) {
+            let event = `Actor ${message.destination} would have recieved msg ${message.type} from Actor ${message.source}, but connection is severed`
+            console.log(event);
+            logEvent(event);
             return;
         }
 
-        let logEntry = `Actor ${message.destination} received msg ${message.type} from Actor ${message.source}`
+        let event = `Actor ${message.destination} received msg ${message.type} from Actor ${message.source}`
         if (message.data) {
-            logEntry = `Actor ${message.destination} received msg ${message.type} with data ${message.data} from Actor ${message.source}`
+            event = `Actor ${message.destination} received msg ${message.type} with data ${message.data} from Actor ${message.source}`
         }
-        console.log(logEntry);
-        addLogEntry(logEntry);
+        console.log(event);
+        logEvent(event);
         let actor = actors[message.destination];
         let msg = {type: message.type, from: message.source, data: message.data};
         actor.receive(msg)
@@ -125,17 +125,17 @@
      * @param {number} target
      * @returns {boolean}
      */
-    function toggleRelation(source, target) {
-        let newState = !(actorRelations[source][target]);
-        actorRelations[source][target] = newState;
-        actorRelations[target][source] = newState;
+    function toggleConnection(source, target) {
+        let newState = !(actorConnections[source][target]);
+        actorConnections[source][target] = newState;
+        actorConnections[target][source] = newState;
 
         let status = "Connected to";
         if (!newState) {status = "Disconnected from"; }
 
-        let logEntry = `Actor ${source} ${status} Actor ${target}`
-        console.log(logEntry);
-        addLogEntry(logEntry);
+        let event = `Actor ${source} ${status} Actor ${target}`
+        console.log(event);
+        logEvent(event);
 
         return newState;
     }
@@ -211,17 +211,17 @@
     }
 
     /**
-     * @param {string} line
+     * @param {string} event
      */
-    export function addLogEntry(line) {
+    export function logEvent(event) {
         if (previewingRewind) {
             finalizeRewind()
         }
         const entry = eventLog.find(e => e.tick === tick);
         if (!entry) {
-            eventLog = [...eventLog, {tick, lines: [line], state: null}];
+            eventLog = [...eventLog, {tick, lines: [event], state: null}];
         } else {
-            entry.lines = [...entry.lines, line];
+            entry.lines = [...entry.lines, event];
             eventLog = [...eventLog.slice(0, eventLog.length - 1), entry]
         }
     }
@@ -252,8 +252,8 @@
         let messagesState = messages.toArray().map(m => structuredClone(m)); //we lose methods on clone, so we need an iterable copy in order to restore the queue
         let timeoutsState = $timeoutsStore.toArray().map(t => structuredClone(t));
 
-        let actorRelationsState = structuredClone(actorRelations);
-        let state = {actorsState: actorsState, actorRelationsState: actorRelationsState, messagesState: messagesState, timeoutsState: timeoutsState };
+        let actorConnectionsState = structuredClone(actorConnections);
+        let state = {actorsState: actorsState, actorConnectionsState: actorConnectionsState, messagesState: messagesState, timeoutsState: timeoutsState };
 
         const entry = eventLog.find(e => e.tick === tick);
         if (entry){
@@ -366,12 +366,12 @@
             }
         }
 
-        // restore actorRelations
-        actorRelations = entry.state.actorRelationsState;
-        for (let i = 0; i < actorRelations.length; i++) {
-            for (let j = i; j < actorRelations.length; j++) {
+        // restore actorConnections
+        actorConnections = entry.state.actorConnectionsState;
+        for (let i = 0; i < actorConnections.length; i++) {
+            for (let j = i; j < actorConnections.length; j++) {
                 if (i === j) continue;
-                setEdgeState(i, j, actorRelations[i][j])
+                setEdgeState(i, j, actorConnections[i][j])
             }
         }
 
@@ -494,9 +494,9 @@
                 const success = Reflect.set(target, prop, value);
 
                 if (success && prev !== value && !restoringState) { //make sure restoring state is false, so we dont log rewinding
-                    let logEntry = `Actor ${target.id} ${String(prop)} changed from ${prev} to ${value}`;
-                    console.log(logEntry);
-                    addLogEntry(logEntry);
+                    let event = `Actor ${target.id} ${String(prop)} changed from ${prev} to ${value}`;
+                    console.log(event);
+                    logEvent(event);
                     updateActorStatePopper(receiver);
 
                     // reflect nodeColor in graph
@@ -527,12 +527,12 @@
         if (!(from < actors.length && from >= 0)) return;
 
 
-        let logEntry = `Actor ${from} sent msg ${type} to Actor ${to}`
+        let event = `Actor ${from} sent msg ${type} to Actor ${to}`
         if (data){
-            logEntry = `Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
+            event = `Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
         }
-        console.log(logEntry);
-        addLogEntry(logEntry);
+        console.log(event);
+        logEvent(event);
         let transitTime = getTransitTime();
         let arrivalTick = tick + transitTime;
         let message = {id: getNextMessageId(), source: Number(from), destination: Number(to), type: type, sentTick: tick, arrivalTick: arrivalTick, data: data}
@@ -596,9 +596,9 @@
         if (message.arrivalTick - tick + delay <= 0) {
             deliverMessage(message);
         } else {
-            let logEntry = `Message ${message.type} delayed by ${delay} ticks`
-            console.log(logEntry);
-            addLogEntry(logEntry);
+            let event = `Message ${message.type} delayed by ${delay} ticks`
+            console.log(event);
+            logEvent(event);
             message.arrivalTick = Number(message.arrivalTick) + Number(delay);
             animateMessage(message, true);
         }
@@ -613,16 +613,16 @@
         if (actor.alive) {
             actor.alive = false;
             $timeoutsStore.remove(/** @param {TimeOutEntry} timeout */ timeout => timeout.actorId === actor.id)
-            let logEntry = `Actor ${actor.id} was killed`
-            console.log(logEntry);
-            addLogEntry(logEntry);
+            let event = `Actor ${actor.id} was killed`
+            console.log(event);
+            logEvent(event);
 
         } else
         {
             actor.alive = true;
-            let logEntry = `Actor ${actor.id} was revived`
-            console.log(logEntry);
-            addLogEntry(logEntry);
+            let event = `Actor ${actor.id} was revived`
+            console.log(event);
+            logEvent(event);
         }
 
     }
@@ -696,7 +696,7 @@
                 class="p-2 text-slate-300 rounded-md hover:bg-blue-200 aria-pressed:bg-blue-200 border-blue-500"
                 aria-label="Log"
                 aria-pressed={leftPanel === LeftPanelOptions.DOCS}
-                on:click={() => (leftPanel = LeftPanelOptions.DOCS)}
+                on:click={() => toggleLeftPanel(LeftPanelOptions.DOCS)}
         >
             <Icon icon="mdi:help" class="w-6 h-6 text-black" />
         </button>
@@ -706,7 +706,7 @@
                 class="p-2 text-slate-300 rounded-md hover:bg-blue-200 aria-pressed:bg-blue-200 border-blue-500"
                 aria-label="Code"
                 aria-pressed={leftPanel === LeftPanelOptions.CODE}
-                on:click={() => (leftPanel = LeftPanelOptions.CODE)}
+                on:click={() => toggleLeftPanel(LeftPanelOptions.CODE)}
         >
             <Icon icon="mdi:code-tags" class="w-6 h-6 text-black" />
         </button>
@@ -716,7 +716,7 @@
                 class="p-2 text-slate-300 rounded-md hover:bg-blue-200 aria-pressed:bg-blue-200 border-blue-500"
                 aria-label="Log"
                 aria-pressed={leftPanel === LeftPanelOptions.LOG}
-                on:click={() => (leftPanel = LeftPanelOptions.LOG)}
+                on:click={() => toggleLeftPanel(LeftPanelOptions.LOG)}
         >
             <Icon icon="mdi:clipboard-text-outline" class="w-6 h-6 text-black" />
         </button>
@@ -732,10 +732,10 @@
                 bind:removeActorNode={removeActorNode}
                 bind:messages={messages}
                 toggleAlive={toggleAlive}
-                toggleRelation={toggleRelation}
+                toggleConnection={toggleConnection}
                 deliverMessage={deliverMessage}
                 delayMessage={delayMessage}
-                addLogEntry={addLogEntry}
+                logEvent={logEvent}
                 removeMessage={removeMessage}
                 bind:setEdgeState={setEdgeState}
                 bind:changeColor={changeColor}

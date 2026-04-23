@@ -339,15 +339,15 @@
     });
 
 
-    /** @type {(logEntry: String) => void}  */
-    export let addLogEntry;
+    /** @type {(event: String) => void}  */
+    export let logEvent;
 
     /** Function used to kill an actor in page.svelte (from graph -> page.svelte)
      * @type {(actor: Actor) => void} */
     export let toggleAlive;
 
     /** @type {(source: number, target: number) => boolean}  */
-    export let toggleRelation;
+    export let toggleConnection;
 
     /**
      * @param {import('cytoscape').EventObject} evt - The Cytoscape event object
@@ -358,7 +358,7 @@
         const source = Number(edge.source().id());
         const target = Number(edge.target().id());
 
-        let active = toggleRelation(source, target);
+        let active = toggleConnection(source, target);
 
         if (active) {
             edge.style('line-color', '#707075');
@@ -506,9 +506,9 @@
     function dropMessage(message) {
 
             removeMessageNode(message)
-            let logEntry = `Dropped message ${message.type} from ${message.source} to ${message.destination}`;
-            console.log(logEntry);
-            addLogEntry(logEntry);
+            let event = `Dropped message ${message.type} from ${message.source} to ${message.destination}`;
+            console.log(event);
+            logEvent(event);
 
             //remove message from logic message
             removeMessage(message);
