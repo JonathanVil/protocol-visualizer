@@ -96,14 +96,14 @@
     function deliverMessage(message) {
         // if the message is delivered to a inactive Actor, ignore it
         if (!actors[message.destination].alive) {
-            let event = `Actor ${message.destination} would have recieved msg ${message.type} from Actor ${message.source}, but is dead`
+            let event = `Actor ${message.destination} would have received msg ${message.type} from Actor ${message.source}, but is dead`
             console.log(event);
             logEvent(event);
             return;
         }
 
         if (!(actorConnections[message.source][message.destination])) {
-            let event = `Actor ${message.destination} would have recieved msg ${message.type} from Actor ${message.source}, but connection is severed`
+            let event = `Actor ${message.destination} would have received msg ${message.type} from Actor ${message.source}, but connection is severed`
             console.log(event);
             logEvent(event);
             return;
@@ -623,6 +623,7 @@
             let event = `Actor ${actor.id} was revived`
             console.log(event);
             logEvent(event);
+            actor.revive?.();
         }
 
     }

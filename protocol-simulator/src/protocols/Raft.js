@@ -116,6 +116,9 @@ class Actor {
                 return;
             }
 
+            // at this point we have accepted that this append request
+            this.votedFor = msg.data.leaderId
+
             // 3. If an existing entry conflicts with a new one (same index but different terms), delete the existing entry and all that follow it (§5.3)
             if (msg.data.prevLogIndex === 0) { // if the whole log is bad
                 this.log = [""];
@@ -315,6 +318,11 @@ class Actor {
             leaderCommit: this.commitIndex
         }
         send(this.id, actorId, "APPEND_ENTRIES_REQUEST", appendEntriesData);
+    }
+
+    revive() {
+        this.votedFor = null
+        this.becomeFollower()
     }
 }
 
