@@ -749,10 +749,12 @@
 
     <div id="ui-layer"></div>
 
-    <div class="absolute top-14 left-14 rounded-lg w-9/20 h-4/5">
-        {#if leftPanel === LeftPanelOptions.DOCS}
+    {#if leftPanel === LeftPanelOptions.DOCS}
+        <div class="absolute top-14 left-14 rounded-lg w-9/20 h-4/5">
             <DocumentationViewer source={docs} />
-        {:else if leftPanel === LeftPanelOptions.CODE}
+        </div>
+    {:else if leftPanel === LeftPanelOptions.CODE}
+        <div class="absolute top-14 left-14 rounded-lg w-9/20 h-4/5">
             <!--Code block-->
             <MonacoEditor
                     bind:tabs={editorTabs}
@@ -761,7 +763,9 @@
                     bind:predefinedProtocols={predefinedProtocols}
                     spawnActor={spawnActor}
             />
-        {:else if leftPanel === LeftPanelOptions.LOG}
+        </div>
+    {:else if leftPanel === LeftPanelOptions.LOG}'
+        <div class="absolute top-14 left-14 rounded-lg w-9/20 max-h-4/5">
             <!--Log block-->
             <EventLog
                     eventLog={eventLog}
