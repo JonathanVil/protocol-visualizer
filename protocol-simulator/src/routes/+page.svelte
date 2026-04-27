@@ -217,13 +217,14 @@
         if (previewingRewind) {
             finalizeRewind()
         }
-        const entry = eventLog.find(e => e.tick === tick);
+        let entry = eventLog.find(e => e.tick === tick);
         if (!entry) {
-            eventLog = [...eventLog, {tick, lines: [event], state: null}];
+            entry = { tick, lines: [event], state: null };
+            eventLog.push(entry);
         } else {
-            entry.lines = [...entry.lines, event];
-            eventLog = [...eventLog.slice(0, eventLog.length - 1), entry]
+            entry.lines.push(event);
         }
+        eventLog = eventLog;
     }
 
     function saveState() {
@@ -771,9 +772,10 @@
                     eventLog={eventLog}
                     restoreState={restoreState}
                     previewingTick={previewingRewind ? tick : null}
+                    currentTick={tick}
             />
-        {/if}
-    </div>
+        </div>
+    {/if}
 
     <button on:click={() => settingsPanelOpen = !settingsPanelOpen} class="absolute top-14 right-5 p-1 rounded-lg hover:bg-blue-200">
         <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
