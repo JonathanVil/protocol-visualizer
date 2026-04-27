@@ -23,8 +23,12 @@
 						<td colspan="3" class="p-2 text-center">No events yet</td>
 					</tr>
 				{/if}
-				{#each [...eventLog].toReversed() as tick}
-					<tr class="hover:bg-blue-100 transition-colors">
+				{#each [...eventLog].toReversed() as tick, i}
+					<tr
+						class={`transition-colors hover:bg-blue-100 ${
+							i % 2 === 0 ? 'bg-gray-100' : 'bg-white'
+						}`}
+					>
 						<td class="p-2 font-semibold align-top">{tick.tick}</td>
 						<td class="p-2 align-top">
 							{#if previewingTick === tick.tick}
