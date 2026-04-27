@@ -231,7 +231,6 @@ class Actor {
     becomeFollower() {
         this.state = "FOLLOWER";
         this.votes = 0;
-        this.votedFor = null;
         this.nodeColor = 'blue';
         this.startElectionTimeout()
     }
@@ -322,6 +321,7 @@ class Actor {
     }
 
     revive() {
+        this.votedFor = null
         this.becomeFollower()
     }
 }
