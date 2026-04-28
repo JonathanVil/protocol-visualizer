@@ -217,13 +217,14 @@
         if (previewingRewind) {
             finalizeRewind()
         }
-        const entry = eventLog.find(e => e.tick === tick);
+        let entry = eventLog.find(e => e.tick === tick);
         if (!entry) {
-            eventLog = [...eventLog, {tick, lines: [event], state: null}];
+            entry = { tick, lines: [event], state: null };
+            eventLog.push(entry);
         } else {
-            entry.lines = [...entry.lines, event];
-            eventLog = [...eventLog.slice(0, eventLog.length - 1), entry]
+            entry.lines.push(event);
         }
+        eventLog = eventLog;
     }
 
     function saveState() {
@@ -750,10 +751,12 @@
 
     <div id="ui-layer"></div>
 
-    <div class="absolute top-14 left-14 rounded-lg w-9/20 h-4/5">
-        {#if leftPanel === LeftPanelOptions.DOCS}
+    {#if leftPanel === LeftPanelOptions.DOCS}
+        <div class="absolute top-14 left-14 rounded-lg w-9/20 h-4/5">
             <DocumentationViewer source={docs} />
-        {:else if leftPanel === LeftPanelOptions.CODE}
+        </div>
+    {:else if leftPanel === LeftPanelOptions.CODE}
+        <div class="absolute top-14 left-14 rounded-lg w-9/20 h-4/5">
             <!--Code block-->
             <MonacoEditor
                     bind:tabs={editorTabs}
@@ -762,15 +765,18 @@
                     bind:predefinedProtocols={predefinedProtocols}
                     spawnActor={spawnActor}
             />
-        {:else if leftPanel === LeftPanelOptions.LOG}
+        </div>
+    {:else if leftPanel === LeftPanelOptions.LOG}'
+        <div class="absolute top-14 left-14 rounded-lg w-9/20 max-h-4/5">
             <!--Log block-->
             <EventLog
                     eventLog={eventLog}
                     restoreState={restoreState}
                     previewingTick={previewingRewind ? tick : null}
+                    currentTick={tick}
             />
-        {/if}
-    </div>
+        </div>
+    {/if}
 
     <button on:click={() => settingsPanelOpen = !settingsPanelOpen} class="absolute top-14 right-5 p-1 rounded-lg hover:bg-blue-200">
         <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
