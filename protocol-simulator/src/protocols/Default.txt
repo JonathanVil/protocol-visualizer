@@ -13,6 +13,11 @@
             send(this.id, msg.from, "PING");
         }
     }
+
+    // Sends a PING message to another actor. Can be run manually from the actor.
+    sendPing(receiverID) {
+        send(this.id, receiverID, "PING");
+    }
 }
 
 return Actor;
