@@ -11,5 +11,5 @@ EXPOSE 3000
 
 CMD ["node", "build"]
 
-# Build image: docker build -t protocol-simulator .
-# Run container: docker run -p 3000:3000 protocol-simulator
+# Build image: docker build -t protocol-visualizer .
+# Run container: docker run -p 3000:3000 protocol-visualizer
