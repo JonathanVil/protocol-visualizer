@@ -10,7 +10,15 @@ A hosted version of the app is available at https://protovis.villeret.dk/
 
 The app can be run either directly with Bun or via Docker.
 
-## With Bun
+## Using Docker
+
+```sh
+docker run -p 3000:3000 ghcr.io/jonathanvil/protocol-visualizer
+```
+
+The app will be available at `http://localhost:3000`.
+
+## Using Bun
 
 ### Prerequisites
 
@@ -23,12 +31,3 @@ bun run dev
 ```
 
 The app will be available at `http://localhost:5173`.
-
-## With Docker
-
-```sh
-docker build -t protocol-visualizer .
-docker run -p 3000:3000 protocol-visualizer
-```
-
-The app will be available at `http://localhost:3000`.
