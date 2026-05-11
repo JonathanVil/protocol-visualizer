@@ -17,7 +17,7 @@
     export let close;
 </script>
 <!--Tickspeed -->
-<div class="absolute top-18 right-4 rounded-lg bg-white border border-gray-300 p-2">
+<div class="absolute top-18 right-4 rounded-lg bg-white border border-gray-300 p-4 min-w-60">
     <button on:click={() => close()} class="absolute top-2 right-2 rounded-lg hover:bg-blue-200">
         <Icon icon="mdi:close" class="w-6 h-6 text-black" />
     </button>
@@ -27,7 +27,7 @@
             <p class="">Ticks / Second</p>
             <InfoToolTip text="The number of simulation ticks processed per second. A tick is the smallest unit in the system"></InfoToolTip>
         </div>
-        <div>
+        <div class="flex flex-col">
             <input type="range" min="1" max="40" bind:value={tickSpeed}>
             <p>{tickSpeed}</p>
         </div>
@@ -51,10 +51,9 @@
             <p class="">Drop chance</p>
             <InfoToolTip text="The chance that any message is dropped when it would otherwise be delivered"></InfoToolTip>
         </div>
-        <div>
-            <input type="range" class="w-3/4" min="0" max="100" bind:value={dropChance}>
+        <div class="flex flex-col">
+            <input type="range" min="0" max="100" bind:value={dropChance}>
             <p>{dropChance}%</p>
-
         </div>
     </div>
 </div>
