@@ -544,14 +544,14 @@
      */
     export let delayMessage;
 
-    /** @type {(msg: Message) => void} */
+    /** @type {(msg: Message, droppable: boolean) => void} */
     export let deliverMessage;
 
     /**
      * //Wrapper function between parent and child to remove the message from logic and graph
      * @param {Message} message */
     function deliverGraphMessage(message) {
-        deliverMessage(message);
+        deliverMessage(message, false);
         dropMessage(message);
     }
 

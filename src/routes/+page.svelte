@@ -92,8 +92,9 @@
     /**
      * Deliver message to destination actor. Transform message to lightweight msg. Lastly invoke actors 'receive' method
      * @param {Message} message
+     * @param {boolean} droppable // this is to ensure they are not dropped if manually delivered through message popper
      */
-    function deliverMessage(message) {
+    function deliverMessage(message, droppable) {
         // if the message is delivered to a inactive Actor, ignore it
         if (!actors[message.destination].alive) {
             let event = `Actor ${message.destination} would have received msg ${message.type} from Actor ${message.source}, but is dead`
@@ -101,9 +102,16 @@
             logEvent(event);
             return;
         }
-
+        // if connection is broken, dont deliver
         if (!(actorConnections[message.source][message.destination])) {
             let event = `Actor ${message.destination} would have received msg ${message.type} from Actor ${message.source}, but connection is severed`
+            console.log(event);
+            logEvent(event);
+            return;
+        }
+
+        if (droppable && dropChance > (Math.random() * 100)) {
+            let event = `Actor ${message.destination} would have received msg ${message.type} from Actor ${message.source}, but it was dropped due to random drop chance`
             console.log(event);
             logEvent(event);
             return;
@@ -431,7 +439,7 @@
             shuffle(msgs); // shuffle messages before delivery to avoid deterministic order
 
             for (let msg of msgs) {
-                deliverMessage(msg);
+                deliverMessage(msg, true);
             }
         }
 
@@ -591,7 +599,7 @@
      * */
     function delayMessage(message, delay) {
         if (message.arrivalTick - tick + delay <= 0) {
-            deliverMessage(message);
+            deliverMessage(message, false);
         } else {
             let event = `Message ${message.type} delayed by ${delay} ticks`
             console.log(event);
@@ -657,6 +665,7 @@
 
     let transitTimeUpperBound = 20;
     let transitTimeLowerBound = 20;
+    let dropChance = 0;
 
     /**
      * @return {number} The transit time in ticks
@@ -774,20 +783,26 @@
         </div>
     {/if}
 
-    <button on:click={() => settingsPanelOpen = !settingsPanelOpen} class="absolute top-14 right-5 p-1 rounded-lg hover:bg-blue-200">
-        <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
-    </button>
 
-    {#if settingsPanelOpen}
+
+    {#if !settingsPanelOpen}
+        <button on:click={() => settingsPanelOpen = !settingsPanelOpen} class="absolute top-18 right-4 p-1 rounded-lg hover:bg-blue-200">
+            <Icon icon="mdi:cog-outline" class="w-8 h-8 text-black" />
+        </button>
+    {:else}
         <!--Settings block-->
-        <SettingsPanel bind:tickSpeed={
-            () => Math.floor(1000 / tickSize),
-            (v) => {
-                tickSize = Math.floor(1000 / v);
-            }}
+        <SettingsPanel
+            bind:tickSpeed={
+                () => Math.floor(1000 / tickSize),
+                (v) => {
+                    tickSize = Math.floor(1000 / v);
+                }}
 
-           bind:transitLower={transitTimeLowerBound}
-           bind:transitUpper={transitTimeUpperBound}>
+            bind:transitLower={transitTimeLowerBound}
+            bind:transitUpper={transitTimeUpperBound}
+            bind:dropChance={dropChance}
+            close={() => settingsPanelOpen = false}
+        >
         </SettingsPanel>
     {/if}
 
