@@ -428,12 +428,8 @@
 
         // deliver messages
         for (const msgs of deliverableMessages.values()) {
-            if (msgs.length === 1) {  // if there is only one message scheduled, deliver it
-                deliverMessage(msgs[0])
-                continue
-            }
-            shuffle(msgs);
-            //finally deliver a random message
+            shuffle(msgs); // shuffle messages before delivery to avoid deterministic order
+
             for (let msg of msgs) {
                 deliverMessage(msg);
             }
@@ -443,10 +439,12 @@
 
     /** @param {Message[]} array **/
     function shuffle(array) { // Fisher–Yates shuffle
+        if (array.length < 2) return; // no need to shuffle if there's only one or zero elements
+
         let currentIndex = array.length;
 
         // While there remain elements to shuffle...
-        while (currentIndex != 0) {
+        while (currentIndex !== 0) {
 
             // Pick a remaining element...
             let randomIndex = Math.floor(Math.random() * currentIndex);
