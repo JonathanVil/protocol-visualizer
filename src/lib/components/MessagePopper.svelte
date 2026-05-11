@@ -44,7 +44,7 @@
     <!-- Methods -->
     <div class="flex flex-row gap-2 items-center text-center">
         <button class=" bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center"
-                on:click={() => deliverMessage(message)}>
+                on:click={() => deliverMessage(message, false)}>
             Deliver
         </button>
         <button class=" bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center"

@@ -9,8 +9,11 @@
 
     /** @type {number} */
     export let transitUpper = 20;
-</script>
 
+    /** @type {number} */
+    export let dropChance = 0;
+</script>
+<!--Tickspeed -->
 <div class="absolute top-22 right-1 rounded-lg w-1/7 h-2/5 bg-[#91B7C7]/16 border">
     <div class="flex flex-col gap-3">
         <div class="flex flex-row gap-2 font-medium">
@@ -22,6 +25,8 @@
             <p>{tickSpeed}</p>
 
         </div>
+
+        <!--Transit bounds-->
         <div class="flex flex-row gap-2 font-medium">
             <p>Transit time</p>
             <InfoToolTip text="The time it takes for a message to travel from the sender to the receiver, measured in simulation units."></InfoToolTip>
@@ -36,6 +41,17 @@
                 <input type="range" class="w-1/2" min="{transitLower}" max="50" bind:value={transitUpper}>
                 <p>{transitUpper}</p>
             </div>
+        </div>
+
+        <!-- Drop chance-->
+        <div class="flex flex-row gap-2 font-medium">
+            <p class="">Drop chance</p>
+            <InfoToolTip text="The chance that any message is dropped when it would otherwise be delivered"></InfoToolTip>
+        </div>
+        <div>
+            <input type="range" class="w-3/4" min="0" max="100" bind:value={dropChance}>
+            <p>{dropChance}</p>
+
         </div>
     </div>
 </div>
