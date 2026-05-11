@@ -783,11 +783,13 @@
         </div>
     {/if}
 
-    <button on:click={() => settingsPanelOpen = !settingsPanelOpen} class="absolute top-14 right-5 p-1 rounded-lg hover:bg-blue-200">
-        <Icon icon="mdi:menu" class="w-6 h-6 text-black" />
-    </button>
 
-    {#if settingsPanelOpen}
+
+    {#if !settingsPanelOpen}
+        <button on:click={() => settingsPanelOpen = !settingsPanelOpen} class="absolute top-18 right-4 p-1 rounded-lg hover:bg-blue-200">
+            <Icon icon="mdi:cog-outline" class="w-8 h-8 text-black" />
+        </button>
+    {:else}
         <!--Settings block-->
         <SettingsPanel
             bind:tickSpeed={
@@ -799,6 +801,7 @@
             bind:transitLower={transitTimeLowerBound}
             bind:transitUpper={transitTimeUpperBound}
             bind:dropChance={dropChance}
+            close={() => settingsPanelOpen = false}
         >
         </SettingsPanel>
     {/if}

@@ -1,5 +1,6 @@
 ﻿<script>
     import InfoToolTip from "$lib/components/InfoToolTip.svelte";
+    import Icon from "@iconify/svelte";
 
     /** @type {number} */
     export let tickSpeed;
@@ -12,9 +13,15 @@
 
     /** @type {number} */
     export let dropChance = 0;
+
+    export let close;
 </script>
 <!--Tickspeed -->
-<div class="absolute top-22 right-1 rounded-lg w-1/7 h-2/5 bg-[#91B7C7]/16 border">
+<div class="absolute top-18 right-4 rounded-lg bg-white border border-gray-300 p-2">
+    <button on:click={() => close()} class="absolute top-2 right-2 rounded-lg hover:bg-blue-200">
+        <Icon icon="mdi:close" class="w-6 h-6 text-black" />
+    </button>
+
     <div class="flex flex-col gap-3">
         <div class="flex flex-row gap-2 font-medium">
             <p class="">Ticks / Second</p>
