@@ -432,9 +432,7 @@
                 deliverMessage(msgs[0])
                 continue
             }
-
-            let shuffled = shuffle(msgs)
-
+            shuffle(msgs);
             //finally deliver a random message
             for (let msg of msgs) {
                 deliverMessage(msg);
@@ -458,7 +456,6 @@
             [array[currentIndex], array[randomIndex]] = [
                 array[randomIndex], array[currentIndex]];
         }
-        return array;
     }
 
     function handleTimeouts() {
