@@ -7,6 +7,7 @@
         this.coordinationSent = false;
         this.seqNum = 0;
         this.expectedSeqNums = []
+        this.maxExpectedTransit = 30 // If max transit time is higher than this number, Bully may fail.
     }
 
     receive(msg) {
@@ -20,9 +21,8 @@
         this.expectedSeqNums[msg.from] = msg.data
 
         if (msg.type === "PING") { //an empty message, serves as a heartbeat
-            if (this.alive){
-                send(this.id, msg.from, "PONG", this.incSeq())
-            }
+            send(this.id, msg.from, "PONG", this.incSeq())
+
         }
         if (msg.type === "PONG") { // response to the heartbeat
             this.leaderIsAlive = true;
@@ -61,7 +61,7 @@
             }
 
             //After x ticks, it tries to coordinate as leader.
-            timeout(this, 50, this.coordinate);
+            timeout(this, 2 * this.maxExpectedTransit, this.coordinate);
 
         }
     }
@@ -69,10 +69,13 @@
         //Only coordinate if this node is still leader.
         if (this.leader === this.id && this.coordinationSent === false){
             for (let i = 0; i < getActors(); i++) {
-                send(this.id, i, "COORDINATE", this.incSeq());
+                if (i != this.id) {
+                    send(this.id, i, "COORDINATE", this.incSeq());
+                }
+
             }
             this.coordinationSent = true;
-            timeout(this, 30, this.finishCoordinate);
+            timeout(this, 2 * this.maxExpectedTransit, this.finishCoordinate);
         }
 
     }
@@ -87,10 +90,10 @@
 
     sendPing() {
         //If leader is alive
-        if (this.leader) {
-            this.leaderIsAlive = false;
+        if (this.leader != null) {
+            this.leaderIsAlive = false; //set to false in case leader is dead, if leader is alive it will be set to true again
             send(this.id, this.leader, "PING", this.incSeq())
-            timeout(this, 40, this.startElection)
+            timeout(this, 2 * this.maxExpectedTransit, this.startElection)
         } else {
             this.startElection()
         }
