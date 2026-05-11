@@ -15,9 +15,10 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.PAT }}
-      - name: Build Docker image
-        run: |
-          docker build -t ghcr.io/jonathanvil/protocol-visualizer:latest .
-      - name: Push Docker image
-        run: |
-          docker push ghcr.io/jonathanvil/protocol-visualizer:latest
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ghcr.io/jonathanvil/protocol-visualizer:latest
