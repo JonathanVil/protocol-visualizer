@@ -409,13 +409,10 @@
 
             if (message == null) continue;
 
-            messages.push(message);
-
             animateMessage(message, false)
 
-
-
             if (message.arrivalTick > tick) { // we only look at messages that should be delivered
+                messages.push(message);
                 continue;
             }
 
@@ -433,31 +430,35 @@
         for (const msgs of deliverableMessages.values()) {
             if (msgs.length === 1) {  // if there is only one message scheduled, deliver it
                 deliverMessage(msgs[0])
-                messages.remove(/** @param {Message} m */ m => m.id === msgs[0].id);
                 continue
             }
 
-            // we need to find the messages that have waited longest
-            let lowestArrivalTick = msgs[0].arrivalTick;
-            for (const msg of msgs) {
-                if (msg.arrivalTick < lowestArrivalTick) {
-                    lowestArrivalTick = msg.arrivalTick;
-                }
-            }
+            let shuffled = shuffle(msgs)
 
-            let oldestMsgs = []
-            for (const msg of msgs) {
-                if (msg.arrivalTick === lowestArrivalTick) {
-                    oldestMsgs.push(msg);
-                }
-            }
             //finally deliver a random message
-            let randomIndex = Math.round(Math.random() * (oldestMsgs.length - 1))
-
-            deliverMessage(oldestMsgs[randomIndex]);
-            messages.remove(/** @param {Message} m */ m => m.id === oldestMsgs[randomIndex].id);
+            for (let msg of msgs) {
+                deliverMessage(msg);
+            }
         }
 
+    }
+
+    /** @param {Message[]} array **/
+    function shuffle(array) { // Fisher–Yates shuffle
+        let currentIndex = array.length;
+
+        // While there remain elements to shuffle...
+        while (currentIndex != 0) {
+
+            // Pick a remaining element...
+            let randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+
+            // And swap it with the current element.
+            [array[currentIndex], array[randomIndex]] = [
+                array[randomIndex], array[currentIndex]];
+        }
+        return array;
     }
 
     function handleTimeouts() {
