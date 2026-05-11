@@ -23,7 +23,6 @@ The app will be available at `http://localhost:3000`.
 ### Prerequisites
 
 - [Bun](https://bun.sh) — used as the package manager and runtime
-- [Node.js](https://nodejs.org) — required by the SvelteKit adapter at runtime
 
 ```sh
 bun install
