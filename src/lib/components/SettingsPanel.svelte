@@ -28,25 +28,21 @@
             <InfoToolTip text="The number of simulation ticks processed per second. A tick is the smallest unit in the system"></InfoToolTip>
         </div>
         <div>
-            <input type="range" class="w-3/4" min="1" max="40" bind:value={tickSpeed}>
+            <input type="range" min="1" max="40" bind:value={tickSpeed}>
             <p>{tickSpeed}</p>
-
         </div>
 
         <!--Transit bounds-->
         <div class="flex flex-row gap-2 font-medium">
             <p>Transit time</p>
-            <InfoToolTip text="The time it takes for a message to travel from the sender to the receiver, measured in simulation units."></InfoToolTip>
+            <InfoToolTip text="The time it takes for a message to travel from the sender to the receiver, measured in ticks."></InfoToolTip>
         </div>
-        <div class="flex">
-            <div class=" w-2/7">
-                <p>Min</p>
-                <p>20</p>
-            </div>
-            <div>
-                <p>Max</p>
-                <input type="range" class="w-1/2" min="{transitLower}" max="50" bind:value={transitUpper}>
-                <p>{transitUpper}</p>
+        <div class="flex flex-col">
+            <input type="range" min="{transitLower}" max="50" bind:value={transitUpper}>
+
+            <div class="flex flex-row gap-2 justify-between">
+                <p>Min: 20</p>
+                <p>Max: {transitUpper}</p>
             </div>
         </div>
 
@@ -57,7 +53,7 @@
         </div>
         <div>
             <input type="range" class="w-3/4" min="0" max="100" bind:value={dropChance}>
-            <p>{dropChance}</p>
+            <p>{dropChance}%</p>
 
         </div>
     </div>
