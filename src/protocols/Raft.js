@@ -76,7 +76,6 @@ class Actor {
                 // If votes received from majority of actors. It wins the election (a)
                 if (this.votes >= Math.floor(getActors() / 2) + 1) {
                     this.becomeLeader();
-                    // BEGIN SENDING HEARTBEATS
                 }
             }
 
