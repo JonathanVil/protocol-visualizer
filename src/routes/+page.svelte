@@ -207,7 +207,9 @@
         //update timeouts by one tick
         handleTimeouts()
 
-
+        for (let actor of actors){
+            updateActorStatePopper(actor)
+        }
 
         if (!paused) {
             let elapsedTime = Date.now() - startTime;
