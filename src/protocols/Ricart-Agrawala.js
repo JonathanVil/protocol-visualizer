@@ -45,14 +45,14 @@
 
     accessCS() {
         console.log("Accessing CS");
-        this.requestingCS = false;
-        this.accessingCS = true;
+        this.nodeColor = '#d8231dff';
         timeout(this, 20, this.exitCS)
     }
 
     exitCS() {
         console.log("Exiting CS");
-        this.accessingCS = false;
+        this.requestingCS = false;
+        this.nodeColor = '#1d4ed8';
         while (this.messageQueue.length > 0) {
             let id = this.messageQueue.pop()
             send(this.id, id, "REPLY");
