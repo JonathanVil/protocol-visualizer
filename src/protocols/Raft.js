@@ -201,6 +201,8 @@ class Actor {
 
         //1. Append command to the log
         this.log = [...this.log, { term: this.currentTerm, command: command }];
+        this.matchIndex[this.id]++
+        this.nextIndex[this.id]++
 
         for (let actorId = 0; actorId < getActors(); actorId++) {
             if (actorId !== this.id) {
