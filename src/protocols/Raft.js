@@ -127,7 +127,7 @@ class Actor {
             }
 
             // 4. Append any new entries not already in the log
-            // [1, 2, 3] <- [2, 3, 4] = [1, 2, 3, 2, 3, 4]
+            // [1, 2, 3] <- [2, 3, 4] = [1, 2, 3, 4]
             this.log = this.log.concat(msg.data.entries);
             let result = {
                 term: this.currentTerm,
@@ -169,7 +169,7 @@ class Actor {
                 // of match Index[i] ≥= N,and log[N].term == currentTerm:
                 // set commitIndex = N (§5.3,§5.4).
                 // - Sort matchIndex to find the median matchIndex. Decrement if terms does not match && i > commitIndex
-                let sorted = this.matchIndex.toSorted();
+                let sorted = this.matchIndex.toSorted((a, b) => a - b);
                 for (let i = sorted[Math.floor(sorted.length / 2)]; i > this.commitIndex; i--) {
                     if (this.log[i].term === this.currentTerm) {
                         this.commitIndex = i;
