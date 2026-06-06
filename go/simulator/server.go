@@ -2,6 +2,7 @@ package simulator
 
 import (
 	"context"
+	"log"
 	"net/http"
 
 	"github.com/coder/websocket"
@@ -9,21 +10,27 @@ import (
 )
 
 type Server struct {
-	sim  *Simulator
-	addr string
+	sim    *Simulator
+	addr   string
+	server *http.Server
 }
 
 func NewServer(sim *Simulator, addr string) *Server {
 	return &Server{sim: sim, addr: addr}
 }
 
-func (s *Server) Listen() error {
+func (s *Server) StartServer() {
 	http.HandleFunc("/ws", s.handleWS)
-	return http.ListenAndServe(s.addr, nil)
+	err := http.ListenAndServe(s.addr, nil)
+	if err != nil {
+		log.Fatal("ListenAndServe: ", err)
+	}
 }
 
 func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
-	conn, err := websocket.Accept(w, r, nil)
+	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
+		InsecureSkipVerify: true,
+	})
 	if err != nil {
 		return
 	}
@@ -52,4 +59,8 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+}
+
+func (s *Server) Close() error {
+	return s.server.Close()
 }

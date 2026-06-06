@@ -69,6 +69,7 @@ func (s *Simulator) Tick() {
 
 func (s *Simulator) Start() {
 	s.running = true
+	fmt.Println("Simulator started")
 
 	for s.running {
 		s.Tick()
@@ -78,4 +79,5 @@ func (s *Simulator) Start() {
 
 func (s *Simulator) Stop() {
 	s.running = false
+	fmt.Println("Simulator stopped")
 }

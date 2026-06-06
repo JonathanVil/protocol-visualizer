@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/JonathanVil/protocol-visualizer"
 )
@@ -26,6 +25,8 @@ func (actor *HelloWorldActor) OnMessage(msg simulator.Message) {
 
 func main() {
 	sim := simulator.New()
+	srv := simulator.NewServer(sim, ":8067")
+	defer srv.Close()
 
 	a := &HelloWorldActor{id: 0, sim: sim}
 	b := &HelloWorldActor{id: 1, sim: sim}
@@ -35,7 +36,5 @@ func main() {
 
 	sim.Send(0, 1, "ping")
 
-	go sim.Start()
-	time.Sleep(10 * time.Second)
-	sim.Stop()
+	srv.StartServer()
 }
