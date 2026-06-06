@@ -15,6 +15,7 @@ type Simulator struct {
 	tickDuration time.Duration
 	running      bool
 	events       chan Event
+	history      []Message
 }
 
 func New() *Simulator {
@@ -65,6 +66,7 @@ func (s *Simulator) Tick() {
 
 	actor.OnMessage(msg)
 	s.events <- Event{Tick: s.tick, Message: msg}
+	s.history = append(s.history, msg)
 }
 
 func (s *Simulator) Start() {
