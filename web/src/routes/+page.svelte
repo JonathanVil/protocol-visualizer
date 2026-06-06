@@ -10,6 +10,7 @@
     import EventLog from "$lib/components/EventLog.svelte";
     import DocumentationViewer from "$lib/components/DocumentationViewer.svelte";
     import {timeoutsStore} from "$lib/stores.js";
+    import {onMount} from "svelte";
 
     /** @typedef {import('$lib/types.js').Message} Message */
     /** @typedef {import('$lib/types.js').ActorConstructor} ActorConstructor */
@@ -51,6 +52,32 @@
     let previewingRewind = false;
     /** @type {Actor[]} */
     let cachedActors = [] // used when previewing and rewinding, this is the list of all actors at the latest point in the eventlog
+
+
+    /**
+     * @type {any[]}
+     */
+    let events = [];
+    /**
+     * @type {WebSocket}
+     */
+    let ws;
+
+    onMount(() => {
+        ws = new WebSocket('ws://localhost:8067/ws');
+        ws.onmessage = (e) => {
+            let data = JSON.parse(e.data);
+            let msg = data.Message;
+            let line = "Actor " + msg.From + " sent " + msg.Payload + " to Actor " + msg.To;
+            let entry = { tick: data.Tick, lines: [line], state: null };
+
+            eventLog = [...eventLog, entry];
+        };
+        return () => ws.close();
+    });
+
+    function start() { ws.send('start'); }
+    function stop() { ws.send('stop'); }
 
     /** @param {string|null} protocolName */
     function spawnActor(protocolName) {
@@ -152,18 +179,11 @@
     let setEdgeState;
 
     function startSimulation() {
-        console.log("Starting simulation");
-        if (previewingRewind){
-            finalizeRewind()
-        }
-
-        paused = false;
-        handleTick();
+        start()
     }
 
     function pauseSimulation() {
-        console.log("Pausing simulation");
-        paused = true;
+        stop()
     }
 
     /** @type {() => void} */
