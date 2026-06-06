@@ -14,6 +14,7 @@ type Simulator struct {
 	tick         int
 	tickDuration time.Duration
 	running      bool
+	events       chan Event
 }
 
 func New() *Simulator {
@@ -21,6 +22,7 @@ func New() *Simulator {
 		actors:       make(map[int]Actor),
 		tick:         0,
 		tickDuration: time.Second,
+		events:       make(chan Event, 16),
 	}
 }
 
@@ -62,6 +64,7 @@ func (s *Simulator) Tick() {
 	s.mu.Unlock()
 
 	actor.OnMessage(msg)
+	s.events <- Event{Tick: s.tick, Message: msg}
 }
 
 func (s *Simulator) Start() {

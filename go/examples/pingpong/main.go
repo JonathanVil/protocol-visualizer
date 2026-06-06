@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/JonathanVil/protocol-visualizer/simulator"
+	"github.com/JonathanVil/protocol-visualizer"
 )
 
 type HelloWorldActor struct {
