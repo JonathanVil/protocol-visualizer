@@ -81,7 +81,6 @@ func (s *Simulator) Send(from, to int, payload any) {
 
 func (s *Simulator) Tick() {
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	defer func() {
 		s.tick++
 	}()
@@ -90,6 +89,7 @@ func (s *Simulator) Tick() {
 
 	// get queue of messages due this tick
 	queue := s.tickQueues[s.tick]
+	s.mu.Unlock()
 	if queue == nil {
 		return
 	}
@@ -99,7 +99,7 @@ func (s *Simulator) Tick() {
 		actor := s.actors[msg.To]
 		if actor == nil {
 			fmt.Printf("No actor found %d\n", msg.To)
-			return
+			continue
 		}
 		actor.OnMessage(msg)
 		s.events <- Event{Tick: s.tick, Message: msg}

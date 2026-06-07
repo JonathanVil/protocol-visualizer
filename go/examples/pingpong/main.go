@@ -14,10 +14,5 @@ func main() {
 
 	sim.RegisterActorType(reflect.TypeOf(&PingActor{}), "ping")
 
-	_ = sim.SpawnActor("ping", 0)
-	_ = sim.SpawnActor("ping", 1)
-
-	sim.Send(0, 1, "ping")
-
 	srv.StartServer()
 }
