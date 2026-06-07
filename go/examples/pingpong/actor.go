@@ -22,3 +22,8 @@ func (actor *PingActor) OnMessage(msg simulator.Message) {
 		actor.sim.Send(actor.id, msg.From, "pong")
 	}
 }
+
+func (actor *PingActor) Init(id int, sim *simulator.Simulator) {
+	actor.id = id
+	actor.sim = sim
+}

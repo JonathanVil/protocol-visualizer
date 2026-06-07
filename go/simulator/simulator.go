@@ -2,7 +2,9 @@ package simulator
 
 import (
 	"fmt"
+	"log"
 	"math/rand/v2"
+	"reflect"
 	"sync"
 	"time"
 )
@@ -16,6 +18,7 @@ type Simulator struct {
 	running      bool
 	events       chan Event
 	history      []Message
+	actorTypes   map[string]reflect.Type
 	TransitTicks int
 }
 
@@ -26,6 +29,7 @@ func New() *Simulator {
 		tick:         0,
 		tickDuration: time.Second,
 		events:       make(chan Event, 16),
+		actorTypes:   make(map[string]reflect.Type),
 		TransitTicks: 1,
 	}
 }
@@ -35,6 +39,34 @@ func (s *Simulator) Register(a Actor) {
 	defer s.mu.Unlock()
 	s.actors[a.ID()] = a
 	fmt.Printf("Registered actor %d\n", a.ID())
+}
+
+func (s *Simulator) RegisterActorType(typ reflect.Type, name string) string {
+	if name == "" {
+		name = typ.Name()
+	}
+
+	// check if typ implements actor interface
+	actorInterface := reflect.TypeOf((*Actor)(nil)).Elem()
+	if !typ.Implements(actorInterface) {
+		log.Fatalf("Type %s does not implement the actor interface", typ)
+	}
+
+	s.actorTypes[name] = typ
+
+	fmt.Printf("Registered actor type %s\n", name)
+	return name
+}
+
+func (s *Simulator) SpawnActor(typ string, id int) Actor {
+	actualType := s.actorTypes[typ]
+	v := reflect.New(actualType.Elem())
+	actor := v.Interface().(Actor)
+	actor.Init(id, s)
+
+	fmt.Printf("Spawned actor %d\n", id)
+	s.Register(actor)
+	return actor
 }
 
 func (s *Simulator) Send(from, to int, payload any) {
@@ -88,4 +120,12 @@ func (s *Simulator) Start() {
 func (s *Simulator) Stop() {
 	s.running = false
 	fmt.Println("Simulator stopped")
+}
+
+func (s *Simulator) Reset() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.tick = 0
+	s.tickQueues[s.tick] = make([]Message, 0)
 }
