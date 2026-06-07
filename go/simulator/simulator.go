@@ -10,20 +10,23 @@ import (
 type Simulator struct {
 	mu           sync.Mutex
 	actors       map[int]Actor
-	queue        []Message
+	tickQueues   map[int][]Message
 	tick         int
 	tickDuration time.Duration
 	running      bool
 	events       chan Event
 	history      []Message
+	TransitTicks int
 }
 
 func New() *Simulator {
 	return &Simulator{
 		actors:       make(map[int]Actor),
+		tickQueues:   make(map[int][]Message),
 		tick:         0,
 		tickDuration: time.Second,
 		events:       make(chan Event, 16),
+		TransitTicks: 1,
 	}
 }
 
@@ -38,35 +41,38 @@ func (s *Simulator) Send(from, to int, payload any) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	i := rand.IntN(len(s.queue) + 1)
 	msg := Message{From: from, To: to, Payload: payload}
-	s.queue = append(s.queue[:i], append([]Message{msg}, s.queue[i:]...)...)
+	idx := s.tick + s.TransitTicks
+	i := rand.IntN(len(s.tickQueues[idx]) + 1)
+	s.tickQueues[idx] = append(s.tickQueues[idx][:i], append([]Message{msg}, s.tickQueues[idx][i:]...)...)
 }
 
 func (s *Simulator) Tick() {
 	s.mu.Lock()
-	if len(s.queue) == 0 {
-		return
-	}
+	defer s.mu.Unlock()
+	defer func() {
+		s.tick++
+	}()
 
 	fmt.Printf("-- Tick %d --\n", s.tick)
 
-	// get message to deliver
-	msg := s.queue[0]
-	s.queue = s.queue[1:]
-
-	// deliver it
-	actor := s.actors[msg.To]
-	if actor == nil {
-		fmt.Printf("No actor found %d\n", msg.To)
+	// get queue of messages due this tick
+	queue := s.tickQueues[s.tick]
+	if queue == nil {
 		return
 	}
-	s.tick++
-	s.mu.Unlock()
 
-	actor.OnMessage(msg)
-	s.events <- Event{Tick: s.tick, Message: msg}
-	s.history = append(s.history, msg)
+	for _, msg := range queue {
+		// deliver it
+		actor := s.actors[msg.To]
+		if actor == nil {
+			fmt.Printf("No actor found %d\n", msg.To)
+			return
+		}
+		actor.OnMessage(msg)
+		s.events <- Event{Tick: s.tick, Message: msg}
+		s.history = append(s.history, msg)
+	}
 }
 
 func (s *Simulator) Start() {
