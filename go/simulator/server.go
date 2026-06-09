@@ -15,6 +15,11 @@ type Server struct {
 	server *http.Server
 }
 
+type WebSocketMessage struct {
+	Type    string         `json:"type"`
+	Payload map[string]any `json:"payload"`
+}
+
 func NewServer(sim *Simulator, addr string) *Server {
 	return &Server{sim: sim, addr: addr}
 }
@@ -41,15 +46,18 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		for {
-			_, data, err := conn.Read(ctx)
-			if err != nil {
+			var command WebSocketMessage
+			if err := wsjson.Read(ctx, conn, &command); err != nil {
 				return
 			}
-			switch string(data) {
+			switch command.Type {
 			case "start":
 				go s.sim.Start()
 			case "stop":
 				s.sim.Stop()
+			case "spawn":
+				name := command.Payload["name"].(string)
+				s.sim.SpawnActor(name, -1)
 			}
 		}
 	}()
@@ -63,4 +71,12 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) Close() error {
 	return s.server.Close()
+}
+
+func (s *Server) SendActorTypes(ctx context.Context, conn *websocket.Conn) {
+	var msg WebSocketMessage = WebSocketMessage{"type", make(map[string]any)}
+	msg.Payload["actors"] = s.sim.actorTypes
+	if err := wsjson.Write(ctx, conn, msg); err != nil {
+		log.Printf("failed to send actorTypes: %v", err)
+	}
 }

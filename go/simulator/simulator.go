@@ -59,6 +59,10 @@ func (s *Simulator) RegisterActorType(typ reflect.Type, name string) string {
 }
 
 func (s *Simulator) SpawnActor(typ string, id int) Actor {
+	if id == -1 {
+		id = len(s.actors)
+	}
+
 	actualType := s.actorTypes[typ]
 	v := reflect.New(actualType.Elem())
 	actor := v.Interface().(Actor)
