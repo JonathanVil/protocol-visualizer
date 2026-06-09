@@ -3,8 +3,10 @@ package simulator
 import (
 	"fmt"
 	"log"
+	"maps"
 	"math/rand/v2"
 	"reflect"
+	"slices"
 	"sync"
 	"time"
 )
@@ -64,6 +66,11 @@ func (s *Simulator) SpawnActor(typ string, id int) Actor {
 	}
 
 	actualType := s.actorTypes[typ]
+	if actualType == nil {
+		log.Printf("Unknown actor type %s\n", typ)
+		return nil
+	}
+
 	v := reflect.New(actualType.Elem())
 	actor := v.Interface().(Actor)
 	actor.Init(id, s)
@@ -132,4 +139,8 @@ func (s *Simulator) Reset() {
 
 	s.tick = 0
 	s.tickQueues[s.tick] = make([]Message, 0)
+}
+
+func (s *Simulator) GetActorTypes() []string {
+	return slices.Collect(maps.Keys(s.actorTypes))
 }

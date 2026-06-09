@@ -46,24 +46,33 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		for {
-			var command WebSocketMessage
-			if err := wsjson.Read(ctx, conn, &command); err != nil {
+			var request WebSocketMessage
+			if err := wsjson.Read(ctx, conn, &request); err != nil {
 				return
 			}
-			switch command.Type {
+			switch request.Type {
 			case "start":
 				go s.sim.Start()
 			case "stop":
 				s.sim.Stop()
 			case "spawn":
-				name := command.Payload["name"].(string)
+				name, ok := request.Payload["name"].(string)
+				if !ok || name == "" {
+					log.Printf("invalid spawn request: missing or null actor name")
+					continue
+				}
 				s.sim.SpawnActor(name, -1)
+			case "requestTypes":
+				var reply = WebSocketMessage{"actorTypes", map[string]any{"actors": s.sim.GetActorTypes()}}
+				if err := wsjson.Write(ctx, conn, reply); err != nil {
+					log.Printf("failed to send actorTypes: %v", err)
+				}
 			}
 		}
 	}()
 
 	for event := range s.sim.events {
-		if err := wsjson.Write(ctx, conn, event); err != nil {
+		if err := wsjson.Write(ctx, conn, WebSocketMessage{"event", map[string]any{"event": event}}); err != nil {
 			return
 		}
 	}
@@ -71,12 +80,4 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) Close() error {
 	return s.server.Close()
-}
-
-func (s *Server) SendActorTypes(ctx context.Context, conn *websocket.Conn) {
-	var msg WebSocketMessage = WebSocketMessage{"type", make(map[string]any)}
-	msg.Payload["actors"] = s.sim.actorTypes
-	if err := wsjson.Write(ctx, conn, msg); err != nil {
-		log.Printf("failed to send actorTypes: %v", err)
-	}
 }
