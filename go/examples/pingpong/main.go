@@ -3,13 +3,14 @@ package main
 import (
 	"reflect"
 
-	"github.com/JonathanVil/protocol-visualizer"
+	simulator "github.com/JonathanVil/protocol-visualizer"
+	"github.com/JonathanVil/protocol-visualizer/transport"
 )
 
 func main() {
 	sim := simulator.New()
 	sim.TransitTicks = 5
-	srv := simulator.NewServer(sim, ":8067")
+	srv := transport.NewServer(sim, ":8067")
 	defer srv.Close()
 
 	sim.RegisterActorType(reflect.TypeOf(&PingActor{}), "ping")
