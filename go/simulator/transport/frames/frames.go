@@ -46,6 +46,11 @@ type SnapshotFrame struct {
 }
 
 // --- Command payload structs ---
+type MessageSendPayload struct {
+	From    int `json:"from"`
+	To      int `json:"to"`
+	Payload any `json:"payload"`
+}
 
 type MessageDropPayload struct {
 	MessageID string `json:"messageId"`

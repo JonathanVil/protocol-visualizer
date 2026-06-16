@@ -5,6 +5,14 @@
 
 	let selectedType = $state('');
 
+	let sendMessageFrom = $state(0);
+	let sendMessageTo = $state(0);
+	let sendMessagePayload = $state('');
+	function sendMessage() {
+		sim.send('message.send', { from: sendMessageFrom, to: sendMessageTo, payload: sendMessagePayload })
+				.then();
+	}
+
 	onMount(() => {
 		sim.connect();
 		return () => sim.disconnect();
@@ -25,8 +33,11 @@
 		<button onclick={() => sim.connect()} class="secondary" style="width: auto">Reconnect</button>
 
 		{#if sim.connected}
-			<button onclick={() => sim.start()} style="width: auto">Start</button>
-			<button onclick={() => sim.stop()} class="secondary" style="width: auto">Stop</button>
+			{#if !sim.running}
+				<button onclick={() => sim.start()} style="width: auto">Start</button>
+			{:else}
+				<button onclick={() => sim.stop()} class="outline" style="width: auto">Stop</button>
+			{/if}
 
 			<div role="group">
 				<select bind:value={selectedType}>
@@ -37,6 +48,24 @@
 				<button onclick={() => selectedType && sim.spawn(selectedType)} type="button">
 					Spawn
 				</button>
+			</div>
+
+			<div role="group">
+				<p>Send a message</p>
+
+				<select bind:value={sendMessageFrom}>
+					{#each sim.actors as actor}
+						<option value={actor.id}>{actor.id}</option>
+					{/each}
+				</select>
+				<select bind:value={sendMessageTo}>
+					{#each sim.actors as actor}
+						<option value={actor.id}>{actor.id}</option>
+					{/each}
+				</select>
+				<input bind:value={sendMessagePayload} placeholder="Payload" />
+
+				<button onclick={sendMessage} type="button">Send</button>
 			</div>
 		{/if}
 	</div>

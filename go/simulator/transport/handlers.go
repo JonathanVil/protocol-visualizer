@@ -34,6 +34,9 @@ func registerHandlers(sim *simulator.Simulator, reg map[string]Handler) {
 	})
 
 	// --- Message manipulation ---
+	Register(reg, "message.send", func(p frames.MessageSendPayload) (any, error) {
+		return nil, sim.Send(p.From, p.To, p.Payload)
+	})
 
 	Register(reg, "message.drop", func(p frames.MessageDropPayload) (any, error) {
 		return nil, sim.DropMessage(p.MessageID)

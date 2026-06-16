@@ -49,6 +49,8 @@ func (s *Server) Close() error {
 	return nil
 }
 
+const loggingEnabled = true
+
 // handleWS is the per-connection WebSocket handler.
 func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{InsecureSkipVerify: true})
@@ -73,6 +75,9 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			case <-ctx.Done():
 				return
 			case frame := <-writes:
+				if loggingEnabled {
+					log.Printf("write: %v", frame)
+				}
 				if err := wsjson.Write(ctx, conn, frame); err != nil {
 					return
 				}

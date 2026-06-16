@@ -122,14 +122,23 @@ func (s *Simulator) SpawnActor(typ string, id int) Actor {
 	return actor
 }
 
-func (s *Simulator) Send(from, to int, payload any) {
+func (s *Simulator) Send(from, to int, payload any) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	// check if actors exist
+	if _, ok := s.actors[from]; !ok {
+		return fmt.Errorf("actor %d does not exist", from)
+	}
+	if _, ok := s.actors[to]; !ok {
+		return fmt.Errorf("actor %d does not exist", to)
+	}
 
 	msg := Message{ID: newMessageID(), From: from, To: to, Payload: payload}
 	idx := s.tick + s.TransitTicks
 	i := rand.IntN(len(s.tickQueues[idx]) + 1)
 	s.tickQueues[idx] = append(s.tickQueues[idx][:i], append([]Message{msg}, s.tickQueues[idx][i:]...)...)
+	return nil
 }
 
 func (s *Simulator) GetActorTypes() []string {
