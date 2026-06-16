@@ -3,6 +3,7 @@ package simulator
 type EventType string
 
 const (
+	EventMessageSent        EventType = "message.sent"
 	EventMessageDelivered   EventType = "message.delivered"
 	EventMessageDropped     EventType = "message.dropped"
 	EventMessageDelayed     EventType = "message.delayed"
@@ -19,6 +20,13 @@ type Event struct {
 }
 
 // Typed payload structs (json tags are metadata only — sim does not import encoding/json).
+
+type MessageSentPayload struct {
+	MessageID string `json:"messageId"`
+	From      int    `json:"from"`
+	To        int    `json:"to"`
+	Payload   any    `json:"payload"`
+}
 
 type MessageDeliveredPayload struct {
 	MessageID string `json:"messageId"`

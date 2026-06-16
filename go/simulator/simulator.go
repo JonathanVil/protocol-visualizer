@@ -138,6 +138,8 @@ func (s *Simulator) Send(from, to int, payload any) error {
 	idx := s.tick + s.TransitTicks
 	i := rand.IntN(len(s.tickQueues[idx]) + 1)
 	s.tickQueues[idx] = append(s.tickQueues[idx][:i], append([]Message{msg}, s.tickQueues[idx][i:]...)...)
+
+	s.emit(EventMessageSent, MessageSentPayload{msg.ID, msg.From, msg.To, msg.Payload})
 	return nil
 }
 
