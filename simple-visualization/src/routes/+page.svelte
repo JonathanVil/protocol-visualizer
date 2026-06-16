@@ -1,110 +1,73 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import {requested} from "$app/server";
-    interface Message {
-        From: number;
-        To: number;
-        Payload: unknown;
-    }
+	import { onMount } from 'svelte';
+	import { sim } from '$lib/sim.svelte';
+	import Graph from '$lib/Graph.svelte';
 
-    interface WebSocketMessage {
-        type: string;
-        payload: any;
-    }
+	let selectedType = $state('');
 
-    interface Event {
-        Tick: number;
-        Message: Message;
-    }
-
-    let events = $state<Event[]>([]);
-    let ws: WebSocket;
-    let connected = $state(false);
-    let error = $state<string | null>(null);
-    function connect() {
-        error = null;
-        ws = new WebSocket('ws://localhost:8067/ws');
-        ws.onopen = () => {
-            connected = true;
-            requestInitialState();
-        };
-        ws.onclose = () => { connected = false; };
-        ws.onerror = () => { error = 'WebSocket error. Is the backend running?'; connected = false; };
-        ws.onmessage = (e: MessageEvent) => {
-            try {
-                let msg: WebSocketMessage = JSON.parse(e.data);
-                switch (msg.type) {
-                    case 'event':
-                        events = [...events, msg.payload as Event];
-                        break;
-                    case 'actorTypes':
-                        actorTypes = msg.payload.actors
-                        break;
-                }
-
-            } catch {
-                error = 'Failed to parse message';
-            }
-        };
-    }
-    onMount(() => {
-        connect();
-        return () => ws.close();
-    });
-    function requestInitialState() {
-        requestActorTypes();
-    }
-    function requestActorTypes() { ws.send(JSON.stringify({ type: 'requestTypes' })); }
-    function start() { ws.send(JSON.stringify({ type: 'start' })); }
-    function stop() { ws.send(JSON.stringify({ type: 'stop' })); }
-    function spawn() { ws.send(JSON.stringify({ type: 'spawn', payload: { 'name': selectedActorType } })); }
-
-    let actorTypes = $state<string[]>([]);
-    let selectedActorType = $state<string | null>(null);
+	onMount(() => {
+		sim.connect();
+		return () => sim.disconnect();
+	});
 </script>
 
 <main class="container">
-    <h1>Protocol Simulator</h1>
+	<h1>Protocol Simulator</h1>
 
-    {#if error}
-        <p style="color: var(--pico-del-color)">{error}</p>
-    {/if}
+	{#if sim.error}
+		<p style="color: var(--pico-del-color)">{sim.error}</p>
+	{/if}
 
-    <div>
-        <button onclick={connect}>Reconnect</button>
-        {#if connected}
-            <button onclick={start}>Start</button>
-            <button onclick={stop} class="secondary">Stop</button>
+	<div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;">
+		<span>Tick: <strong>{sim.tick}</strong></span>
+		<span>{sim.running ? 'Running' : 'Stopped'}</span>
 
-            <div role="group">
-                <select name="actorTypes" bind:value={selectedActorType}>
-                    {#each actorTypes as type}
-                        <option>{type}</option>
-                    {/each}
-                </select>
-                <button onclick={() => spawn()} type="button">Spawn</button>
-            </div>
-        {/if}
-    </div>
+		<button onclick={() => sim.connect()} class="secondary" style="width: auto">Reconnect</button>
 
-    <table>
-        <thead>
-        <tr>
-            <th>Tick</th>
-            <th>From</th>
-            <th>To</th>
-            <th>Payload</th>
-        </tr>
-        </thead>
-        <tbody>
-        {#each events as event}
-            <tr>
-                <td>{event.Tick}</td>
-                <td>Node {event.Message.From}</td>
-                <td>Node {event.Message.To}</td>
-                <td>{String(event.Message.Payload)}</td>
-            </tr>
-        {/each}
-        </tbody>
-    </table>
+		{#if sim.connected}
+			<button onclick={() => sim.start()} style="width: auto">Start</button>
+			<button onclick={() => sim.stop()} class="secondary" style="width: auto">Stop</button>
+
+			<div role="group">
+				<select bind:value={selectedType}>
+					{#each sim.actorTypes as t}
+						<option value={t}>{t}</option>
+					{/each}
+				</select>
+				<button onclick={() => selectedType && sim.spawn(selectedType)} type="button">
+					Spawn
+				</button>
+			</div>
+		{/if}
+	</div>
+
+	<Graph />
+
+	<details open style="margin-top: 1rem;">
+		<summary>Event log ({sim.eventLog.length})</summary>
+		<div style="overflow-x: auto; max-height: 300px; overflow-y: auto;">
+			<table>
+				<thead>
+					<tr>
+						<th>Seq</th>
+						<th>Tick</th>
+						<th>Type</th>
+						<th>Payload</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each sim.eventLog.slice().reverse() as event (event.seq)}
+						<tr>
+							<td>{event.seq}</td>
+							<td>{event.tick}</td>
+							<td>{event.type}</td>
+							<td style="font-size: 0.75rem; font-family: monospace">
+								{JSON.stringify(event.payload)}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	</details>
 </main>
