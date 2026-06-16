@@ -116,6 +116,11 @@ func (s *Simulator) SpawnActor(typ string, id int) Actor {
 
 	fmt.Printf("Spawned actor %d\n", id)
 	s.Register(actor)
+	s.emit(Event{
+		Type:    EventActorSpawned,
+		Tick:    s.tick,
+		Payload: ActorSpawnedPayload{ActorID: id, TypeName: typ},
+	})
 	return actor
 }
 
@@ -129,33 +134,167 @@ func (s *Simulator) Send(from, to int, payload any) {
 	s.tickQueues[idx] = append(s.tickQueues[idx][:i], append([]Message{msg}, s.tickQueues[idx][i:]...)...)
 }
 
-func (s *Simulator) Tick() {
-	s.mu.Lock()
-	defer func() {
-		s.tick++
-	}()
-
-	fmt.Printf("-- Tick %d --\n", s.tick)
-
-	// get queue of messages due this tick
-	queue := s.tickQueues[s.tick]
-	s.mu.Unlock()
-	if queue == nil {
-		return
-	}
-
-	for _, msg := range queue {
-		// deliver it
-		actor := s.actors[msg.To]
-		if actor == nil {
-			fmt.Printf("No actor found %d\n", msg.To)
-			continue
-		}
-		actor.OnMessage(msg)
-		s.events <- Event{Tick: s.tick, Message: msg}
-		s.history = append(s.history, msg)
-	}
+func (s *Simulator) GetActorTypes() []string {
+	return slices.Collect(maps.Keys(s.actorTypes))
 }
+
+// --- Sim-loop-only methods (called from commands channel, no locking needed) ---
+
+// DropMessage removes an in-transit message without delivering it.
+func (s *Simulator) DropMessage(id string) error {
+	tick, idx, err := s.findMessage(id)
+	if err != nil {
+		return err
+	}
+	s.tickQueues[tick] = append(s.tickQueues[tick][:idx], s.tickQueues[tick][idx+1:]...)
+	s.deliveredIDs[id] = true
+	s.emit(Event{Type: EventMessageDropped, Tick: s.tick, Payload: MessageDroppedPayload{MessageID: id}})
+	return nil
+}
+
+// DelayMessage moves an in-transit message's delivery tick forward by ticks.
+func (s *Simulator) DelayMessage(id string, ticks int) error {
+	if ticks <= 0 {
+		return fmt.Errorf("%w: ticks must be > 0", ErrInvalidArgument)
+	}
+	srcTick, idx, err := s.findMessage(id)
+	if err != nil {
+		return err
+	}
+	msg := s.tickQueues[srcTick][idx]
+	s.tickQueues[srcTick] = append(s.tickQueues[srcTick][:idx], s.tickQueues[srcTick][idx+1:]...)
+	newTick := srcTick + ticks
+	s.tickQueues[newTick] = append(s.tickQueues[newTick], msg)
+	s.emit(Event{Type: EventMessageDelayed, Tick: s.tick, Payload: MessageDelayedPayload{MessageID: id, NewDeliverTick: newTick}})
+	return nil
+}
+
+// DeliverNow immediately delivers an in-transit message.
+func (s *Simulator) DeliverNow(id string) error {
+	srcTick, idx, err := s.findMessage(id)
+	if err != nil {
+		return err
+	}
+	msg := s.tickQueues[srcTick][idx]
+	s.tickQueues[srcTick] = append(s.tickQueues[srcTick][:idx], s.tickQueues[srcTick][idx+1:]...)
+	s.deliverMessage(msg)
+	return nil
+}
+
+// SetActorField sets a named field on an actor.
+func (s *Simulator) SetActorField(actorID int, field string, value any) error {
+	actor := s.actors[actorID]
+	if actor == nil {
+		return ErrActorNotFound
+	}
+	v := reflect.ValueOf(actor).Elem()
+	fieldV := v.FieldByName("Name")
+	if !fieldV.IsValid() {
+		return ErrFieldNotFound
+	}
+
+	switch fieldV.Type().Kind() {
+	case reflect.String:
+		if reflect.TypeOf(value).Kind() != reflect.String {
+			return fmt.Errorf("%w: value must be a string", ErrInvalidArgument)
+		}
+		fieldV.SetString(value.(string))
+		break
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		if reflect.TypeOf(value).Kind() != reflect.Int {
+			return fmt.Errorf("%w: value must be an int", ErrInvalidArgument)
+		}
+		fieldV.SetInt(value.(int64))
+		break
+	case reflect.Bool:
+		if reflect.TypeOf(value).Kind() != reflect.Bool {
+			return fmt.Errorf("%w: value must be a bool", ErrInvalidArgument)
+		}
+		fieldV.SetBool(value.(bool))
+		break
+	case reflect.Float32, reflect.Float64:
+		if reflect.TypeOf(value).Kind() != reflect.Float64 {
+			return fmt.Errorf("%w: value must be a float64", ErrInvalidArgument)
+		}
+		fieldV.SetFloat(value.(float64))
+		break
+	default:
+		return fmt.Errorf("%w: unsupported field type %s", ErrInvalidArgument, fieldV.Type().Kind())
+	}
+
+	s.emit(Event{Type: EventActorFieldChanged, Tick: s.tick, Payload: ActorFieldChangedPayload{ActorID: actorID, Field: field, Value: value}})
+	return nil
+}
+
+// InvokeActor calls a named method on an actor.
+func (s *Simulator) InvokeActor(actorID int, method string, args ...any) (any, error) {
+	actor := s.actors[actorID]
+	if actor == nil {
+		return nil, ErrActorNotFound
+	}
+
+	v := reflect.ValueOf(actor).Elem()
+	methodV := v.MethodByName(method)
+	if !methodV.IsValid() {
+		return nil, ErrMethodNotFound
+	}
+
+	argsV := make([]reflect.Value, len(args))
+	for _, v := range args {
+		argsV = append(argsV, reflect.ValueOf(v))
+	}
+
+	values := methodV.Call(argsV)
+	realValues := make([]any, len(values))
+	for _, v := range values {
+		switch v.Type().Kind() {
+		case reflect.String:
+			realValues = append(realValues, v.String())
+			break
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			realValues = append(realValues, v.Int())
+			break
+		case reflect.Bool:
+			realValues = append(realValues, v.Bool())
+			break
+		case reflect.Float32, reflect.Float64:
+			realValues = append(realValues, v.Float())
+			break
+		default:
+			realValues = append(realValues, v.Interface())
+		}
+	}
+
+	return methodV.Call(argsV), nil
+}
+
+// SetSpeed sets the speed multiplier (ticks per second = multiplier).
+func (s *Simulator) SetSpeed(multiplier float64) error {
+	if multiplier <= 0 {
+		return fmt.Errorf("%w: multiplier must be > 0", ErrInvalidArgument)
+	}
+	s.speedMultiplier = multiplier
+	s.emit(Event{Type: EventSimSettingsChanged, Tick: s.tick, Payload: SimSettingsChangedPayload{SpeedMultiplier: multiplier, TransitTicks: s.TransitTicks}})
+	return nil
+}
+
+// SetTransitTime sets the default message transit ticks.
+func (s *Simulator) SetTransitTime(ticks int) error {
+	if ticks < 0 {
+		return fmt.Errorf("%w: ticks must be >= 0", ErrInvalidArgument)
+	}
+	s.TransitTicks = ticks
+	s.emit(Event{Type: EventSimSettingsChanged, Tick: s.tick, Payload: SimSettingsChangedPayload{SpeedMultiplier: s.speedMultiplier, TransitTicks: ticks}})
+	return nil
+}
+
+// Settings holds configurable simulation parameters.
+type Settings struct {
+	SpeedMultiplier float64 `json:"speedMultiplier"`
+	TransitTicks    int     `json:"transitTicks"`
+}
+
+// --- Sim loop ---
 
 func (s *Simulator) Start() {
 	s.mu.Lock()
