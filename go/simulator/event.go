@@ -9,6 +9,7 @@ const (
 	EventActorSpawned       EventType = "actor.spawned"
 	EventActorFieldChanged  EventType = "actor.fieldChanged"
 	EventSimSettingsChanged EventType = "sim.settingsChanged"
+	EventClockTick          EventType = "tick"
 )
 
 type Event struct {

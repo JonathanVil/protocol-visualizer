@@ -343,6 +343,7 @@ func (s *Simulator) Reset() {
 
 func (s *Simulator) doTick() {
 	fmt.Printf("-- Tick %d --\n", s.tick)
+	s.emit(EventClockTick, nil)
 	queue := s.tickQueues[s.tick]
 	delete(s.tickQueues, s.tick)
 	for _, msg := range queue {
