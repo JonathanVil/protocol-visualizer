@@ -116,11 +116,7 @@ func (s *Simulator) SpawnActor(typ string, id int) Actor {
 
 	fmt.Printf("Spawned actor %d\n", id)
 	s.Register(actor)
-	s.emit(Event{
-		Type:    EventActorSpawned,
-		Tick:    s.tick,
-		Payload: ActorSpawnedPayload{ActorID: id, TypeName: typ},
-	})
+	s.emit(EventActorSpawned, ActorSpawnedPayload{ActorID: id, TypeName: typ})
 	return actor
 }
 
@@ -148,7 +144,7 @@ func (s *Simulator) DropMessage(id string) error {
 	}
 	s.tickQueues[tick] = append(s.tickQueues[tick][:idx], s.tickQueues[tick][idx+1:]...)
 	s.deliveredIDs[id] = true
-	s.emit(Event{Type: EventMessageDropped, Tick: s.tick, Payload: MessageDroppedPayload{MessageID: id}})
+	s.emit(EventMessageDropped, MessageDroppedPayload{MessageID: id})
 	return nil
 }
 
@@ -165,7 +161,7 @@ func (s *Simulator) DelayMessage(id string, ticks int) error {
 	s.tickQueues[srcTick] = append(s.tickQueues[srcTick][:idx], s.tickQueues[srcTick][idx+1:]...)
 	newTick := srcTick + ticks
 	s.tickQueues[newTick] = append(s.tickQueues[newTick], msg)
-	s.emit(Event{Type: EventMessageDelayed, Tick: s.tick, Payload: MessageDelayedPayload{MessageID: id, NewDeliverTick: newTick}})
+	s.emit(EventMessageDelayed, MessageDelayedPayload{MessageID: id, NewDeliverTick: newTick})
 	return nil
 }
 
@@ -222,7 +218,7 @@ func (s *Simulator) SetActorField(actorID int, field string, value any) error {
 		return fmt.Errorf("%w: unsupported field type %s", ErrInvalidArgument, fieldV.Type().Kind())
 	}
 
-	s.emit(Event{Type: EventActorFieldChanged, Tick: s.tick, Payload: ActorFieldChangedPayload{ActorID: actorID, Field: field, Value: value}})
+	s.emit(EventActorFieldChanged, ActorFieldChangedPayload{ActorID: actorID, Field: field, Value: value})
 	return nil
 }
 
@@ -274,7 +270,7 @@ func (s *Simulator) SetSpeed(multiplier float64) error {
 		return fmt.Errorf("%w: multiplier must be > 0", ErrInvalidArgument)
 	}
 	s.speedMultiplier = multiplier
-	s.emit(Event{Type: EventSimSettingsChanged, Tick: s.tick, Payload: SimSettingsChangedPayload{SpeedMultiplier: multiplier, TransitTicks: s.TransitTicks}})
+	s.emit(EventSimSettingsChanged, SimSettingsChangedPayload{SpeedMultiplier: multiplier, TransitTicks: s.TransitTicks})
 	return nil
 }
 
@@ -284,7 +280,7 @@ func (s *Simulator) SetTransitTime(ticks int) error {
 		return fmt.Errorf("%w: ticks must be >= 0", ErrInvalidArgument)
 	}
 	s.TransitTicks = ticks
-	s.emit(Event{Type: EventSimSettingsChanged, Tick: s.tick, Payload: SimSettingsChangedPayload{SpeedMultiplier: s.speedMultiplier, TransitTicks: ticks}})
+	s.emit(EventSimSettingsChanged, SimSettingsChangedPayload{SpeedMultiplier: s.speedMultiplier, TransitTicks: ticks})
 	return nil
 }
 
@@ -364,15 +360,11 @@ func (s *Simulator) deliverMessage(msg Message) {
 	actor.OnMessage(msg)
 	s.deliveredIDs[msg.ID] = true
 	s.history = append(s.history, msg)
-	s.emit(Event{
-		Type: EventMessageDelivered,
-		Tick: s.tick,
-		Payload: MessageDeliveredPayload{
-			MessageID: msg.ID,
-			From:      msg.From,
-			To:        msg.To,
-			Payload:   msg.Payload,
-		},
+	s.emit(EventMessageDelivered, MessageDeliveredPayload{
+		MessageID: msg.ID,
+		From:      msg.From,
+		To:        msg.To,
+		Payload:   msg.Payload,
 	})
 }
 
@@ -390,11 +382,11 @@ func (s *Simulator) findMessage(id string) (tick int, idx int, err error) {
 	return 0, 0, ErrMessageNotFound
 }
 
-func (s *Simulator) emit(e Event) {
+func (s *Simulator) emit(e EventType, payload any) {
 	select {
-	case s.events <- e:
+	case s.events <- Event{Tick: s.tick, Type: e, Payload: payload}:
 	default:
-		log.Printf("event buffer full, dropping event %s", e.Type)
+		log.Printf("event buffer full, dropping event %s", e)
 	}
 }
 
