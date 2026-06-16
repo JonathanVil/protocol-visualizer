@@ -7,9 +7,9 @@ import (
 )
 
 type ActorSnapshot struct {
-	id       int
-	typeName string
-	fields   map[string]any
+	ID       int            `json:"id"`
+	TypeName string         `json:"typeName"`
+	Fields   map[string]any `json:"fields"`
 }
 
 type MessageSnapshot struct {
@@ -28,24 +28,20 @@ type Snapshot struct {
 }
 
 func (s *Simulator) GetSnapshot() Snapshot {
-	actors := make([]ActorSnapshot, len(s.actors))
-
-	// create a snapshot of all actors
+	actors := make([]ActorSnapshot, 0, len(s.actors))
 	for _, a := range s.actors {
 		fields, err := structToMap(a)
 		if err != nil {
-			panic(err)
+			fields = nil
 		}
-
 		actors = append(actors, ActorSnapshot{
-			id:       a.ID(),
-			typeName: s.actorTypeNames[a.ID()],
-			fields:   fields,
+			ID:       a.ID(),
+			TypeName: s.actorTypeNames[a.ID()],
+			Fields:   fields,
 		})
 	}
 
-	// create a snapshot of all messages
-	messages := make([]MessageSnapshot, len(s.history))
+	messages := make([]MessageSnapshot, 0)
 	for tick, queue := range s.tickQueues {
 		for _, m := range queue {
 			messages = append(messages, MessageSnapshot{

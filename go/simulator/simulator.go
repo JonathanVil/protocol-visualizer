@@ -115,8 +115,10 @@ func (s *Simulator) SpawnActor(typ string, id int) Actor {
 	actor.Init(id, s)
 
 	fmt.Printf("Spawned actor %d\n", id)
+	s.actorTypeNames[id] = typ
 	s.Register(actor)
 	s.emit(EventActorSpawned, ActorSpawnedPayload{ActorID: id, TypeName: typ})
+	s.emit(EventSnapshot, s.GetSnapshot())
 	return actor
 }
 
@@ -342,14 +344,14 @@ func (s *Simulator) Reset() {
 // --- Internal helpers ---
 
 func (s *Simulator) doTick() {
+	s.tick++
 	fmt.Printf("-- Tick %d --\n", s.tick)
-	s.emit(EventClockTick, nil)
 	queue := s.tickQueues[s.tick]
 	delete(s.tickQueues, s.tick)
 	for _, msg := range queue {
 		s.deliverMessage(msg)
 	}
-	s.tick++
+	s.emit(EventSnapshot, s.GetSnapshot())
 }
 
 func (s *Simulator) deliverMessage(msg Message) {

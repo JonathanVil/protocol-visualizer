@@ -98,10 +98,12 @@ class Sim {
 				const p = frame.payload as {
 					Tick: number;
 					Running: boolean;
+					Actors: Array<{ id: number; typeName: string; fields: Record<string, unknown> }>;
 					Messages: Array<{ Id: string; From: number; To: number; Payload: unknown; DeliverAtTick: number }>;
 				};
 				this.tick = p.Tick;
 				this.running = p.Running;
+				this.actors = (p.Actors ?? []).map((a) => ({ id: a.id, typeName: a.typeName }));
 				this.inTransit = (p.Messages ?? []).map((m) => ({
 					id: m.Id, from: m.From, to: m.To,
 					payload: m.Payload, deliverAtTick: m.DeliverAtTick,
@@ -134,9 +136,11 @@ class Sim {
 					{ seq, tick, type: frame.type as string, payload: frame.payload },
 				];
 				if (tick > this.tick) this.tick = tick;
+				/*
 				if (frame.payload) {
 					this.#applyEvent(frame.type as string, frame.payload as Record<string, unknown>);
 				}
+				*/
 			}
 		}
 	}
