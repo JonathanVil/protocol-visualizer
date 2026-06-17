@@ -25,35 +25,35 @@ type QueuedCommand struct {
 }
 
 type Simulator struct {
-	mu              sync.Mutex
-	actors          map[int]Actor
-	actorTypeNames  map[int]string
-	tickQueues      map[int][]Message
-	deliveredIDs    map[string]bool
-	tick            int
-	running         atomic.Bool
-	stopCh          chan struct{}
-	events          chan Event
-	history         []Message
-	actorTypes      map[string]reflect.Type
-	commands        chan QueuedCommand
-	TransitTicks    int
-	speedMultiplier float64
+	mu             sync.Mutex
+	actors         map[int]Actor
+	actorTypeNames map[int]string
+	tickQueues     map[int][]Message
+	deliveredIDs   map[string]bool
+	tick           int
+	running        atomic.Bool
+	stopCh         chan struct{}
+	events         chan Event
+	history        []Message
+	actorTypes     map[string]reflect.Type
+	commands       chan QueuedCommand
+	TransitTicks   int
+	TickDuration   time.Duration
 }
 
 func New() *Simulator {
 	return &Simulator{
-		actors:          make(map[int]Actor),
-		actorTypeNames:  make(map[int]string),
-		tickQueues:      make(map[int][]Message),
-		deliveredIDs:    make(map[string]bool),
-		tick:            0,
-		stopCh:          make(chan struct{}),
-		events:          make(chan Event, 64),
-		actorTypes:      make(map[string]reflect.Type),
-		commands:        make(chan QueuedCommand, 32),
-		TransitTicks:    1,
-		speedMultiplier: 1.0,
+		actors:         make(map[int]Actor),
+		actorTypeNames: make(map[int]string),
+		tickQueues:     make(map[int][]Message),
+		deliveredIDs:   make(map[string]bool),
+		tick:           0,
+		stopCh:         make(chan struct{}),
+		events:         make(chan Event, 64),
+		actorTypes:     make(map[string]reflect.Type),
+		commands:       make(chan QueuedCommand, 32),
+		TransitTicks:   1,
+		TickDuration:   100 * time.Millisecond,
 	}
 }
 
@@ -277,13 +277,13 @@ func (s *Simulator) InvokeActor(actorID int, method string, args ...any) (any, e
 	return methodV.Call(argsV), nil
 }
 
-// SetSpeed sets the speed multiplier (ticks per second = multiplier).
-func (s *Simulator) SetSpeed(multiplier float64) error {
-	if multiplier <= 0 {
-		return fmt.Errorf("%w: multiplier must be > 0", ErrInvalidArgument)
+// SetSpeed sets the tick duration
+func (s *Simulator) SetSpeed(tickDuration time.Duration) error {
+	if tickDuration <= 0 {
+		return fmt.Errorf("%w: tickDuration must be > 0", ErrInvalidArgument)
 	}
-	s.speedMultiplier = multiplier
-	s.emit(EventSimSettingsChanged, SimSettingsChangedPayload{SpeedMultiplier: multiplier, TransitTicks: s.TransitTicks})
+	s.TickDuration = tickDuration
+	s.emit(EventSimSettingsChanged, SimSettingsChangedPayload{TickDurationMs: int(tickDuration.Milliseconds()), TransitTicks: s.TransitTicks})
 	return nil
 }
 
@@ -293,7 +293,7 @@ func (s *Simulator) SetTransitTime(ticks int) error {
 		return fmt.Errorf("%w: ticks must be >= 0", ErrInvalidArgument)
 	}
 	s.TransitTicks = ticks
-	s.emit(EventSimSettingsChanged, SimSettingsChangedPayload{SpeedMultiplier: s.speedMultiplier, TransitTicks: ticks})
+	s.emit(EventSimSettingsChanged, SimSettingsChangedPayload{TickDurationMs: int(s.TickDuration.Milliseconds()), TransitTicks: ticks})
 	return nil
 }
 
@@ -318,8 +318,7 @@ func (s *Simulator) Start() {
 	fmt.Println("Simulator started")
 
 	for {
-		interval := time.Duration(float64(time.Second) / s.speedMultiplier)
-		timer := time.NewTimer(interval)
+		timer := time.NewTimer(s.TickDuration)
 		select {
 		case <-s.stopCh:
 			timer.Stop()

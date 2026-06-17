@@ -56,6 +56,6 @@ type ActorFieldChangedPayload struct {
 }
 
 type SimSettingsChangedPayload struct {
-	SpeedMultiplier float64 `json:"speedMultiplier"`
-	TransitTicks    int     `json:"transitTicks"`
+	TickDurationMs int `json:"tickDurationMs"`
+	TransitTicks   int `json:"transitTicks"`
 }
