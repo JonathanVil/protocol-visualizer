@@ -17,6 +17,7 @@ type MessageSnapshot struct {
 	From          int
 	To            int
 	Payload       any
+	SentTick      int
 	DeliverAtTick int
 }
 
@@ -49,6 +50,7 @@ func (s *Simulator) GetSnapshot() Snapshot {
 				From:          m.From,
 				To:            m.To,
 				Payload:       m.Payload,
+				SentTick:      m.SentTick,
 				DeliverAtTick: tick,
 			})
 		}

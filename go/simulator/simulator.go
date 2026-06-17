@@ -134,7 +134,7 @@ func (s *Simulator) Send(from, to int, payload any) error {
 		return fmt.Errorf("actor %d does not exist", to)
 	}
 
-	msg := Message{ID: newMessageID(), From: from, To: to, Payload: payload}
+	msg := Message{ID: newMessageID(), From: from, To: to, Payload: payload, SentTick: s.tick}
 	idx := s.tick + s.TransitTicks
 	i := rand.IntN(len(s.tickQueues[idx]) + 1)
 	s.tickQueues[idx] = append(s.tickQueues[idx][:i], append([]Message{msg}, s.tickQueues[idx][i:]...)...)
