@@ -21,9 +21,15 @@ type MessageSnapshot struct {
 	DeliverAtTick int
 }
 
+type SettingsSnapshot struct {
+	TickDurationMs int `json:"tickDurationMs"`
+	TransitTicks   int `json:"transitTicks"`
+}
+
 type Snapshot struct {
 	Tick     int
 	Running  bool
+	Settings SettingsSnapshot
 	Actors   []ActorSnapshot
 	Messages []MessageSnapshot
 }
@@ -59,6 +65,7 @@ func (s *Simulator) GetSnapshot() Snapshot {
 	return Snapshot{
 		Tick:     s.tick,
 		Running:  s.running.Load(),
+		Settings: SettingsSnapshot{TickDurationMs: int(s.TickDuration.Milliseconds()), TransitTicks: s.TransitTicks},
 		Actors:   actors,
 		Messages: messages,
 	}

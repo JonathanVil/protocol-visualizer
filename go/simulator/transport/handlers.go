@@ -2,6 +2,7 @@ package transport
 
 import (
 	"fmt"
+	"time"
 
 	simulator "github.com/JonathanVil/protocol-visualizer"
 	"github.com/JonathanVil/protocol-visualizer/transport/frames"
@@ -63,7 +64,7 @@ func registerHandlers(sim *simulator.Simulator, reg map[string]Handler) {
 	// --- Sim settings ---
 
 	Register(reg, "sim.setSpeed", func(p frames.SimSetSpeedPayload) (any, error) {
-		return nil, sim.SetSpeed(p.Multiplier)
+		return nil, sim.SetSpeed(time.Duration(time.Millisecond) * 100)
 	})
 
 	Register(reg, "sim.setTransitTime", func(p frames.SimSetTransitTimePayload) (any, error) {

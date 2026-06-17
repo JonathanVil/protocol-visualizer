@@ -53,7 +53,7 @@ func New() *Simulator {
 		actorTypes:     make(map[string]reflect.Type),
 		commands:       make(chan QueuedCommand, 32),
 		TransitTicks:   1,
-		TickDuration:   100 * time.Millisecond,
+		TickDuration:   1000 * time.Millisecond,
 	}
 }
 

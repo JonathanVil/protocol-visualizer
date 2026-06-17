@@ -8,6 +8,7 @@ export interface InTransitMsg {
 	from: number;
 	to: number;
 	payload: unknown;
+	sentTick: number;
 	deliverAtTick: number;
 }
 
@@ -16,6 +17,11 @@ export interface SimEvent {
 	tick: number;
 	type: string;
 	payload: unknown;
+}
+
+export interface Settings {
+	tickDurationMs: number;
+	transitTicks: number;
 }
 
 class Sim {
@@ -27,6 +33,7 @@ class Sim {
 	inTransit = $state<InTransitMsg[]>([]);
 	actorTypes = $state<string[]>([]);
 	eventLog = $state<SimEvent[]>([]);
+	settings = $state<Settings>({ tickDurationMs: 100, transitTicks: 5});
 
 	#ws: WebSocket | null = null;
 	#cmdId = 0;
@@ -98,16 +105,19 @@ class Sim {
 				const p = frame.payload as {
 					Tick: number;
 					Running: boolean;
+					Settings: Settings;
 					Actors: Array<{ id: number; typeName: string; fields: Record<string, unknown> }>;
-					Messages: Array<{ Id: string; From: number; To: number; Payload: unknown; DeliverAtTick: number }>;
+					Messages: Array<{
+						Id: string; From: number; To: number; Payload: unknown; SentTick: number; DeliverAtTick: number }>;
 				};
 				this.tick = p.Tick;
 				this.running = p.Running;
 				this.actors = (p.Actors ?? []).map((a) => ({ id: a.id, typeName: a.typeName }));
 				this.inTransit = (p.Messages ?? []).map((m) => ({
 					id: m.Id, from: m.From, to: m.To,
-					payload: m.Payload, deliverAtTick: m.DeliverAtTick,
+					payload: m.Payload, sentTick: m.SentTick, deliverAtTick: m.DeliverAtTick,
 				}));
+				this.settings = p.Settings;
 				break;
 			}
 			case 'ack': {
@@ -157,6 +167,7 @@ class Sim {
 					from: p.from as number,
 					to: p.to as number,
 					payload: p.payload,
+					sentTick: p.sentTick as number,
 					deliverAtTick: p.deliverTick as number,
 				}];
 				break;
