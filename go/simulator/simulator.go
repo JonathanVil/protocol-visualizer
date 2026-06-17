@@ -370,7 +370,6 @@ func (s *Simulator) deliverMessage(msg Message) {
 		fmt.Printf("No actor found %d\n", msg.To)
 		return
 	}
-	actor.OnMessage(msg)
 	s.deliveredIDs[msg.ID] = true
 	s.history = append(s.history, msg)
 	s.emit(EventMessageDelivered, MessageDeliveredPayload{
@@ -379,6 +378,7 @@ func (s *Simulator) deliverMessage(msg Message) {
 		To:        msg.To,
 		Payload:   msg.Payload,
 	})
+	actor.OnMessage(msg)
 }
 
 func (s *Simulator) findMessage(id string) (tick int, idx int, err error) {
