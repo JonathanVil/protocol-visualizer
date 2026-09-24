@@ -74,7 +74,7 @@ type ActorSetFieldPayload struct {
 type ActorInvokePayload struct {
 	ActorID int    `json:"actorId"`
 	Method  string `json:"method"`
-	Args    any    `json:"args"`
+	Args    []any  `json:"args"`
 }
 
 type SimSetSpeedPayload struct {

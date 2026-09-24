@@ -3,13 +3,14 @@ package simulator
 import (
 	"fmt"
 	"reflect"
-	"strings"
+	"slices"
 )
 
 type ActorSnapshot struct {
 	ID       int            `json:"id"`
 	TypeName string         `json:"typeName"`
 	Fields   map[string]any `json:"fields"`
+	Methods  []MethodInfo   `json:"methods"`
 }
 
 type MessageSnapshot struct {
@@ -45,8 +46,10 @@ func (s *Simulator) GetSnapshot() Snapshot {
 			ID:       a.ID(),
 			TypeName: s.actorTypeNames[a.ID()],
 			Fields:   fields,
+			Methods:  actorMethods(a),
 		})
 	}
+	slices.SortFunc(actors, func(a, b ActorSnapshot) int { return a.ID - b.ID })
 
 	messages := make([]MessageSnapshot, 0)
 	for tick, queue := range s.tickQueues {
