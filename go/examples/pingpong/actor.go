@@ -38,6 +38,13 @@ func (actor *PingActor) Init(id int, sim *simulator.Simulator) {
 	actor.sim = sim
 }
 
+// OnRevive is called when the actor is revived after being killed. Like a real
+// node restarting after a crash, it loses the state it only kept in memory.
+func (actor *PingActor) OnRevive() {
+	actor.PingsReceived = 0
+	actor.PongsReceived = 0
+}
+
 // SendPing sends a "ping" to another actor.
 func (actor *PingActor) SendPing(to int) error {
 	return actor.sim.Send(actor.id, to, "ping")

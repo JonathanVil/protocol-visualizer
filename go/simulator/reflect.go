@@ -14,16 +14,17 @@ type MethodInfo struct {
 }
 
 var actorInterfaceMethods = func() map[string]bool {
-	t := reflect.TypeFor[Actor]()
-	names := make(map[string]bool, t.NumMethod())
-	for method := range t.Methods() {
-		names[method.Name] = true
+	names := make(map[string]bool)
+	for _, t := range []reflect.Type{reflect.TypeFor[Actor](), reflect.TypeFor[Reviver]()} {
+		for method := range t.Methods() {
+			names[method.Name] = true
+		}
 	}
 	return names
 }()
 
-// isActorInterfaceMethod reports whether name is part of the Actor interface.
-// These are driven by the simulator and not exposed for remote invocation.
+// isActorInterfaceMethod reports whether name is part of the Actor or Reviver
+// interface. These are driven by the simulator and not exposed for remote invocation.
 func isActorInterfaceMethod(name string) bool {
 	return actorInterfaceMethods[name]
 }
