@@ -33,7 +33,9 @@ type Simulator struct {
 	tick           int
 	running        atomic.Bool
 	stopCh         chan struct{}
-	events         chan Event
+	subsMu         sync.Mutex
+	subs           map[chan Event]struct{}
+	cmdMu          sync.Mutex
 	history        []Message
 	actorTypes     map[string]reflect.Type
 	commands       chan QueuedCommand
@@ -49,7 +51,7 @@ func New() *Simulator {
 		deliveredIDs:   make(map[string]bool),
 		tick:           0,
 		stopCh:         make(chan struct{}),
-		events:         make(chan Event, 64),
+		subs:           make(map[chan Event]struct{}),
 		actorTypes:     make(map[string]reflect.Type),
 		commands:       make(chan QueuedCommand, 32),
 		TransitTicks:   1,
@@ -57,17 +59,31 @@ func New() *Simulator {
 	}
 }
 
-// Events returns a read-only view of the simulation event stream.
-func (s *Simulator) Events() <-chan Event { return s.events }
+// Subscribe returns a channel that receives every simulation event emitted
+// from now on, and a function that unsubscribes it. Each subscriber has its own
+// buffer; events are dropped for a subscriber whose buffer is full.
+func (s *Simulator) Subscribe() (<-chan Event, func()) {
+	ch := make(chan Event, 256)
+	s.subsMu.Lock()
+	s.subs[ch] = struct{}{}
+	s.subsMu.Unlock()
+	return ch, func() {
+		s.subsMu.Lock()
+		delete(s.subs, ch)
+		s.subsMu.Unlock()
+	}
+}
 
 // Enqueue schedules fn to run on the sim goroutine and returns a channel that
 // delivers exactly one CommandResult when fn completes.
-// If the sim is not running, fn is executed synchronously on the caller's goroutine
-// (safe because there is no concurrent tick processing when stopped).
+// If the sim is not running, fn is executed synchronously on the caller's goroutine,
+// serialized with other commands (there is no concurrent tick processing when stopped).
 func (s *Simulator) Enqueue(fn func() (any, error)) <-chan CommandResult {
 	ch := make(chan CommandResult, 1)
 	if !s.running.Load() {
+		s.cmdMu.Lock()
 		res, err := fn()
+		s.cmdMu.Unlock()
 		ch <- CommandResult{Value: res, Err: err}
 		return ch
 	}
@@ -187,6 +203,8 @@ func (s *Simulator) DeliverNow(id string) error {
 	msg := s.tickQueues[srcTick][idx]
 	s.tickQueues[srcTick] = append(s.tickQueues[srcTick][:idx], s.tickQueues[srcTick][idx+1:]...)
 	s.deliverMessage(msg)
+	// The receiving actor's state may have changed outside a tick.
+	s.emit(EventSnapshot, s.GetSnapshot())
 	return nil
 }
 
@@ -316,6 +334,7 @@ func (s *Simulator) Start() {
 	s.mu.Unlock()
 
 	fmt.Println("Simulator started")
+	s.emit(EventSnapshot, s.GetSnapshot())
 
 	for {
 		timer := time.NewTimer(s.TickDuration)
@@ -339,6 +358,7 @@ func (s *Simulator) Stop() {
 	if s.running.CompareAndSwap(true, false) {
 		close(s.stopCh)
 		fmt.Println("Simulator stopped")
+		s.emit(EventSnapshot, s.GetSnapshot())
 	}
 }
 
@@ -396,10 +416,15 @@ func (s *Simulator) findMessage(id string) (tick int, idx int, err error) {
 }
 
 func (s *Simulator) emit(e EventType, payload any) {
-	select {
-	case s.events <- Event{Tick: s.tick, Type: e, Payload: payload}:
-	default:
-		log.Printf("event buffer full, dropping event %s", e)
+	event := Event{Tick: s.tick, Type: e, Payload: payload}
+	s.subsMu.Lock()
+	defer s.subsMu.Unlock()
+	for ch := range s.subs {
+		select {
+		case ch <- event:
+		default:
+			log.Printf("event buffer full, dropping event %s", e)
+		}
 	}
 }
 

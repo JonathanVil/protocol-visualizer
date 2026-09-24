@@ -92,6 +92,12 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Subscribe before taking the snapshot so no event falls between the two.
+	// Events emitted just before the snapshot may be delivered after it; the
+	// frontend applies events idempotently.
+	events, unsubscribe := s.sim.Subscribe()
+	defer unsubscribe()
+
 	// Request a consistent snapshot from the sim goroutine and send it first.
 	// Enqueue executes synchronously when the sim is not yet running.
 	snapResult := <-s.sim.Enqueue(func() (any, error) {
@@ -111,7 +117,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 			select {
 			case <-ctx.Done():
 				return
-			case event := <-s.sim.Events():
+			case event := <-events:
 				sendFrame(frames.EventFrame{
 					Seq:     seq.Add(1),
 					Tick:    event.Tick,
