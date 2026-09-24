@@ -1,6 +1,6 @@
-<script>
-    import {sim} from "$lib/sim.svelte.js";
-    import {notifyError} from "$lib/notifications.svelte.js";
+<script lang="ts">
+    import {sim} from "$lib/sim.svelte";
+    import {notifyError} from "$lib/notifications.svelte";
 
     const unsupported = "Not supported by the Go simulator yet";
 </script>

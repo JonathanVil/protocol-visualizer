@@ -1,7 +1,9 @@
-<script>
+<script lang="ts">
 	import './layout.css';
 
-	const { children } = $props();
+	import type { Snippet } from 'svelte';
+
+	const { children }: { children: Snippet } = $props();
 </script>
 
 {@render children()}

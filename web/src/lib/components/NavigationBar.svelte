@@ -1,5 +1,5 @@
-<script>
-    import {sim, DEFAULT_URL} from "$lib/sim.svelte.js";
+<script lang="ts">
+    import {sim, DEFAULT_URL} from "$lib/sim.svelte";
 </script>
 
 <header class="h-14 bg-white shadow flex items-center justify-between px-6">

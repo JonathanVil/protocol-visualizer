@@ -6,41 +6,75 @@
  * Event application is idempotent, so events that overlap a snapshot are harmless.
  */
 
-/** @typedef {{ name: string, args: string[] }} MethodInfo */
+export interface MethodInfo {
+	name: string;
+	/** Go parameter types, e.g. "int", "string". */
+	args: string[];
+}
 
-/**
- * @typedef {{
- *   id: number,
- *   typeName: string,
- *   fields: Record<string, unknown>,
- *   methods: MethodInfo[]
- * }} Actor
- */
+export interface Actor {
+	id: number;
+	typeName: string;
+	fields: Record<string, unknown>;
+	methods: MethodInfo[];
+}
 
-/**
- * @typedef {{
- *   id: string,
- *   from: number,
- *   to: number,
- *   payload: unknown,
- *   sentTick: number,
- *   deliverAtTick: number
- * }} InTransitMsg
- */
+export interface InTransitMsg {
+	id: string;
+	from: number;
+	to: number;
+	payload: unknown;
+	sentTick: number;
+	deliverAtTick: number;
+}
 
-/** @typedef {{ seq: number, tick: number, type: string, payload: any }} SimEvent */
+export interface Settings {
+	tickDurationMs: number;
+	transitTicks: number;
+}
 
-/** @typedef {{ tickDurationMs: number, transitTicks: number }} Settings */
+export interface Snapshot {
+	tick: number;
+	running: boolean;
+	settings: Settings;
+	actors: Actor[] | null;
+	inTransit: InTransitMsg[] | null;
+}
 
-/**
- * @typedef {{
- *   tick: number,
- *   running: boolean,
- *   settings: Settings,
- *   actors: Actor[] | null,
- *   inTransit: InTransitMsg[] | null
- * }} Snapshot
- */
+/** A simulation event, discriminated by `type`. */
+export type SimEvent = { seq: number; tick: number } & (
+	| {
+			type: 'message.sent';
+			payload: {
+				messageId: string;
+				from: number;
+				to: number;
+				payload: unknown;
+				sentTick: number;
+				deliverAtTick: number;
+			};
+	  }
+	| {
+			type: 'message.delivered';
+			payload: { messageId: string; from: number; to: number; payload: unknown };
+	  }
+	| { type: 'message.dropped'; payload: { messageId: string } }
+	| { type: 'message.delayed'; payload: { messageId: string; newDeliverTick: number } }
+	| { type: 'actor.spawned'; payload: { actorId: number; typeName: string } }
+	| { type: 'actor.fieldChanged'; payload: { actorId: number; field: string; value: unknown } }
+	| { type: 'sim.settingsChanged'; payload: Settings }
+);
+
+type ServerFrame =
+	| { type: 'snapshot'; seq: number; tick: number; payload: Snapshot }
+	| { type: 'ack'; replyTo: string; result: unknown }
+	| { type: 'error'; replyTo: string; code: string; message: string }
+	| SimEvent;
+
+interface PendingCommand {
+	resolve: (result: unknown) => void;
+	reject: (err: Error) => void;
+}
 
 export const DEFAULT_URL = 'ws://localhost:8067/ws';
 
@@ -49,26 +83,18 @@ const MAX_LOG_EVENTS = 2000;
 
 class Sim {
 	connected = $state(false);
-	/** @type {string | null} */
-	error = $state(null);
+	error = $state<string | null>(null);
 	tick = $state(0);
 	running = $state(false);
-	/** @type {Actor[]} */
-	actors = $state([]);
-	/** @type {InTransitMsg[]} */
-	inTransit = $state([]);
-	/** @type {string[]} */
-	actorTypes = $state([]);
-	/** @type {SimEvent[]} */
-	eventLog = $state([]);
-	/** @type {Settings} */
-	settings = $state({ tickDurationMs: 1000, transitTicks: 1 });
+	actors = $state<Actor[]>([]);
+	inTransit = $state<InTransitMsg[]>([]);
+	actorTypes = $state<string[]>([]);
+	eventLog = $state<SimEvent[]>([]);
+	settings = $state<Settings>({ tickDurationMs: 1000, transitTicks: 1 });
 
-	/** @type {WebSocket | null} */
-	#ws = null;
+	#ws: WebSocket | null = null;
 	#cmdId = 0;
-	/** @type {Map<string, { resolve: (r: any) => void, reject: (e: Error) => void }>} */
-	#pending = new Map();
+	#pending = new Map<string, PendingCommand>();
 
 	connect(url = DEFAULT_URL) {
 		this.error = null;
@@ -82,7 +108,7 @@ class Sim {
 			// The snapshot that follows is the whole world; events from an earlier
 			// connection (possibly to a since-restarted program) no longer apply.
 			this.eventLog = [];
-			this.send('requestTypes')
+			this.send<string[]>('requestTypes')
 				.then((types) => {
 					this.actorTypes = [...types].sort();
 				})
@@ -97,7 +123,7 @@ class Sim {
 			if (this.#ws !== ws) return;
 			this.error = `Cannot reach the simulator at ${url}. Is your Go program running?`;
 		};
-		ws.onmessage = (e) => {
+		ws.onmessage = (e: MessageEvent<string>) => {
 			try {
 				this.#dispatch(JSON.parse(e.data));
 			} catch (err) {
@@ -116,20 +142,15 @@ class Sim {
 
 	// --- Commands ---
 
-	/**
-	 * Sends a command and resolves with the ack result, or rejects with the error frame.
-	 * @param {string} type
-	 * @param {unknown} [payload]
-	 * @returns {Promise<any>}
-	 */
-	send(type, payload) {
+	/** Sends a command and resolves with the ack result, or rejects with the error frame. */
+	send<T = unknown>(type: string, payload?: unknown): Promise<T> {
 		const id = `c-${++this.#cmdId}`;
-		return new Promise((resolve, reject) => {
+		return new Promise<T>((resolve, reject) => {
 			if (!this.#ws || this.#ws.readyState !== WebSocket.OPEN) {
 				reject(new Error('Not connected to the simulator'));
 				return;
 			}
-			this.#pending.set(id, { resolve, reject });
+			this.#pending.set(id, { resolve: resolve as (result: unknown) => void, reject });
 			this.#ws.send(JSON.stringify({ id, type, ...(payload !== undefined && { payload }) }));
 		});
 	}
@@ -146,55 +167,47 @@ class Sim {
 		});
 	}
 
-	/** @param {string} name */
-	spawn(name) {
-		return this.send('spawn', { name });
+	/** Resolves with the new actor's id. */
+	spawn(name: string) {
+		return this.send<number>('spawn', { name });
 	}
 
-	/** @param {number} from @param {number} to @param {unknown} payload */
-	sendMessage(from, to, payload) {
+	sendMessage(from: number, to: number, payload: unknown) {
 		return this.send('message.send', { from, to, payload });
 	}
 
-	/** @param {string} messageId */
-	dropMessage(messageId) {
+	dropMessage(messageId: string) {
 		return this.send('message.drop', { messageId });
 	}
 
-	/** @param {string} messageId @param {number} ticks */
-	delayMessage(messageId, ticks) {
+	delayMessage(messageId: string, ticks: number) {
 		return this.send('message.delay', { messageId, ticks });
 	}
 
-	/** @param {string} messageId */
-	deliverNow(messageId) {
+	deliverNow(messageId: string) {
 		return this.send('message.deliverNow', { messageId });
 	}
 
-	/** @param {number} actorId @param {string} field @param {unknown} value */
-	setField(actorId, field, value) {
+	setField(actorId: number, field: string, value: unknown) {
 		return this.send('actor.setField', { actorId, field, value });
 	}
 
-	/** @param {number} actorId @param {string} method @param {unknown[]} args */
-	invoke(actorId, method, args) {
+	/** Resolves with the method's return value(s). */
+	invoke(actorId: number, method: string, args: unknown[]) {
 		return this.send('actor.invoke', { actorId, method, args });
 	}
 
-	/** @param {number} tickDurationMs */
-	setTickDuration(tickDurationMs) {
+	setTickDuration(tickDurationMs: number) {
 		return this.send('sim.setSpeed', { tickDurationMs });
 	}
 
-	/** @param {number} ticks */
-	setTransitTicks(ticks) {
+	setTransitTicks(ticks: number) {
 		return this.send('sim.setTransitTime', { ticks });
 	}
 
 	// --- Inbound frames ---
 
-	/** @param {any} frame */
-	#dispatch(frame) {
+	#dispatch(frame: ServerFrame) {
 		switch (frame.type) {
 			case 'snapshot':
 				this.#applySnapshot(frame.payload);
@@ -205,21 +218,17 @@ class Sim {
 			case 'error':
 				this.#settle(frame.replyTo)?.reject(new Error(frame.message ?? frame.code));
 				break;
-			default: {
-				/** @type {SimEvent} */
-				const event = { seq: frame.seq, tick: frame.tick, type: frame.type, payload: frame.payload };
-				this.#applyEvent(event);
-				this.eventLog.push(event);
+			default:
+				this.#applyEvent(frame);
+				this.eventLog.push(frame);
 				if (this.eventLog.length > MAX_LOG_EVENTS) {
 					this.eventLog.splice(0, this.eventLog.length - MAX_LOG_EVENTS);
 				}
-				if (event.tick > this.tick) this.tick = event.tick;
-			}
+				if (frame.tick > this.tick) this.tick = frame.tick;
 		}
 	}
 
-	/** @param {Snapshot} p */
-	#applySnapshot(p) {
+	#applySnapshot(p: Snapshot) {
 		this.tick = p.tick;
 		this.running = p.running;
 		this.settings = p.settings;
@@ -227,20 +236,23 @@ class Sim {
 		this.inTransit = p.inTransit ?? [];
 	}
 
-	/** @param {SimEvent} event */
-	#applyEvent({ type, payload: p }) {
-		switch (type) {
-			case 'actor.spawned':
+	#applyEvent(event: SimEvent) {
+		switch (event.type) {
+			case 'actor.spawned': {
+				const p = event.payload;
 				if (!this.actors.some((a) => a.id === p.actorId)) {
 					this.actors.push({ id: p.actorId, typeName: p.typeName, fields: {}, methods: [] });
 				}
 				break;
+			}
 			case 'actor.fieldChanged': {
+				const p = event.payload;
 				const actor = this.actors.find((a) => a.id === p.actorId);
 				if (actor) actor.fields[p.field] = p.value;
 				break;
 			}
-			case 'message.sent':
+			case 'message.sent': {
+				const p = event.payload;
 				if (!this.inTransit.some((m) => m.id === p.messageId)) {
 					this.inTransit.push({
 						id: p.messageId,
@@ -252,30 +264,32 @@ class Sim {
 					});
 				}
 				break;
+			}
 			case 'message.delivered':
-			case 'message.dropped':
-				this.inTransit = this.inTransit.filter((m) => m.id !== p.messageId);
+			case 'message.dropped': {
+				const { messageId } = event.payload;
+				this.inTransit = this.inTransit.filter((m) => m.id !== messageId);
 				break;
+			}
 			case 'message.delayed': {
+				const p = event.payload;
 				const msg = this.inTransit.find((m) => m.id === p.messageId);
 				if (msg) msg.deliverAtTick = p.newDeliverTick;
 				break;
 			}
 			case 'sim.settingsChanged':
-				this.settings = { tickDurationMs: p.tickDurationMs, transitTicks: p.transitTicks };
+				this.settings = { ...event.payload };
 				break;
 		}
 	}
 
-	/** @param {string} replyTo */
-	#settle(replyTo) {
+	#settle(replyTo: string) {
 		const pending = this.#pending.get(replyTo);
 		this.#pending.delete(replyTo);
 		return pending;
 	}
 
-	/** @param {Error} err */
-	#rejectPending(err) {
+	#rejectPending(err: Error) {
 		for (const { reject } of this.#pending.values()) reject(err);
 		this.#pending.clear();
 	}

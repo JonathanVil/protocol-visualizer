@@ -1,7 +1,7 @@
-<script>
+<script lang="ts">
     import InfoToolTip from "$lib/components/InfoToolTip.svelte";
-    import {sim} from "$lib/sim.svelte.js";
-    import {notifyError} from "$lib/notifications.svelte.js";
+    import {sim} from "$lib/sim.svelte";
+    import {notifyError} from "$lib/notifications.svelte";
 
     let selectedType = $state("");
 

@@ -1,7 +1,7 @@
-<script>
+<script lang="ts">
     import {marked} from "marked";
 
-    export let source = '';
+    let {source}: {source: string} = $props();
 </script>
 
 <div class="flex h-full flex-col">

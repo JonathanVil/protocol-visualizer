@@ -1,13 +1,11 @@
-<script>
+<script lang="ts">
     import InfoToolTip from "$lib/components/InfoToolTip.svelte";
-    import {sim} from "$lib/sim.svelte.js";
-    import {parseLoose} from "$lib/format.js";
-    import {notifyError} from "$lib/notifications.svelte.js";
+    import {sim} from "$lib/sim.svelte";
+    import {parseLoose} from "$lib/format";
+    import {notifyError} from "$lib/notifications.svelte";
 
-    /** @type {number | undefined} */
-    let from = $state();
-    /** @type {number | undefined} */
-    let to = $state();
+    let from = $state<number>();
+    let to = $state<number>();
     let payload = $state("");
 
     const canSend = $derived(sim.connected && from !== undefined && to !== undefined);

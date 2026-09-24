@@ -1,22 +1,22 @@
-<script module>
+<script module lang="ts">
     import cytoscape from 'cytoscape';
     import cytoscapePopper from 'cytoscape-popper';
-    import {computePosition, flip, shift, limitShift} from '@floating-ui/dom';
+    import {computePosition, flip, shift, limitShift, type ComputePositionConfig} from '@floating-ui/dom';
 
-    /**
-     * @param {cytoscapePopper.RefElement} ref
-     * @param {HTMLElement} content
-     * @param {cytoscapePopper.PopperOptions|undefined} options
-     */
-    function popperFactory(ref, content, options) {
+    /** What our popper factory returns; cytoscape-popper types it as an empty interface. */
+    interface FloatingPopper {
+        update(): void;
+    }
+
+    const popperFactory: cytoscapePopper.PopperFactory = (ref, content, options): FloatingPopper => {
         // see https://floating-ui.com/docs/computePosition#options
-        const popperOptions = {
+        const popperOptions: Partial<ComputePositionConfig> = {
             middleware: [
                 flip(),
                 shift({limiter: limitShift()})
             ],
-            ...options,
-        }
+            ...(options as Partial<ComputePositionConfig>),
+        };
 
         function update() {
             computePosition(ref, content, popperOptions).then(({x, y}) => {
@@ -27,106 +27,103 @@
             });
         }
         update();
-        return { update };
-    }
+        return {update};
+    };
 
     cytoscape.use(cytoscapePopper(popperFactory));
 </script>
 
-<script>
-    import {mount, unmount, onMount, untrack} from 'svelte';
+<script lang="ts">
+    import {mount, unmount, onMount, untrack, type Component} from 'svelte';
+    import type {Core, NodeSingular} from 'cytoscape';
     import ActorPopper from "$lib/components/ActorPopper.svelte";
     import MessagePopper from "$lib/components/MessagePopper.svelte";
-    import {sim} from "$lib/sim.svelte.js";
-    import {payloadLabel} from "$lib/format.js";
+    import {sim} from "$lib/sim.svelte";
+    import {payloadLabel} from "$lib/format";
 
-    /** @typedef {import('$lib/sim.svelte.js').InTransitMsg} InTransitMsg */
+    let cyContainer: HTMLElement;
 
-    /** @type {HTMLElement} */
-    let cyContainer;
+    /** Layer that holds the actor and message poppers. */
+    let uiLayer: HTMLElement;
 
-    /** Layer that holds the actor and message poppers. @type {HTMLElement} */
-    let uiLayer;
-
-    /** @type {import('cytoscape').Core | null} */
-    let cy = $state(null);
+    let cy = $state<Core | null>(null);
 
     /** Bumped after every layout, so message positions are recomputed. */
     let layoutVersion = $state(0);
 
-    /**
-     * A Svelte component mounted next to a graph node.
-     * @typedef {{ el: HTMLElement, component: any, node: any, update: () => void }} Popper
-     */
+    /** A Svelte component mounted next to a graph node. */
+    interface Popper<Exports> {
+        el: HTMLElement;
+        component: Exports;
+        node: NodeSingular;
+        update: () => void;
+    }
 
-    /** @type {Map<number, Popper>} */
-    const actorPoppers = new Map();
+    type ActorPopperExports = {
+        setStateCollapsed(val: boolean): void;
+        setMethodsCollapsed(val: boolean): void;
+    };
 
-    /** @type {Map<string, Popper>} */
-    const messagePoppers = new Map();
+    const actorPoppers = new Map<number, Popper<ActorPopperExports>>();
+    const messagePoppers = new Map<string, Popper<unknown>>();
 
     /**
      * Mounts a component in a popper anchored to a graph node.
-     * @param {any} node
-     * @param {any} Component
-     * @param {Record<string, any>} props may contain getters, which stay reactive
-     * @param {object} [options]
-     * @returns {Popper}
+     * `makeProps` receives the popper's reposition function; returned getters stay reactive.
      */
-    function mountPopper(node, Component, props, options) {
+    function mountPopper<Props extends Record<string, any>, Exports extends Record<string, any>>(
+        node: NodeSingular,
+        Component: Component<Props, Exports>,
+        makeProps: (reposition: () => void) => Props,
+        options?: Partial<ComputePositionConfig>,
+    ): Popper<Exports> {
         const el = document.createElement('div');
         el.style.position = 'absolute';
         uiLayer.appendChild(el);
 
-        const popper = node.popper({content: () => el, popper: options});
+        const popper = node.popper({content: () => el, popper: options}) as FloatingPopper;
         const update = () => popper.update();
-        // Object.assign rather than spreading, which would evaluate (and freeze) the getters.
-        const component = mount(Component, {target: el, props: Object.assign(props, {reposition: update})});
+        const component = mount(Component, {target: el, props: makeProps(update)});
         node.on('position', update);
         cy?.on('pan zoom resize', update);
         return {el, component, node, update};
     }
 
-    /** @param {Popper | undefined} entry */
-    function unmountPopper(entry) {
+    function unmountPopper(entry: Popper<unknown> | undefined) {
         if (!entry) return;
-        entry.node.off('position', entry.update);
+        entry.node.off('position', undefined, entry.update);
         cy?.off('pan zoom resize', entry.update);
-        unmount(entry.component);
+        unmount(entry.component as Record<string, any>);
         entry.el.remove();
     }
 
-    /** @param {boolean} collapsed */
-    function setActorStateCollapsed(collapsed) {
+    function setActorStateCollapsed(collapsed: boolean) {
         for (const popper of actorPoppers.values()) {
             popper.component.setStateCollapsed(collapsed);
             popper.update();
         }
     }
 
-    /** @param {boolean} collapsed */
-    function setActorMethodsCollapsed(collapsed) {
+    function setActorMethodsCollapsed(collapsed: boolean) {
         for (const popper of actorPoppers.values()) {
             popper.component.setMethodsCollapsed(collapsed);
             popper.update();
         }
     }
 
-    /** @param {string} id */
-    function closeMessagePopper(id) {
+    function closeMessagePopper(id: string) {
         unmountPopper(messagePoppers.get(id));
         messagePoppers.delete(id);
     }
 
-    /** @param {any} node */
-    function openMessagePopper(node) {
+    function openMessagePopper(node: NodeSingular) {
         const id = node.id();
         if (messagePoppers.has(id)) return;
 
-        messagePoppers.set(id, mountPopper(node, MessagePopper, {
+        messagePoppers.set(id, mountPopper(node, MessagePopper, () => ({
             get message() { return sim.inTransit.find(m => m.id === id); },
             close: () => closeMessagePopper(id),
-        }, {placement: 'right'}));
+        }), {placement: 'right'}));
     }
 
     onMount(() => {
@@ -220,11 +217,12 @@
 
             // Poppers are mounted after layout so they are placed next to their final node position.
             for (const actorId of newIds) {
-                actorPoppers.set(actorId, mountPopper(graph.getElementById(String(actorId)), ActorPopper, {
+                actorPoppers.set(actorId, mountPopper(graph.getElementById(String(actorId)), ActorPopper, (reposition) => ({
                     get actor() { return sim.actors.find(a => a.id === actorId); },
                     setStateCollapsedGlobal: setActorStateCollapsed,
                     setMethodsCollapsedGlobal: setActorMethodsCollapsed,
-                }));
+                    reposition,
+                })));
             }
         });
     });
@@ -268,8 +266,7 @@
             const sp = src.position();
             const dp = dst.position();
             const total = Math.max(1, msg.deliverAtTick - msg.sentTick);
-            /** @param {number} ticksElapsed */
-            const positionAt = (ticksElapsed) => {
+            const positionAt = (ticksElapsed: number) => {
                 const t = Math.min(1, Math.max(0, ticksElapsed / total));
                 return {x: sp.x + (dp.x - sp.x) * t, y: sp.y + (dp.y - sp.y) * t};
             };

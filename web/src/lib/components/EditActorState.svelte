@@ -1,32 +1,26 @@
-<script>
-    /** @type {string | null} */
-    export let editingKey = null;
+<script lang="ts">
+    interface Props {
+        editingKey: string | null;
+        editText: string;
+        editOriginalValue: unknown;
+        save: (newValue: unknown) => void;
+    }
 
-    /** @type {string} */
-    export let editText = '';
+    let {
+        editingKey = $bindable(),
+        editText = $bindable(),
+        editOriginalValue = $bindable(),
+        save,
+    }: Props = $props();
 
-    /** @type {any} */
-    export let editOriginalValue;
-
-    /**
-     * @param {string} newValue
-     */
-    export let save = (newValue) => {}
-
-    /**
-     * @param {event?} event
-     */
-    function closeEdit(event) {
-        event?.stopPropagation?.();
+    function closeEdit(event?: Event) {
+        event?.stopPropagation();
         editingKey = null;
         editText = '';
         editOriginalValue = undefined;
     }
 
-    /** @param {string} text @param {any} original
-     * @param original
-     */
-    function parseEditedValue(text, original) {
+    function parseEditedValue(text: string, original: unknown): unknown {
         const t = text.trim();
 
         if (t === 'undefined') return undefined;
@@ -49,31 +43,21 @@
         }
     }
 
-    /**
-     * @param {event} event
-     */
-    function saveEdit(event) {
-        event?.stopPropagation?.();
+    function saveEdit(event: Event) {
+        event.stopPropagation();
         if (!editingKey) return;
 
-        const nextValue = parseEditedValue(editText, editOriginalValue);
-
-        save(nextValue);
-
-        closeEdit(null);
+        save(parseEditedValue(editText, editOriginalValue));
+        closeEdit();
     }
 
-    /**
-     * @param {KeyboardEvent} event
-     */
-    function onEditKeydown(event) {
+    function onEditKeydown(event: KeyboardEvent) {
         if (event.key === 'Escape') closeEdit(event);
         if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') saveEdit(event);
     }
 
-    /** @param {HTMLElement} el */
-    function init(el){
-        el.focus()
+    function init(el: HTMLElement) {
+        el.focus();
     }
 </script>
 
@@ -93,7 +77,7 @@
                         class="inline-flex h-6 w-6 items-center justify-center rounded text-white/70 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
                         aria-label="Close edit popup"
                         title="Close"
-                        on:click={closeEdit}
+                        onclick={closeEdit}
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 6 6 18" />
@@ -107,7 +91,7 @@
                     class="w-full resize-y rounded bg-white/5 px-2 py-1 font-mono text-[12px] leading-[1.2] text-white outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-white/30"
                     rows="4"
                     bind:value={editText}
-                    on:keydown={onEditKeydown}></textarea>
+                    onkeydown={onEditKeydown}></textarea>
 
             <div class="mt-2 flex items-center justify-end gap-2">
                 <div class="mr-auto text-[11px] opacity-70">
@@ -117,14 +101,14 @@
                 <button
                         type="button"
                         class="rounded px-2 py-1 text-[12px] text-white/80 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                        on:click={closeEdit}
+                        onclick={closeEdit}
                 >
                     Cancel
                 </button>
                 <button
                         type="button"
                         class="rounded bg-white/10 px-2 py-1 text-[12px] text-white hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                        on:click={saveEdit}
+                        onclick={saveEdit}
                 >
                     Save
                 </button>

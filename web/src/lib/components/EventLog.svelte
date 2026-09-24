@@ -1,38 +1,43 @@
-<script>
-    import {sim} from "$lib/sim.svelte.js";
-    import {formatValue} from "$lib/format.js";
+<script lang="ts">
+    import {sim, type SimEvent} from "$lib/sim.svelte";
+    import {formatValue} from "$lib/format";
 
-    /** @typedef {import('$lib/sim.svelte.js').SimEvent} SimEvent */
-
-    /**
-     * Human-readable description of a simulation event.
-     * @param {SimEvent} event
-     */
-    function describe({type, payload: p}) {
-        switch (type) {
-            case 'message.sent':
+    /** Human-readable description of a simulation event. */
+    function describe(event: SimEvent): string {
+        switch (event.type) {
+            case 'message.sent': {
+                const p = event.payload;
                 return `Actor ${p.from} sent ${formatValue(p.payload)} to actor ${p.to} (arrives at tick ${p.deliverAtTick})`;
-            case 'message.delivered':
+            }
+            case 'message.delivered': {
+                const p = event.payload;
                 return `Delivered ${formatValue(p.payload)} from actor ${p.from} to actor ${p.to}`;
+            }
             case 'message.dropped':
-                return `Dropped message ${p.messageId}`;
+                return `Dropped message ${event.payload.messageId}`;
             case 'message.delayed':
-                return `Delayed message ${p.messageId} until tick ${p.newDeliverTick}`;
+                return `Delayed message ${event.payload.messageId} until tick ${event.payload.newDeliverTick}`;
             case 'actor.spawned':
-                return `Spawned ${p.typeName} actor ${p.actorId}`;
-            case 'actor.fieldChanged':
+                return `Spawned ${event.payload.typeName} actor ${event.payload.actorId}`;
+            case 'actor.fieldChanged': {
+                const p = event.payload;
                 return `Set ${p.field} = ${formatValue(p.value)} on actor ${p.actorId}`;
-            case 'sim.settingsChanged':
+            }
+            case 'sim.settingsChanged': {
+                const p = event.payload;
                 return `Settings changed: ${Math.round(1000 / p.tickDurationMs)} ticks/s, transit time ${p.transitTicks} ticks`;
-            default:
-                return `${type} ${formatValue(p)}`;
+            }
+            default: {
+                // An event type this client doesn't know about yet.
+                const unknown = event as {type: string, payload: unknown};
+                return `${unknown.type} ${formatValue(unknown.payload)}`;
+            }
         }
     }
 
     /** Events grouped by tick, newest first. */
     const ticks = $derived.by(() => {
-        /** @type {{ tick: number, lines: string[] }[]} */
-        const groups = [];
+        const groups: {tick: number, lines: string[]}[] = [];
         for (const event of sim.eventLog) {
             const last = groups.at(-1);
             if (last?.tick === event.tick) {

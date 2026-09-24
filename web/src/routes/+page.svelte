@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import {onMount} from "svelte";
     import Icon from '@iconify/svelte';
     import SettingsPanel from "$lib/components/SettingsPanel.svelte";
@@ -9,8 +9,8 @@
     import SpawnActor from "$lib/components/SpawnActor.svelte";
     import EventLog from "$lib/components/EventLog.svelte";
     import DocumentationViewer from "$lib/components/DocumentationViewer.svelte";
-    import {sim} from '$lib/sim.svelte.js';
-    import {notifications} from '$lib/notifications.svelte.js';
+    import {sim} from '$lib/sim.svelte';
+    import {notifications} from '$lib/notifications.svelte';
     import docs from '../../docs/BASICS.md?raw';
 
     onMount(() => {
@@ -22,11 +22,12 @@
         DOCS: "docs",
         LOG: "log",
         NONE: "none"
-    };
-    let leftPanel = $state(LeftPanelOptions.DOCS);
+    } as const;
+    type LeftPanel = typeof LeftPanelOptions[keyof typeof LeftPanelOptions];
 
-    /** @param {string} panel */
-    function toggleLeftPanel(panel) {
+    let leftPanel = $state<LeftPanel>(LeftPanelOptions.DOCS);
+
+    function toggleLeftPanel(panel: LeftPanel) {
         leftPanel = leftPanel === panel ? LeftPanelOptions.NONE : panel;
     }
 

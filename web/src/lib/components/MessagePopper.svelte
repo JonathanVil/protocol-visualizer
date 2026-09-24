@@ -1,18 +1,19 @@
-<script>
+<script lang="ts">
     import Icon from "@iconify/svelte";
-    import {sim} from "$lib/sim.svelte.js";
-    import {formatValue} from "$lib/format.js";
-    import {notifyError} from "$lib/notifications.svelte.js";
+    import {sim, type InTransitMsg} from "$lib/sim.svelte";
+    import {formatValue} from "$lib/format";
+    import {notifyError} from "$lib/notifications.svelte";
 
-    /** @typedef {import('$lib/sim.svelte.js').InTransitMsg} InTransitMsg */
+    interface Props {
+        message: InTransitMsg | undefined;
+        close: () => void;
+    }
 
-    /** @type {{ message: InTransitMsg | undefined, close: () => void, reposition: () => void }} */
-    let {message, close} = $props();
+    let {message, close}: Props = $props();
 
     let delay = $state(10);
 
-    /** @param {Promise<unknown>} command */
-    function closeAfter(command) {
+    function closeAfter(command: Promise<unknown>) {
         command.then(close).catch(notifyError);
     }
 </script>

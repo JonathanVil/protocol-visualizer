@@ -1,11 +1,10 @@
-<script>
+<script lang="ts">
     import InfoToolTip from "$lib/components/InfoToolTip.svelte";
     import Icon from "@iconify/svelte";
-    import {sim} from "$lib/sim.svelte.js";
-    import {notifyError} from "$lib/notifications.svelte.js";
+    import {sim} from "$lib/sim.svelte";
+    import {notifyError} from "$lib/notifications.svelte";
 
-    /** @type {{ close: () => void }} */
-    let {close} = $props();
+    let {close}: {close: () => void} = $props();
 
     // Sliders show the backend's settings, and follow them when they change
     // (e.g. from another tab) unless the user is dragging.

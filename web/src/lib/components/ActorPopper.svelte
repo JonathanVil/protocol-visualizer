@@ -1,33 +1,26 @@
-<script>
-    /** @typedef {import('$lib/sim.svelte.js').Actor} Actor */
-    /** @typedef {import('$lib/sim.svelte.js').MethodInfo} MethodInfo */
-
+<script lang="ts">
     import {untrack} from "svelte";
     import EditActorState from "$lib/components/EditActorState.svelte";
     import RunActorMethod from "$lib/components/RunActorMethod.svelte";
-    import {sim} from "$lib/sim.svelte.js";
-    import {formatValue} from "$lib/format.js";
-    import {notifyError} from "$lib/notifications.svelte.js";
+    import {sim, type Actor, type MethodInfo} from "$lib/sim.svelte";
+    import {formatValue} from "$lib/format";
+    import {notifyError} from "$lib/notifications.svelte";
 
-    /**
-     * @type {{
-     *   actor: Actor | undefined,
-     *   setStateCollapsedGlobal: (c: boolean) => void,
-     *   setMethodsCollapsedGlobal: (c: boolean) => void,
-     *   reposition: () => void
-     * }}
-     */
-    let {actor, setStateCollapsedGlobal, setMethodsCollapsedGlobal, reposition} = $props();
+    interface Props {
+        actor: Actor | undefined;
+        setStateCollapsedGlobal: (collapsed: boolean) => void;
+        setMethodsCollapsedGlobal: (collapsed: boolean) => void;
+        reposition: () => void;
+    }
+
+    let {actor, setStateCollapsedGlobal, setMethodsCollapsedGlobal, reposition}: Props = $props();
 
     const entries = $derived(actor ? Object.entries(actor.fields ?? {}) : []);
     const methods = $derived(actor?.methods ?? []);
 
     // --- flash-on-change bookkeeping ---
-    /** @type {Map<string, unknown>} */
-    const prevByKey = new Map();
-
-    /** @type {Record<string, number>} */
-    let versionByKey = $state({});
+    const prevByKey = new Map<string, unknown>();
+    let versionByKey = $state<Record<string, number>>({});
 
     $effect.pre(() => {
         for (const [key, value] of entries) {
@@ -42,8 +35,7 @@
     let stateCollapsed = $state(true);
     let methodsListCollapsed = $state(true);
 
-    /** @param {MouseEvent} event */
-    function toggleShowState(event) {
+    function toggleShowState(event: MouseEvent) {
         event.stopPropagation();
         if (event.shiftKey) {
             setStateCollapsedGlobal(!stateCollapsed);
@@ -53,8 +45,7 @@
         }
     }
 
-    /** @param {MouseEvent} event */
-    function toggleShowMethods(event) {
+    function toggleShowMethods(event: MouseEvent) {
         event.stopPropagation();
         if (event.shiftKey) {
             setMethodsCollapsedGlobal(!methodsListCollapsed);
@@ -64,60 +55,38 @@
         }
     }
 
-    /**
-     * Used by its parent to toggle all state
-     * @param {boolean} val
-     */
-    export function setStateCollapsed(val) {
+    /** Used by its parent to toggle all state */
+    export function setStateCollapsed(val: boolean) {
         stateCollapsed = val;
     }
 
-    /**
-     * Used by its parent to toggle all methods
-     * @param {boolean} val
-     */
-    export function setMethodsCollapsed(val) {
+    /** Used by its parent to toggle all methods */
+    export function setMethodsCollapsed(val: boolean) {
         methodsListCollapsed = val;
     }
 
-    /** @type {string | null} */
-    let editingKey = $state(null);
+    let editingKey = $state<string | null>(null);
     let editText = $state('');
-    /** @type {any} */
-    let editOriginalValue = $state();
+    let editOriginalValue = $state<unknown>();
 
-    /**
-     * @param {MouseEvent} event
-     * @param {string} key
-     * @param {unknown} value
-     */
-    function openEdit(event, key, value) {
+    function openEdit(event: MouseEvent, key: string, value: unknown) {
         event.stopPropagation();
         editingKey = key;
         editText = typeof value === 'string' ? value : formatValue(value);
         editOriginalValue = value;
     }
 
-    /**
-     * @param {string} key
-     * @param {any} newValue
-     */
-    function saveEdit(key, newValue) {
+    function saveEdit(key: string, newValue: unknown) {
         if (!actor) return;
         sim.setField(actor.id, key, newValue).catch(notifyError);
     }
 
-    /** @type {MethodInfo | null} */
-    let selectedMethod = $state(null);
+    let selectedMethod = $state<MethodInfo | null>(null);
 
     /** Result of the most recent method call, shown under the method list. */
     let lastResult = $state('');
 
-    /**
-     * @param {string} name
-     * @param {unknown[]} args
-     */
-    function runMethod(name, args) {
+    function runMethod(name: string, args: unknown[]) {
         if (!actor) return;
         selectedMethod = null;
         sim.invoke(actor.id, name, args)
@@ -206,7 +175,7 @@
                 {/each}
 
                 {#if editingKey}
-                    <EditActorState save={(/** @type {any} */ v) => editingKey && saveEdit(editingKey, v)} bind:editingKey bind:editText bind:editOriginalValue />
+                    <EditActorState save={(v) => editingKey && saveEdit(editingKey, v)} bind:editingKey bind:editText bind:editOriginalValue />
                 {/if}
             {/if}
 
@@ -236,7 +205,9 @@
 
                     {#if selectedMethod}
                         {@const method = selectedMethod}
-                        <RunActorMethod run={(/** @type {unknown[]} */ args) => runMethod(method.name, args)} cancel={() => selectedMethod = null} methodName={method.name} argumentTypes={method.args} />
+                        {#key method.name}
+                            <RunActorMethod run={(args) => runMethod(method.name, args)} cancel={() => selectedMethod = null} methodName={method.name} argumentTypes={method.args} />
+                        {/key}
                     {/if}
                 </div>
             {/if}

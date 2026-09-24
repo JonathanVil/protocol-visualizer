@@ -1,15 +1,15 @@
-/** @typedef {{ id: number, text: string }} Notification */
+export interface Notification {
+	id: number;
+	text: string;
+}
 
 let nextId = 0;
 
 /** Transient error messages shown to the user, e.g. rejected commands. */
-export const notifications = $state(/** @type {Notification[]} */ ([]));
+export const notifications = $state<Notification[]>([]);
 
-/**
- * Shows an error for a few seconds.
- * @param {unknown} err
- */
-export function notifyError(err) {
+/** Shows an error for a few seconds. */
+export function notifyError(err: unknown) {
 	const id = nextId++;
 	const text = err instanceof Error ? err.message : String(err);
 	notifications.push({ id, text });
