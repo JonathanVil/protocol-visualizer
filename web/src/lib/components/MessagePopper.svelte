@@ -1,75 +1,70 @@
-﻿<script>
-    /** @typedef {import('$lib/types.js').Message} Message */
-
-
-
+<script>
     import Icon from "@iconify/svelte";
+    import {sim} from "$lib/sim.svelte.js";
+    import {formatValue} from "$lib/format.js";
+    import {notifyError} from "$lib/notifications.svelte.js";
 
-    /** @type {Message} */
-    export let message;
+    /** @typedef {import('$lib/sim.svelte.js').InTransitMsg} InTransitMsg */
 
+    /** @type {{ message: InTransitMsg | undefined, close: () => void, reposition: () => void }} */
+    let {message, close} = $props();
 
-    let delay = 100;
+    let delay = $state(10);
 
-    export let dropMessage;
-
-    export let delayMessage;
-
-    export let deliverMessage;
-
-    export let closePopper;
-
-
+    /** @param {Promise<unknown>} command */
+    function closeAfter(command) {
+        command.then(close).catch(notifyError);
+    }
 </script>
 
-<div class="fixed inset-0 z-40 bg-black/0"></div>
-
-<div class="fixed pointer-events-auto z-9999 whitespace-nowrap rounded-lg border border-white/10 bg-slate-900/90 px-2 py-1.5 text-[16px] leading-[1.2] text-white shadow-[0_8px_20px_rgba(0,0,0,0.35)]">
+{#if message}
+<div class="pointer-events-auto relative z-50 whitespace-nowrap rounded-lg border border-white/10 bg-slate-900/90 px-2 py-1.5 text-[16px] leading-[1.2] text-white shadow-[0_8px_20px_rgba(0,0,0,0.35)]">
     <!-- Message data -->
     <div class="flex flex-col items-center text-center">
         <p class="items-center font-bold">Message</p>
 
-        <button class=" absolute right-0 top-0 bg-white/20 rounded-full p-1 m-1 hover:bg-white/30"
-                on:click={() => closePopper(message)}>
+        <button class="absolute right-0 top-0 bg-white/20 rounded-full p-1 m-1 hover:bg-white/30"
+                aria-label="Close"
+                onclick={close}>
             <Icon icon="mdi:close" class="w-6 h-6 text-white" />
         </button>
 
         <div>
             <div class="text-xs">ID: {message.id}</div>
-            <div class="">{message.source} ⟶ {message.destination}</div>
+            <div>{message.from} ⟶ {message.to}</div>
+            <div class="font-mono text-sm">{formatValue(message.payload)}</div>
+            <div class="text-xs opacity-70">Sent tick {message.sentTick}, arrives tick {message.deliverAtTick}</div>
         </div>
     </div>
 
     <hr class="h-px my-2 bg-white border-0">
     <!-- Methods -->
     <div class="flex flex-row gap-2 items-center text-center">
-        <button class=" bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center"
-                on:click={() => deliverMessage(message, false)}>
+        <button class="bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center"
+                onclick={() => closeAfter(sim.deliverNow(message.id))}>
             Deliver
         </button>
-        <button class=" bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center"
-                on:click={() => dropMessage(message)}>
+        <button class="bg-blue-600 text-white rounded hover:bg-blue-700 w-25 h-10 text-base flex text-center justify-center items-center"
+                onclick={() => closeAfter(sim.dropMessage(message.id))}>
             Drop
         </button>
     </div>
 
     <div class="mt-2 flex flex-row items-center text-center gap-2">
         <button class="bg-blue-600 text-white rounded hover:bg-blue-800 w-25 h-10 text-base flex text-center justify-center items-center"
-                on:click={() => delayMessage(message, delay)}>
+                onclick={() => sim.delayMessage(message.id, delay).catch(notifyError)}>
             Delay
         </button>
         <input
-                class="border p-1 h-10 w-12 rounded relative z-9999 bg-blue-800"
-                id="from"
+                class="border p-1 h-10 w-12 rounded bg-blue-800"
+                type="number"
+                min="1"
+                aria-label="Delay in ticks"
                 bind:value={delay}
-                placeholder="ID"
-                on:pointerdown|stopPropagation
-                on:mousedown|stopPropagation
+                onpointerdown={(e) => e.stopPropagation()}
+                onmousedown={(e) => e.stopPropagation()}
         />
-        <p>
-            ticks
-        </p>
+        <p>ticks</p>
     </div>
-
-
 </div>
+{/if}
