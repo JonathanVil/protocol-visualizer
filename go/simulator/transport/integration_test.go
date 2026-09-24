@@ -77,10 +77,10 @@ func TestIntegration_SnapshotOnConnect(t *testing.T) {
 	if !ok {
 		t.Fatal("snapshot payload is not an object")
 	}
-	if _, ok := payload["Actors"]; !ok {
+	if _, ok := payload["actors"]; !ok {
 		t.Error("snapshot payload missing actors")
 	}
-	if _, ok := payload["Messages"]; !ok {
+	if _, ok := payload["inTransit"]; !ok {
 		t.Error("snapshot payload missing inTransit")
 	}
 }
@@ -119,7 +119,7 @@ func TestIntegration_MessageDropAckAndEvent(t *testing.T) {
 	if len(snap.Messages) == 0 {
 		t.Fatal("expected at least one in-transit message in snapshot")
 	}
-	msgID := snap.Messages[0].Id
+	msgID := snap.Messages[0].ID
 
 	// Send the drop command.
 	if err := wsjson.Write(ctx, conn, map[string]any{

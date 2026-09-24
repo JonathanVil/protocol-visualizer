@@ -78,7 +78,7 @@ type ActorInvokePayload struct {
 }
 
 type SimSetSpeedPayload struct {
-	TickDurationMs int `json:"TickDurationMs"`
+	TickDurationMs int `json:"tickDurationMs"`
 }
 
 type SimSetTransitTimePayload struct {

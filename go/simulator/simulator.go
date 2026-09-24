@@ -144,10 +144,10 @@ func (s *Simulator) Send(from, to int, payload any) error {
 
 	// check if actors exist
 	if _, ok := s.actors[from]; !ok {
-		return fmt.Errorf("actor %d does not exist", from)
+		return fmt.Errorf("%w: %d", ErrActorNotFound, from)
 	}
 	if _, ok := s.actors[to]; !ok {
-		return fmt.Errorf("actor %d does not exist", to)
+		return fmt.Errorf("%w: %d", ErrActorNotFound, to)
 	}
 
 	msg := Message{ID: newMessageID(), From: from, To: to, Payload: payload, SentTick: s.tick}
@@ -155,7 +155,14 @@ func (s *Simulator) Send(from, to int, payload any) error {
 	i := rand.IntN(len(s.tickQueues[idx]) + 1)
 	s.tickQueues[idx] = append(s.tickQueues[idx][:i], append([]Message{msg}, s.tickQueues[idx][i:]...)...)
 
-	s.emit(EventMessageSent, MessageSentPayload{msg.ID, msg.From, msg.To, msg.Payload})
+	s.emit(EventMessageSent, MessageSentPayload{
+		MessageID:     msg.ID,
+		From:          msg.From,
+		To:            msg.To,
+		Payload:       msg.Payload,
+		SentTick:      msg.SentTick,
+		DeliverAtTick: idx,
+	})
 	return nil
 }
 
@@ -310,12 +317,6 @@ func (s *Simulator) SetTransitTime(ticks int) error {
 	s.TransitTicks = ticks
 	s.emit(EventSimSettingsChanged, SimSettingsChangedPayload{TickDurationMs: int(s.TickDuration.Milliseconds()), TransitTicks: ticks})
 	return nil
-}
-
-// Settings holds configurable simulation parameters.
-type Settings struct {
-	SpeedMultiplier float64 `json:"speedMultiplier"`
-	TransitTicks    int     `json:"transitTicks"`
 }
 
 // --- Sim loop ---

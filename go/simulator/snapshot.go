@@ -14,12 +14,12 @@ type ActorSnapshot struct {
 }
 
 type MessageSnapshot struct {
-	Id            string
-	From          int
-	To            int
-	Payload       any
-	SentTick      int
-	DeliverAtTick int
+	ID            string `json:"id"`
+	From          int    `json:"from"`
+	To            int    `json:"to"`
+	Payload       any    `json:"payload"`
+	SentTick      int    `json:"sentTick"`
+	DeliverAtTick int    `json:"deliverAtTick"`
 }
 
 type SettingsSnapshot struct {
@@ -28,11 +28,11 @@ type SettingsSnapshot struct {
 }
 
 type Snapshot struct {
-	Tick     int
-	Running  bool
-	Settings SettingsSnapshot
-	Actors   []ActorSnapshot
-	Messages []MessageSnapshot
+	Tick     int               `json:"tick"`
+	Running  bool              `json:"running"`
+	Settings SettingsSnapshot  `json:"settings"`
+	Actors   []ActorSnapshot   `json:"actors"`
+	Messages []MessageSnapshot `json:"inTransit"`
 }
 
 func (s *Simulator) GetSnapshot() Snapshot {
@@ -55,7 +55,7 @@ func (s *Simulator) GetSnapshot() Snapshot {
 	for tick, queue := range s.tickQueues {
 		for _, m := range queue {
 			messages = append(messages, MessageSnapshot{
-				Id:            m.ID,
+				ID:            m.ID,
 				From:          m.From,
 				To:            m.To,
 				Payload:       m.Payload,

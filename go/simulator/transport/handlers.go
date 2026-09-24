@@ -64,7 +64,7 @@ func registerHandlers(sim *simulator.Simulator, reg map[string]Handler) {
 	// --- Sim settings ---
 
 	Register(reg, "sim.setSpeed", func(p frames.SimSetSpeedPayload) (any, error) {
-		return nil, sim.SetSpeed(time.Duration(time.Millisecond) * 100)
+		return nil, sim.SetSpeed(time.Duration(p.TickDurationMs) * time.Millisecond)
 	})
 
 	Register(reg, "sim.setTransitTime", func(p frames.SimSetTransitTimePayload) (any, error) {
