@@ -12,12 +12,12 @@ All frames are JSON objects sent over a single WebSocket connection at `/ws`.
 ### Frontend → Backend: command
 
 ```json
-{ "Id": "c-1042", "type": "message.drop", "payload": { "messageId": "m-87" } }
+{ "id": "c-1042", "type": "message.drop", "payload": { "messageId": "m-87" } }
 ```
 
 | Field | Type | Notes |
 |---|---|---|
-| `Id` | string | Client-generated, unique per connection. Echoed in the corresponding ack or error. |
+| `id` | string | Client-generated, unique per connection. Echoed in the corresponding ack or error. |
 | `type` | string | Command name. |
 | `payload` | object | Command-specific. May be omitted for payload-less commands. |
 
@@ -54,14 +54,35 @@ All frames are JSON objects sent over a single WebSocket connection at `/ws`.
 | `type` | string | Event type (see table below). |
 | `payload` | object | Event-specific. |
 
-#### Snapshot — sent once on connect, before any events
+#### Snapshot — the whole world
 
 ```json
-{ "type": "snapshot", "seq": 0, "tick": 5, "payload": { "actors": [...], "inTransit": [...], "settings": {...} } }
+{ "type": "snapshot", "seq": 0, "tick": 5, "payload": {
+    "tick": 5,
+    "running": true,
+    "settings": { "tickDurationMs": 1000, "transitTicks": 5 },
+    "actors": [
+      { "id": 0, "typeName": "ping",
+        "fields": { "PingsReceived": 3 },
+        "methods": [ { "name": "SendPing", "args": ["int"] } ] }
+    ],
+    "inTransit": [
+      { "id": "m-87", "from": 0, "to": 1, "payload": "ping", "sentTick": 3, "deliverAtTick": 8 }
+    ]
+} }
 ```
 
-The snapshot is fetched at a tick boundary so it is internally consistent.
-The frontend rebuilds its world from this frame and applies only events with `seq > snapshot.seq`.
+A snapshot is sent once on connect, before any events, and fetched at a tick boundary so it is
+internally consistent. The simulator also emits snapshots as events (with a `seq`) after every
+tick, on start/stop, after a spawn, and after `message.deliverNow` / `actor.invoke`, since actor
+code may change state outside a tick.
+
+The frontend replaces its world with every snapshot and applies events in between. Events emitted
+just before the connect-time snapshot may arrive after it, so applying an event must be idempotent.
+
+`fields` holds the actor's exported struct fields, keyed by their `json` tag name if present
+(fields tagged `json:"-"` are omitted). `methods` lists exported methods other than those of the
+`Actor` interface, with their parameter types.
 
 ---
 
@@ -83,6 +104,7 @@ commands that don't require one.
 
 | Command | Payload fields | Result | Error codes |
 |---|---|---|---|
+| `message.send` | `from: int`, `to: int`, `payload: any` | null | `ACTOR_NOT_FOUND` |
 | `message.drop` | `messageId: string` | null | `MESSAGE_NOT_FOUND`, `MESSAGE_ALREADY_DELIVERED` |
 | `message.delay` | `messageId: string`, `ticks: int` | null | `MESSAGE_NOT_FOUND`, `MESSAGE_ALREADY_DELIVERED`, `INVALID_ARGUMENT` |
 | `message.deliverNow` | `messageId: string` | null | `MESSAGE_NOT_FOUND`, `MESSAGE_ALREADY_DELIVERED` |
@@ -92,13 +114,18 @@ commands that don't require one.
 | Command | Payload fields | Result | Error codes |
 |---|---|---|---|
 | `actor.setField` | `actorId: int`, `field: string`, `value: any` | null | `ACTOR_NOT_FOUND`, `FIELD_NOT_FOUND`, `INVALID_ARGUMENT` |
-| `actor.invoke` | `actorId: int`, `method: string`, `args: any` | method return value | `ACTOR_NOT_FOUND`, `METHOD_NOT_FOUND`, `INVALID_ARGUMENT` |
+| `actor.invoke` | `actorId: int`, `method: string`, `args: [any, ...]` | method return value | `ACTOR_NOT_FOUND`, `METHOD_NOT_FOUND`, `INVALID_ARGUMENT` |
+
+`field` is a key of the snapshot's `fields`. `value` and `args` are converted to the Go field or
+parameter type; string, bool and numeric types are supported (a number must be integral for an
+integer type). For `actor.invoke`, a trailing `error` result is returned as an error frame when it
+is non-nil; otherwise the result is the single return value, an array of them, or null.
 
 ### Sim settings
 
 | Command | Payload fields | Result | Error codes |
 |---|---|---|---|
-| `sim.setSpeed` | `multiplier: float64` | null | `INVALID_ARGUMENT` |
+| `sim.setSpeed` | `tickDurationMs: int` | null | `INVALID_ARGUMENT` |
 | `sim.setTransitTime` | `ticks: int` | null | `INVALID_ARGUMENT` |
 
 Unrecognized `type` → `UNKNOWN_COMMAND` error.
@@ -110,12 +137,14 @@ Malformed JSON or unparseable payload → `BAD_PAYLOAD` error.
 
 | Event type | Payload fields |
 |---|---|
+| `message.sent` | `messageId`, `from`, `to`, `payload`, `sentTick`, `deliverAtTick` |
 | `message.delivered` | `messageId`, `from`, `to`, `payload` |
 | `message.dropped` | `messageId` |
 | `message.delayed` | `messageId`, `newDeliverTick` |
 | `actor.spawned` | `actorId`, `typeName` |
 | `actor.fieldChanged` | `actorId`, `field`, `value` |
-| `sim.settingsChanged` | `speedMultiplier`, `transitTicks` |
+| `sim.settingsChanged` | `tickDurationMs`, `transitTicks` |
+| `snapshot` | see [Snapshot](#snapshot--the-whole-world) |
 
 Every successful mutation emits a corresponding event. The ack confirms the command was
 accepted; the event is what the frontend renders from.
@@ -131,5 +160,5 @@ accepted; the event is what the frontend renders from.
 3. **Events are emitted only from the sim goroutine**, so `seq` assignment is race-free.
 4. **One writer goroutine** owns the WebSocket write side; acks, errors, events, and
    snapshots all funnel through it.
-5. **Snapshot before stream**: the snapshot is fetched at a tick boundary before the event
-   stream begins, ensuring a consistent starting state.
+5. **Snapshot before stream**: each connection subscribes to events, then fetches the snapshot at
+   a tick boundary and sends it before any events. Every connection receives every event.
