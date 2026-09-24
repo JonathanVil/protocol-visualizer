@@ -17,7 +17,7 @@
     /** @typedef {import('$lib/types.js').Actor} Actor */
     /** @typedef {import('$lib/types.js').TimeoutEntry} TimeOutEntry */
     /** @typedef {import('$lib/types.js').EditorTab} EditorTab */
-
+    /** @typedef {import('../lib/sim.svelte.js').InTransitMsg} InTransitMsg */
 
     /**@type {{ protocols: { name: string; content: string }[], docs: string }}*/
     export let data; // props from +page.server.js
@@ -53,106 +53,15 @@
     /** @type {Actor[]} */
     let cachedActors = [] // used when previewing and rewinding, this is the list of all actors at the latest point in the eventlog
 
-
-    /**
-     * @type {any[]}
-     */
-    let events = [];
-    /**
-     * @type {WebSocket}
-     */
-    let ws;
-
+    import { sim } from '../lib/sim.svelte.js';
     onMount(() => {
-        ws = new WebSocket('ws://localhost:8067/ws');
-        ws.onmessage = (e) => {
-            let data = JSON.parse(e.data);
-            let msg = data.Message;
-            let line = "Actor " + msg.From + " sent " + msg.Payload + " to Actor " + msg.To;
-            let entry = { tick: data.Tick, lines: [line], state: null };
-
-            eventLog = [...eventLog, entry];
-        };
-        return () => ws.close();
+        sim.connect();
+        return () => sim.disconnect();
     });
-
-    function start() { ws.send('start'); }
-    function stop() { ws.send('stop'); }
 
     /** @param {string|null} protocolName */
     function spawnActor(protocolName) {
-        if (selectedEditorTab?.model.getValue() == null) return;
-
-        /** @type {ActorConstructor|null} */
-        const actorClass = parseProtocolCode(selectedEditorTab?.model.getValue(), send, getActors, deleteTimeout, createQueue, timeout); // we need to give send here so the actor "knows" it
-
-        if (actorClass == null) {
-          console.error("Actor class not defined");
-          return;
-        }
-
-        let nextId = actors.length
-
-        //  svelte automatically updates them in the Graph.svelte
-        /** @type {Actor} */
-        let newActor = new actorClass(nextId);
-        newActor.alive = true;
-        newActor.protocolName = protocolName;
-
-        let actor = watchActor(newActor);
-        actors = [...actors, actor]; // Must be this way to be reactive in the UI
-
-        actorConnections.push([true])
-
-        for (let i = 0; i < actorConnections.length - 1; i++) {
-            actorConnections[i].push(true); // push new actor to other lists
-            actorConnections[nextId].push(true); // push other actors to new actor
-        }
-        console.log(actorConnections)
-
-        let event = "Adding " + protocolName + " actor"
-        console.log(event);
-        logEvent(event);
-    }
-
-
-    /**
-     * Deliver message to destination actor. Transform message to lightweight msg. Lastly invoke actors 'receive' method
-     * @param {Message} message
-     * @param {boolean} droppable // this is to ensure they are not dropped if manually delivered through message popper
-     */
-    function deliverMessage(message, droppable) {
-        // if the message is delivered to a inactive Actor, ignore it
-        if (!actors[message.destination].alive) {
-            let event = `Actor ${message.destination} would have received msg ${message.type} from Actor ${message.source}, but is dead`
-            console.log(event);
-            logEvent(event);
-            return;
-        }
-        // if connection is broken, dont deliver
-        if (!(actorConnections[message.source][message.destination])) {
-            let event = `Actor ${message.destination} would have received msg ${message.type} from Actor ${message.source}, but connection is severed`
-            console.log(event);
-            logEvent(event);
-            return;
-        }
-
-        if (droppable && dropChance > (Math.random() * 100)) {
-            let event = `Actor ${message.destination} would have received msg ${message.type} from Actor ${message.source}, but it was dropped due to random drop chance`
-            console.log(event);
-            logEvent(event);
-            return;
-        }
-
-        let event = `Actor ${message.destination} received msg ${message.type} from Actor ${message.source}`
-        if (message.data) {
-            event = `Actor ${message.destination} received msg ${message.type} with data ${message.data} from Actor ${message.source}`
-        }
-        console.log(event);
-        logEvent(event);
-        let actor = actors[message.destination];
-        let msg = {type: message.type, from: message.source, data: message.data};
-        actor.receive(msg)
+        sim.send("spawn", {protocolName: protocolName});
     }
 
     /**
@@ -161,46 +70,25 @@
      * @returns {boolean}
      */
     function toggleConnection(source, target) {
-        let newState = !(actorConnections[source][target]);
-        actorConnections[source][target] = newState;
-        actorConnections[target][source] = newState;
-
-        let status = "Connected to";
-        if (!newState) {status = "Disconnected from"; }
-
-        let event = `Actor ${source} ${status} Actor ${target}`
-        console.log(event);
-        logEvent(event);
-
-        return newState;
+        return false;
     }
 
     /** @type {(source: number, target: number, state: boolean) => void} */
     let setEdgeState;
 
     function startSimulation() {
-        start()
+        sim.start()
     }
 
     function pauseSimulation() {
-        stop()
+        sim.stop()
     }
 
     /** @type {() => void} */
     let resetGraph;
 
     function resetSimulation() {
-        messages = new Queue();
-        $timeoutsStore = new Queue();
-        eventLog = [];
-        actors = [];
-        cachedActors = [];
-        actorConnections = []
-        previewingRewind = false;
-        nextMessageId = -1;
-        tick = 0;
-        paused = true;
-        resetGraph();
+
     }
 
     function tickByOne() {
@@ -212,30 +100,11 @@
     }
 
     function handleTick() {
-        let startTime = Date.now()
-
-        const entry = eventLog.find(e => e.tick === tick);
-        if (entry) { //if last tick had an event, we save its state for rewinding
-            saveState()
-            console.log(entry)
-        }
-
-        tick++
         //update messages by one tick
         handleMessages()
 
         //update timeouts by one tick
         handleTimeouts()
-
-
-
-        if (!paused) {
-            let elapsedTime = Date.now() - startTime;
-            if (elapsedTime > tickSize) {
-                console.log(`--------------------TIME TO HANDLE TICK HIGHER THAN TICKSIZE--------------------`);
-            }
-            setTimeout(() => !paused && handleTick(), tickSize - elapsedTime); //we get tick size, not speed, since we want the interval at which we tick, not the frequency of ticks
-        }
     }
 
     /**
@@ -323,7 +192,6 @@
 
         if (actorsState.length < actors.length) {
             for (let i = actorsState.length; i < actors.length; i++) {
-                removeActorNode(actors[i]);
             }
             actors = actors.slice(0, actorsState.length);
         } else if (actorsState.length > actors.length) {
@@ -357,7 +225,6 @@
             }
         }
         for (let i = 0; i < actors.length; i++) {
-            updateActorStatePopper(actors[i]); // reflect the updated fields
         }
 
         clearMessageNodes();
@@ -371,7 +238,6 @@
 
         for (let m of messages.toArray()) {
             if (!restoredMessages.find(/** @param {Message} msg */ msg => msg.id === m.id)) {
-                removeMessageNode(m);
             }
         }
 
@@ -426,43 +292,13 @@
 
     }
 
-    /** @type {(msg: Message, instant: boolean) => void} */
+    /** @type {(msg: InTransitMsg, instant: boolean) => void} */
     let animateMessage;
+
     function handleMessages() {
-        let n = messages.length;
-        /** @type {Map<number, Message[]>} */
-        const deliverableMessages = new Map(); // map of actorID to messages waiting to be delivered to them
-        for (let i = 0; i < n; i++) {
-            let message = messages.pop()
-
-            if (message == null) continue;
-
-            animateMessage(message, false)
-
-            if (message.arrivalTick > tick) { // we only look at messages that should be delivered
-                messages.push(message);
-                continue;
-            }
-
-            // group messages by receiver id
-            let list = deliverableMessages.get(message.destination);
-            if (!list) {
-                list = [];
-            }
-
-            list.push(message);
-            deliverableMessages.set(message.destination, list);
+        for (let msg of sim.inTransit) {
+            animateMessage(msg, false);
         }
-
-        // deliver messages
-        for (const msgs of deliverableMessages.values()) {
-            shuffle(msgs); // shuffle messages before delivery to avoid deterministic order
-
-            for (let msg of msgs) {
-                deliverMessage(msg, true);
-            }
-        }
-
     }
 
     /** @param {Message[]} array **/
@@ -485,22 +321,6 @@
     }
 
     function handleTimeouts() {
-        let n = $timeoutsStore.length;
-        for (let i = 0; i < n; i++) {
-            let timer = $timeoutsStore.pop()
-            if (timer != null){
-                if (timer.ticks === 0){
-                    /** @type {Record<string, any>} */
-                    const actor = actors[timer.actorId];
-
-                    actor[timer.reaction]();
-                } else {
-                    timer.ticks -= 1
-                    $timeoutsStore.push(timer);
-                }
-            }
-        }
-        $timeoutsStore = $timeoutsStore;
     }
 
     /** @param {Message} message */
@@ -511,59 +331,11 @@
     /** @type {(actor: Actor) => void} */
     let updateActorStatePopper;
 
-    /** @param {Actor} actor */
-    function watchActor(actor) {
-        return new Proxy(actor, {
-            set(target, prop, value, receiver) {
-                const prev = Reflect.get(target, prop);
-                const success = Reflect.set(target, prop, value);
-
-                if (success && prev !== value && !restoringState) { //make sure restoring state is false, so we dont log rewinding
-                    let event = `Actor ${target.id} ${String(prop)} changed from ${prev} to ${value}`;
-                    console.log(event);
-                    logEvent(event);
-                    updateActorStatePopper(receiver);
-
-                    // reflect nodeColor in graph
-                    if (prop === "nodeColor" && changeColor) {
-                        changeColor(value, target);
-                    }
-                }
-                return true;
-            }
-        });
-    }
-
     /** @type {(color: any, actor: Actor) => void} */
     export let changeColor;
 
     /** @type {(actor: Actor) => void} */
     export let addActorNodeManually;
-
-    // These are the functions we export into the Actors
-
-    /** @param {number} from
-     *  @param {number} to
-     *  @param {string} type
-     *  @param {any} data
-     * */
-    function send(from, to, type, data) { //Example of use: send(this.id, msg.id, "PING", "Hello")
-        if (!(to < actors.length && to >= 0)) return; // cant send messages to freaks who are not real
-        if (!(from < actors.length && from >= 0)) return;
-
-
-        let event = `Actor ${from} sent msg ${type} to Actor ${to}`
-        if (data){
-            event = `Actor ${from} sent msg ${type} with data ${data} to Actor ${to}`
-        }
-        console.log(event);
-        logEvent(event);
-        let transitTime = getTransitTime();
-        let arrivalTick = tick + transitTime;
-        let message = {id: getNextMessageId(), source: Number(from), destination: Number(to), type: type, sentTick: tick, arrivalTick: arrivalTick, data: data}
-        messages.push(message)
-        animateMessage(message, false);
-    }
 
 
     function getActors() { //Example of use: let total actors = getActors()
@@ -618,15 +390,7 @@
      * @returns void
      * */
     function delayMessage(message, delay) {
-        if (message.arrivalTick - tick + delay <= 0) {
-            deliverMessage(message, false);
-        } else {
-            let event = `Message ${message.type} delayed by ${delay} ticks`
-            console.log(event);
-            logEvent(event);
-            message.arrivalTick = Number(message.arrivalTick) + Number(delay);
-            animateMessage(message, true);
-        }
+
     }
 
     /** Makes an actor inactive
@@ -635,21 +399,6 @@
      * @returns void
      * */
     export function toggleAlive(actor) {
-        if (actor.alive) {
-            actor.alive = false;
-            $timeoutsStore.remove(/** @param {TimeOutEntry} timeout */ timeout => timeout.actorId === actor.id)
-            let event = `Actor ${actor.id} was killed`
-            console.log(event);
-            logEvent(event);
-
-        } else
-        {
-            actor.alive = true;
-            let event = `Actor ${actor.id} was revived`
-            console.log(event);
-            logEvent(event);
-            actor.revive?.();
-        }
 
     }
 
@@ -754,19 +503,13 @@
         <Graph
                 bind:resetGraph={resetGraph}
                 bind:animateMessage={animateMessage}
-                bind:updateActorStatePopper={updateActorStatePopper}
-                bind:removeMessageNode={removeMessageNode}
-                bind:removeActorNode={removeActorNode}
                 bind:messages={messages}
-                toggleAlive={toggleAlive}
                 toggleConnection={toggleConnection}
-                deliverMessage={deliverMessage}
+                deliverMessage={() => console.log("deliverMessage")}
                 delayMessage={delayMessage}
                 logEvent={logEvent}
                 removeMessage={removeMessage}
                 bind:setEdgeState={setEdgeState}
-                bind:changeColor={changeColor}
-                bind:addActorNodeManually={addActorNodeManually}
                 bind:clearMessageNodes={clearMessageNodes}
                 actors={actors}
                 tickSize={tickSize}
@@ -829,7 +572,7 @@
     <!--Message block-->
     <div class="absolute bottom-2 left-14">
         <ManualMessageComponent
-                send={send}
+                send={() => console.log("send")}
         />
     </div>
 
