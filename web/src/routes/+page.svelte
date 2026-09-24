@@ -36,7 +36,8 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
-<div class="min-h-screen">
+<!-- Exactly one viewport tall: the graph fills what the nav bar leaves, and nothing scrolls. -->
+<div class="relative flex h-dvh flex-col overflow-hidden">
     <!--Top navigation bar-->
     <NavigationBar/>
 
@@ -63,7 +64,7 @@
     </aside>
 
     <!--Dotted graph (background)-->
-    <div class="cy-wrapper">
+    <div class="cy-wrapper min-h-0 flex-1">
         <Graph />
     </div>
 
@@ -111,9 +112,6 @@
 
 <style>
     .cy-wrapper {
-        width: 100vw;
-        height: 95vh;
-
         /* dots*/
         background-color: #ffffff;
         background-image: radial-gradient(#d1d5db 1px, transparent 1px);
