@@ -208,91 +208,88 @@ func (s *Simulator) DeliverNow(id string) error {
 	return nil
 }
 
-// SetActorField sets a named field on an actor.
+// SetActorField sets a named field on an actor. field is either the Go field
+// name or its json tag name, matching the keys used in snapshots.
 func (s *Simulator) SetActorField(actorID int, field string, value any) error {
 	actor := s.actors[actorID]
 	if actor == nil {
 		return ErrActorNotFound
 	}
-	v := reflect.ValueOf(actor).Elem()
-	fieldV := v.FieldByName("Name")
-	if !fieldV.IsValid() {
+	fieldV := fieldByWireName(reflect.ValueOf(actor).Elem(), field)
+	if !fieldV.IsValid() || !fieldV.CanSet() {
 		return ErrFieldNotFound
 	}
-
-	switch fieldV.Type().Kind() {
-	case reflect.String:
-		if reflect.TypeOf(value).Kind() != reflect.String {
-			return fmt.Errorf("%w: value must be a string", ErrInvalidArgument)
-		}
-		fieldV.SetString(value.(string))
-		break
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		if reflect.TypeOf(value).Kind() != reflect.Int {
-			return fmt.Errorf("%w: value must be an int", ErrInvalidArgument)
-		}
-		fieldV.SetInt(value.(int64))
-		break
-	case reflect.Bool:
-		if reflect.TypeOf(value).Kind() != reflect.Bool {
-			return fmt.Errorf("%w: value must be a bool", ErrInvalidArgument)
-		}
-		fieldV.SetBool(value.(bool))
-		break
-	case reflect.Float32, reflect.Float64:
-		if reflect.TypeOf(value).Kind() != reflect.Float64 {
-			return fmt.Errorf("%w: value must be a float64", ErrInvalidArgument)
-		}
-		fieldV.SetFloat(value.(float64))
-		break
-	default:
-		return fmt.Errorf("%w: unsupported field type %s", ErrInvalidArgument, fieldV.Type().Kind())
+	converted, err := convertValue(value, fieldV.Type())
+	if err != nil {
+		return err
 	}
+	fieldV.Set(converted)
 
-	s.emit(EventActorFieldChanged, ActorFieldChangedPayload{ActorID: actorID, Field: field, Value: value})
+	s.emit(EventActorFieldChanged, ActorFieldChangedPayload{ActorID: actorID, Field: field, Value: converted.Interface()})
 	return nil
 }
 
-// InvokeActor calls a named method on an actor.
-func (s *Simulator) InvokeActor(actorID int, method string, args ...any) (any, error) {
+// InvokeActor calls a named exported method on an actor. Arguments are
+// converted to the method's parameter types. A trailing error result is
+// returned as the error; remaining results are returned as a single value
+// (one result) or a slice (several results).
+func (s *Simulator) InvokeActor(actorID int, method string, args []any) (result any, err error) {
 	actor := s.actors[actorID]
 	if actor == nil {
 		return nil, ErrActorNotFound
 	}
-
-	v := reflect.ValueOf(actor).Elem()
-	methodV := v.MethodByName(method)
+	if isActorInterfaceMethod(method) {
+		return nil, ErrMethodNotFound
+	}
+	methodV := reflect.ValueOf(actor).MethodByName(method)
 	if !methodV.IsValid() {
 		return nil, ErrMethodNotFound
 	}
 
-	argsV := make([]reflect.Value, len(args))
-	for _, v := range args {
-		argsV = append(argsV, reflect.ValueOf(v))
+	methodT := methodV.Type()
+	if methodT.IsVariadic() {
+		return nil, fmt.Errorf("%w: variadic methods are not supported", ErrInvalidArgument)
 	}
-
-	values := methodV.Call(argsV)
-	realValues := make([]any, len(values))
-	for _, v := range values {
-		switch v.Type().Kind() {
-		case reflect.String:
-			realValues = append(realValues, v.String())
-			break
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			realValues = append(realValues, v.Int())
-			break
-		case reflect.Bool:
-			realValues = append(realValues, v.Bool())
-			break
-		case reflect.Float32, reflect.Float64:
-			realValues = append(realValues, v.Float())
-			break
-		default:
-			realValues = append(realValues, v.Interface())
+	if methodT.NumIn() != len(args) {
+		return nil, fmt.Errorf("%w: %s takes %d arguments, got %d", ErrInvalidArgument, method, methodT.NumIn(), len(args))
+	}
+	argsV := make([]reflect.Value, len(args))
+	for i, arg := range args {
+		argsV[i], err = convertValue(arg, methodT.In(i))
+		if err != nil {
+			return nil, fmt.Errorf("argument %d: %w", i, err)
 		}
 	}
 
-	return methodV.Call(argsV), nil
+	// Actor code is user code; don't let a panic take down the simulator.
+	defer func() {
+		if r := recover(); r != nil {
+			result, err = nil, fmt.Errorf("%s panicked: %v", method, r)
+		}
+	}()
+	out := methodV.Call(argsV)
+	// The method may have changed actor state outside a tick.
+	s.emit(EventSnapshot, s.GetSnapshot())
+
+	errorType := reflect.TypeFor[error]()
+	if n := len(out); n > 0 && out[n-1].Type() == errorType {
+		if !out[n-1].IsNil() {
+			return nil, out[n-1].Interface().(error)
+		}
+		out = out[:n-1]
+	}
+	switch len(out) {
+	case 0:
+		return nil, nil
+	case 1:
+		return out[0].Interface(), nil
+	default:
+		values := make([]any, len(out))
+		for i, v := range out {
+			values[i] = v.Interface()
+		}
+		return values, nil
+	}
 }
 
 // SetSpeed sets the tick duration

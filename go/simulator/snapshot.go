@@ -88,11 +88,9 @@ func structToMap(v any) (map[string]any, error) {
 		if !field.IsExported() {
 			continue
 		}
-		name := field.Name
-		if tag := field.Tag.Get("json"); tag != "" && tag != "-" {
-			name = strings.Split(tag, ",")[0]
+		if name := wireName(field); name != "" {
+			m[name] = val.Field(i).Interface()
 		}
-		m[name] = val.Field(i).Interface()
 	}
 	return m, nil
 }
