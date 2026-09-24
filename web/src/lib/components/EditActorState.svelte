@@ -57,7 +57,6 @@
         if (!editingKey) return;
 
         const nextValue = parseEditedValue(editText, editOriginalValue);
-        console.log(nextValue);
 
         save(nextValue);
 

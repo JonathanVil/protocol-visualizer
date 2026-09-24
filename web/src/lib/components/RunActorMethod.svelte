@@ -1,49 +1,55 @@
 <script>
+    import {parseLoose} from "$lib/format.js";
+
     /** @type {string} */
     export let methodName;
 
-    /** @type {string[]} */
-    export let argumentNames = [];
+    /** Go parameter types, e.g. "int", "string", "bool". @type {string[]} */
+    export let argumentTypes = [];
 
-    /** @type {(args: any[]) => void} */
+    /** @type {(args: unknown[]) => void} */
     export let run;
 
     /** @type {() => void} */
     export let cancel;
 
-    /** @type {{ name: string, value: string, type: 'String' | 'Number' }[]} */
-    let args = [];
+    /** @type {string[]} */
+    let values = [];
+    $: values = argumentTypes.map((_, i) => values[i] ?? '');
 
-    $: args = argumentNames.map((name, index) => {
-        const existing = args[index];
-        return {
-            name: existing?.name ?? name,
-            value: existing?.value ?? '',
-            type: existing?.type ?? 'String'
-        };
-    });
+    /** @param {string} type */
+    function isNumeric(type) {
+        return /^(u?int(8|16|32|64)?|float(32|64)|uintptr|byte|rune)$/.test(type);
+    }
 
     /**
-     * @param {{value: string, type: ("String"|"Number")}} arg
+     * @param {string} type
+     * @param {string} value
      */
-    function isInvalidNumberArg(arg) {
-        return arg?.type === 'Number' && arg.value.trim() !== '' && Number.isNaN(Number(arg.value));
+    function isInvalid(type, value) {
+        if (value.trim() === '') return false;
+        if (isNumeric(type)) return Number.isNaN(Number(value));
+        if (type === 'bool') return value !== 'true' && value !== 'false';
+        return false;
+    }
+
+    /**
+     * Converts the text input to the JSON value the backend expects for the Go type.
+     * @param {string} type
+     * @param {string} value
+     */
+    function parseArg(type, value) {
+        if (type === 'string') return value;
+        if (isNumeric(type)) return Number(value);
+        if (type === 'bool') return value === 'true';
+        return parseLoose(value);
     }
 
     function submit() {
-        if (args.length !== argumentNames.length) {
+        if (argumentTypes.some((type, i) => (values[i].trim() === '' && type !== 'string') || isInvalid(type, values[i]))) {
             return;
         }
-
-        if (args.some(isInvalidNumberArg)) {
-            return;
-        }
-
-        const parsedArgs = args.map((arg) =>
-            arg.type === 'Number' ? Number(arg.value) : arg.value
-        );
-
-        run(parsedArgs);
+        run(argumentTypes.map((type, i) => parseArg(type, values[i])));
     }
 </script>
 
@@ -57,11 +63,11 @@
                 class="rounded-md border border-white/10 bg-slate-950/95 p-2"
         >
             <div class="mb-1 flex items-center justify-between">
-                <div class="text-[12px] font-semibold opacity-90">Run: <code>{methodName}({argumentNames.join(', ')})</code></div>
+                <div class="text-[12px] font-semibold opacity-90">Run: <code>{methodName}({argumentTypes.join(', ')})</code></div>
                 <button
                         type="button"
                         class="inline-flex h-6 w-6 items-center justify-center rounded text-white/70 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                        aria-label="Close edit popup"
+                        aria-label="Close run popup"
                         title="Close"
                         on:click={cancel}
                 >
@@ -72,36 +78,26 @@
                 </button>
             </div>
 
-            {#if args.length > 0}
+            {#if argumentTypes.length > 0}
                 <div class="mt-3 space-y-2">
-                    {#each args as arg}
+                    {#each argumentTypes as type, i}
                         <div class="flex flex-row items-center justify-between gap-2">
-                            <label class="text-xs text-white/80" for={"arg-" + arg.name}>
-                                {arg.name}
+                            <label class="text-xs text-white/80" for={"arg-" + i}>
+                                arg{i} <span class="opacity-60">{type}</span>
                             </label>
 
                             <input
-                                id={"arg-" + arg.name}
-                                class="min-w-0 rounded border bg-white/5 px-2 py-1 text-xs text-white outline-none placeholder:text-white/35 focus:border-white/30 {isInvalidNumberArg(arg) ? 'border-red-500' : 'border-white/10'}"
-                                bind:value={arg.value}
-                                placeholder={"Enter " + arg.name}
+                                id={"arg-" + i}
+                                class="min-w-0 rounded border bg-white/5 px-2 py-1 text-xs text-white outline-none placeholder:text-white/35 focus:border-white/30 {isInvalid(type, values[i] ?? '') ? 'border-red-500' : 'border-white/10'}"
+                                bind:value={values[i]}
+                                placeholder={type === 'bool' ? 'true / false' : 'Enter ' + type}
                             />
-
-                            <select
-                                id={"arg-type-" + arg.name}
-                                class="rounded border border-white/10 bg-white/5 px-2 py-1 text-xs text-white outline-none focus:border-white/30"
-                                bind:value={arg.type}
-                            >
-                                <option value="String" class="text-black">String</option>
-                                <option value="Number" class="text-black">Number</option>
-                            </select>
                         </div>
                     {/each}
                 </div>
             {/if}
 
             <div class="mt-2 flex items-center justify-end gap-2">
-
                 <button
                         type="button"
                         class="rounded px-2 py-1 text-[12px] text-white/80 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
