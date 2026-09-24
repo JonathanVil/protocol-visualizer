@@ -1,82 +1,132 @@
-export interface Actor {
-	id: number;
-	typeName: string;
-}
+/**
+ * Client for the Go simulator's WebSocket protocol (see PROTOCOL.md).
+ *
+ * State is rebuilt from `snapshot` frames (sent on connect, every tick, and after
+ * commands that run actor code) and kept current in between by applying events.
+ * Event application is idempotent, so events that overlap a snapshot are harmless.
+ */
 
-export interface InTransitMsg {
-	id: number;
-	from: number;
-	to: number;
-	payload: unknown;
-	sentTick: number;
-	deliverAtTick: number;
-}
+/** @typedef {{ name: string, args: string[] }} MethodInfo */
 
-export interface SimEvent {
-	seq: number;
-	tick: number;
-	type: string;
-	payload: unknown;
-}
+/**
+ * @typedef {{
+ *   id: number,
+ *   typeName: string,
+ *   fields: Record<string, unknown>,
+ *   methods: MethodInfo[]
+ * }} Actor
+ */
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   from: number,
+ *   to: number,
+ *   payload: unknown,
+ *   sentTick: number,
+ *   deliverAtTick: number
+ * }} InTransitMsg
+ */
+
+/** @typedef {{ seq: number, tick: number, type: string, payload: any }} SimEvent */
+
+/** @typedef {{ tickDurationMs: number, transitTicks: number }} Settings */
+
+/**
+ * @typedef {{
+ *   tick: number,
+ *   running: boolean,
+ *   settings: Settings,
+ *   actors: Actor[] | null,
+ *   inTransit: InTransitMsg[] | null
+ * }} Snapshot
+ */
+
+export const DEFAULT_URL = 'ws://localhost:8067/ws';
+
+/** Maximum number of events kept in the log. */
+const MAX_LOG_EVENTS = 2000;
 
 class Sim {
 	connected = $state(false);
-	error = $state<string | null>(null);
+	/** @type {string | null} */
+	error = $state(null);
 	tick = $state(0);
 	running = $state(false);
+	/** @type {Actor[]} */
 	actors = $state([]);
+	/** @type {InTransitMsg[]} */
 	inTransit = $state([]);
+	/** @type {string[]} */
 	actorTypes = $state([]);
+	/** @type {SimEvent[]} */
 	eventLog = $state([]);
+	/** @type {Settings} */
+	settings = $state({ tickDurationMs: 1000, transitTicks: 1 });
 
+	/** @type {WebSocket | null} */
 	#ws = null;
 	#cmdId = 0;
+	/** @type {Map<string, { resolve: (r: any) => void, reject: (e: Error) => void }>} */
 	#pending = new Map();
 
-	connect(url = 'ws://localhost:8067/ws') {
+	connect(url = DEFAULT_URL) {
 		this.error = null;
 		this.#ws?.close();
 		const ws = new WebSocket(url);
 		this.#ws = ws;
 
 		ws.onopen = () => {
+			if (this.#ws !== ws) return;
 			this.connected = true;
+			// The snapshot that follows is the whole world; events from an earlier
+			// connection (possibly to a since-restarted program) no longer apply.
+			this.eventLog = [];
 			this.send('requestTypes')
-				.then((r) => { this.actorTypes = r; })
+				.then((types) => {
+					this.actorTypes = [...types].sort();
+				})
 				.catch(() => {});
 		};
-		ws.onclose = () => { this.connected = false; };
-		ws.onerror = () => { this.error = 'WebSocket error — is the backend running?'; };
+		ws.onclose = () => {
+			if (this.#ws !== ws) return;
+			this.connected = false;
+			this.#rejectPending(new Error('connection closed'));
+		};
+		ws.onerror = () => {
+			if (this.#ws !== ws) return;
+			this.error = `Cannot reach the simulator at ${url}. Is your Go program running?`;
+		};
 		ws.onmessage = (e) => {
-			try { this.#dispatch(JSON.parse(e.data )); }
-			catch { this.error = 'Failed to parse server message'; }
+			try {
+				this.#dispatch(JSON.parse(e.data));
+			} catch (err) {
+				console.error('Failed to handle server frame', err, e.data);
+			}
 		};
 	}
 
 	disconnect() {
-		this.#ws?.close();
+		const ws = this.#ws;
 		this.#ws = null;
+		ws?.close();
+		this.connected = false;
+		this.#rejectPending(new Error('disconnected'));
 	}
 
-	start() {
-		this.send('start')
-			.then(() => { this.running = true; })
+	// --- Commands ---
 
-	}
-	stop()  {
-		this.send('stop')
-			.then(() => { this.running = false; })
-	}
-	spawn(name) {
-		this.#fire('spawn', { name });
-	}
-
-	// Correlated send — resolves with ack result or rejects on error frame
+	/**
+	 * Sends a command and resolves with the ack result, or rejects with the error frame.
+	 * @param {string} type
+	 * @param {unknown} [payload]
+	 * @returns {Promise<any>}
+	 */
 	send(type, payload) {
 		const id = `c-${++this.#cmdId}`;
 		return new Promise((resolve, reject) => {
 			if (!this.#ws || this.#ws.readyState !== WebSocket.OPEN) {
-				reject(new Error('not connected'));
+				reject(new Error('Not connected to the simulator'));
 				return;
 			}
 			this.#pending.set(id, { resolve, reject });
@@ -84,94 +134,150 @@ class Sim {
 		});
 	}
 
-	#fire(type, payload) {
-		if (!this.#ws || this.#ws.readyState !== WebSocket.OPEN) {
-			this.error = 'Not connected';
-			return;
-		}
-		const id = `c-${++this.#cmdId}`;
-		this.#ws.send(JSON.stringify({ id, type, ...(payload !== undefined && { payload }) }));
+	start() {
+		return this.send('start').then(() => {
+			this.running = true;
+		});
 	}
 
+	stop() {
+		return this.send('stop').then(() => {
+			this.running = false;
+		});
+	}
+
+	/** @param {string} name */
+	spawn(name) {
+		return this.send('spawn', { name });
+	}
+
+	/** @param {number} from @param {number} to @param {unknown} payload */
+	sendMessage(from, to, payload) {
+		return this.send('message.send', { from, to, payload });
+	}
+
+	/** @param {string} messageId */
+	dropMessage(messageId) {
+		return this.send('message.drop', { messageId });
+	}
+
+	/** @param {string} messageId @param {number} ticks */
+	delayMessage(messageId, ticks) {
+		return this.send('message.delay', { messageId, ticks });
+	}
+
+	/** @param {string} messageId */
+	deliverNow(messageId) {
+		return this.send('message.deliverNow', { messageId });
+	}
+
+	/** @param {number} actorId @param {string} field @param {unknown} value */
+	setField(actorId, field, value) {
+		return this.send('actor.setField', { actorId, field, value });
+	}
+
+	/** @param {number} actorId @param {string} method @param {unknown[]} args */
+	invoke(actorId, method, args) {
+		return this.send('actor.invoke', { actorId, method, args });
+	}
+
+	/** @param {number} tickDurationMs */
+	setTickDuration(tickDurationMs) {
+		return this.send('sim.setSpeed', { tickDurationMs });
+	}
+
+	/** @param {number} ticks */
+	setTransitTicks(ticks) {
+		return this.send('sim.setTransitTime', { ticks });
+	}
+
+	// --- Inbound frames ---
+
+	/** @param {any} frame */
 	#dispatch(frame) {
 		switch (frame.type) {
-			case 'snapshot': {
-				const p = frame.payload;
-				this.tick = p.Tick;
-				this.running = p.Running;
-				this.actors = (p.Actors ?? []).map((a) => ({ id: a.id, typeName: a.typeName }));
-				this.inTransit = (p.Messages ?? []).map((m) => ({
-					id: m.Id, from: m.From, to: m.To,
-					payload: m.Payload, sentTick: m.SentTick, deliverAtTick: m.DeliverAtTick,
-				}));
+			case 'snapshot':
+				this.#applySnapshot(frame.payload);
 				break;
-			}
-			case 'ack': {
-				const pending = this.#pending.get(frame.replyTo );
-				if (pending) {
-					this.#pending.delete(frame.replyTo );
-					pending.resolve(frame.result);
-				}
+			case 'ack':
+				this.#settle(frame.replyTo)?.resolve(frame.result);
 				break;
-			}
-			case 'error': {
-				const pending = this.#pending.get(frame.replyTo );
-				if (pending) {
-					this.#pending.delete(frame.replyTo );
-					pending.reject(new Error(`${frame.code}: ${frame.message}`));
-				}
-				console.warn('sim error:', frame.code, frame.message);
+			case 'error':
+				this.#settle(frame.replyTo)?.reject(new Error(frame.message ?? frame.code));
 				break;
-			}
 			default: {
-				// Simulation event
-				const seq = frame.seq ;
-				const tick = frame.tick ;
-				this.eventLog = [
-					...this.eventLog,
-					{ seq, tick, type: frame.type , payload: frame.payload },
-				];
-				if (tick > this.tick) this.tick = tick;
-				/*
-				if (frame.payload) {
-					this.#applyEvent(frame.type , frame.payload as Record<string, unknown>);
+				/** @type {SimEvent} */
+				const event = { seq: frame.seq, tick: frame.tick, type: frame.type, payload: frame.payload };
+				this.#applyEvent(event);
+				this.eventLog.push(event);
+				if (this.eventLog.length > MAX_LOG_EVENTS) {
+					this.eventLog.splice(0, this.eventLog.length - MAX_LOG_EVENTS);
 				}
-				*/
+				if (event.tick > this.tick) this.tick = event.tick;
 			}
 		}
 	}
 
-	#applyEvent(type, p) {
+	/** @param {Snapshot} p */
+	#applySnapshot(p) {
+		this.tick = p.tick;
+		this.running = p.running;
+		this.settings = p.settings;
+		this.actors = p.actors ?? [];
+		this.inTransit = p.inTransit ?? [];
+	}
+
+	/** @param {SimEvent} event */
+	#applyEvent({ type, payload: p }) {
 		switch (type) {
 			case 'actor.spawned':
-				this.actors = [...this.actors, { id: p.actorId , typeName: p.typeName  }];
+				if (!this.actors.some((a) => a.id === p.actorId)) {
+					this.actors.push({ id: p.actorId, typeName: p.typeName, fields: {}, methods: [] });
+				}
 				break;
+			case 'actor.fieldChanged': {
+				const actor = this.actors.find((a) => a.id === p.actorId);
+				if (actor) actor.fields[p.field] = p.value;
+				break;
+			}
 			case 'message.sent':
-				// Backend will emit this once the plan is implemented
-				this.inTransit = [...this.inTransit, {
-					id: p.messageId,
-					from: p.from,
-					to: p.to,
-					payload: p.payload,
-					sentTick: p.sentTick,
-					deliverAtTick: p.deliverTick,
-				}];
+				if (!this.inTransit.some((m) => m.id === p.messageId)) {
+					this.inTransit.push({
+						id: p.messageId,
+						from: p.from,
+						to: p.to,
+						payload: p.payload,
+						sentTick: p.sentTick,
+						deliverAtTick: p.deliverAtTick
+					});
+				}
 				break;
 			case 'message.delivered':
 			case 'message.dropped':
-				this.inTransit = this.inTransit.filter((m) => m.id !== (p.messageId ));
+				this.inTransit = this.inTransit.filter((m) => m.id !== p.messageId);
 				break;
-			case 'message.delayed':
-				this.inTransit = this.inTransit.map((m) =>
-					m.id === (p.messageId )
-						? { ...m, deliverAtTick: p.newDeliverTick }
-						: m
-				);
+			case 'message.delayed': {
+				const msg = this.inTransit.find((m) => m.id === p.messageId);
+				if (msg) msg.deliverAtTick = p.newDeliverTick;
 				break;
-			case 'clock.tick':
-				this.tick = (p.tick ) ?? this.tick;
+			}
+			case 'sim.settingsChanged':
+				this.settings = { tickDurationMs: p.tickDurationMs, transitTicks: p.transitTicks };
 				break;
 		}
+	}
+
+	/** @param {string} replyTo */
+	#settle(replyTo) {
+		const pending = this.#pending.get(replyTo);
+		this.#pending.delete(replyTo);
+		return pending;
+	}
+
+	/** @param {Error} err */
+	#rejectPending(err) {
+		for (const { reject } of this.#pending.values()) reject(err);
+		this.#pending.clear();
 	}
 }
 
