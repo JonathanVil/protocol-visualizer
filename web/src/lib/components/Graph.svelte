@@ -1,185 +1,7 @@
-﻿<script>
-    import {mount, unmount, onMount, onDestroy} from 'svelte';
+<script module>
     import cytoscape from 'cytoscape';
     import cytoscapePopper from 'cytoscape-popper';
-    import {
-        computePosition,
-        flip,
-        shift,
-        limitShift,
-    } from '@floating-ui/dom';
-    import ActorPopper from "$lib/components/ActorPopper.svelte";
-    import {writable} from "svelte/store";
-    import MessagePopper from "$lib/components/MessagePopper.svelte";
-    import {createPopper} from "@popperjs/core";
-    import {Queue} from '$lib/datastructures/Queue.js';
-    import {sim} from "../sim.svelte.js";
-
-    /** @typedef {import('../sim.svelte.js').InTransitMsg} InTransitMsg */
-    /** @typedef {import('../sim.svelte.js').Actor} Actor */
-
-    /** @type {number} */
-    export let tickSize;
-
-    /** @type {number} */
-    export let tick;
-
-    /** @type {Queue} */
-    export let messages = new Queue();
-    /** @type {{ source: number, target: number, label: string }[]} */
-    let edges = [];
-
-    /** @type {import('cytoscape').NodeSingular[]} */
-    let graphMessageNodes = [];
-
-    /** @type {HTMLElement} */
-    let cyContainer;
-
-    /** @type {any} */
-    let cyInstance;
-
-    /** Map from message ID to corresponding message graph node
-     *  @type {Map<number, import('cytoscape').NodeSingular>} */
-    const messagesToNodes = new Map();
-
-
-    /** @typedef {import('svelte/store').Writable<Actor>} ActorStore */
-    /**
-     * @type {Map<number, {
-     *   popper: any,
-     *   actorStore: ActorStore,
-     *   el: HTMLElement,
-     *   component: any,
-     *   node: any,
-     *   update: () => void
-     * }>}
-     */
-    const poppers = new Map();
-
-    /**
-     * @param {number} id
-     */
-    function removeActorStatePopper(id) {
-        const entry = poppers.get(id);
-        if (!entry) return;
-
-        // Remove event listeners (must match original handler references)
-        entry.node?.off?.('position', entry.update);
-        cyInstance?.off?.('pan zoom resize', entry.update);
-
-        // If popper implementation supports destroy, call it (guarded)
-        try {
-            entry.popper?.destroy?.();
-        } catch {
-            // ignore
-        }
-
-        // Unmount Svelte component + remove its container
-        try {
-            unmount(entry.component);
-        } catch {
-            // ignore
-        }
-        entry.el?.remove();
-
-        poppers.delete(id);
-    }
-
-    function removeAllPoppers() {
-        for (const id of poppers.keys()) {
-            removeActorStatePopper(id);
-        }
-        poppers.clear();
-    }
-
-    /**
-     * Used to reset the visuals in the graph
-     */
-    export function resetGraph() {
-
-    }
-
-    // Helper: convert Actor → cytoscape node
-    /**
-     * @param {Actor} actor
-     */
-    function actorToNode(actor) {
-        //Check if color contains opacity & is hex
-        let color = '#1d4ed8';
-        if (color.includes("#")) {color = color.slice(0, 7);}
-
-        return {
-            data: { id: String(actor.id), color: color }, // cytoscape needs string IDs
-            classes: 'actor'
-        };
-    }
-
-    // Helper: ensure an actor node exists
-    /** @param {Actor} actor */
-    function ensureActorNode(actor) {
-        const id = String(actor.id);
-        const existing = cyInstance.getElementById(id);
-        if (!existing.empty()) return { added: false, id };
-
-        cyInstance.add(actorToNode(actor));
-
-        // add popper
-        updateActorStatePopper(actor);
-
-        return { added: true, id };
-    }
-
-    /** @param {Actor} actor */
-    export function removeActorNode(actor) {
-        const nodeId = String(actor.id);
-        cyInstance.getElementById(nodeId).remove();
-        removeActorStatePopper(actor.id);
-        rearrangeGraph()
-    }
-
-    // Helper: ensure an edge exists
-    /**
-     * @param {{ source: number, target: number, label: string }} e
-     */
-    function ensureEdge(e) {
-        const source = String(e.source);
-        const target = String(e.target);
-        const edgeId = `${source}->${target}`; // deterministic id prevents duplicates
-
-        const existing = cyInstance.getElementById(edgeId);
-        if (!existing.empty()) return false;
-
-        cyInstance.add({
-            group: 'edges',
-            data: { id: edgeId, source, target, label: e.label ?? "" }
-        });
-        return true;
-    }
-
-    // Helper: adds or updates a "popper" displaying the actor state to cytoscape nodes
-    /**
-     * @param {Actor} actor
-     */
-    export function updateActorStatePopper(actor) {
-    }
-
-    /** Toggle all Actor Poppers*/
-    /** @param {boolean} collapsed */
-    function setActorStateCollapsed(collapsed) {
-        poppers.forEach(popper => {
-            popper?.component.setStateCollapsed(collapsed);
-            popper?.update();
-        });
-    }
-
-    /** @param {boolean} collapsed */
-    function setActorMethodsCollapsed(collapsed) {
-        poppers.forEach(popper => {
-            popper?.component.setMethodsCollapsed(collapsed);
-            popper?.update();
-        });
-    }
-
+    import {computePosition, flip, shift, limitShift} from '@floating-ui/dom';
 
     /**
      * @param {cytoscapePopper.RefElement} ref
@@ -189,8 +11,6 @@
     function popperFactory(ref, content, options) {
         // see https://floating-ui.com/docs/computePosition#options
         const popperOptions = {
-            // matching the default behaviour from Popper@2
-            // https://floating-ui.com/docs/migration#configure-middleware
             middleware: [
                 flip(),
                 shift({limiter: limitShift()})
@@ -211,16 +31,113 @@
     }
 
     cytoscape.use(cytoscapePopper(popperFactory));
+</script>
+
+<script>
+    import {mount, unmount, onMount, untrack} from 'svelte';
+    import ActorPopper from "$lib/components/ActorPopper.svelte";
+    import MessagePopper from "$lib/components/MessagePopper.svelte";
+    import {sim} from "$lib/sim.svelte.js";
+    import {payloadLabel} from "$lib/format.js";
+
+    /** @typedef {import('$lib/sim.svelte.js').InTransitMsg} InTransitMsg */
+
+    /** @type {HTMLElement} */
+    let cyContainer;
+
+    /** Layer that holds the actor and message poppers. @type {HTMLElement} */
+    let uiLayer;
+
+    /** @type {import('cytoscape').Core | null} */
+    let cy = $state(null);
+
+    /** Bumped after every layout, so message positions are recomputed. */
+    let layoutVersion = $state(0);
+
+    /**
+     * A Svelte component mounted next to a graph node.
+     * @typedef {{ el: HTMLElement, component: any, node: any, update: () => void }} Popper
+     */
+
+    /** @type {Map<number, Popper>} */
+    const actorPoppers = new Map();
+
+    /** @type {Map<string, Popper>} */
+    const messagePoppers = new Map();
+
+    /**
+     * Mounts a component in a popper anchored to a graph node.
+     * @param {any} node
+     * @param {any} Component
+     * @param {Record<string, any>} props may contain getters, which stay reactive
+     * @param {object} [options]
+     * @returns {Popper}
+     */
+    function mountPopper(node, Component, props, options) {
+        const el = document.createElement('div');
+        el.style.position = 'absolute';
+        uiLayer.appendChild(el);
+
+        const popper = node.popper({content: () => el, popper: options});
+        const update = () => popper.update();
+        // Object.assign rather than spreading, which would evaluate (and freeze) the getters.
+        const component = mount(Component, {target: el, props: Object.assign(props, {reposition: update})});
+        node.on('position', update);
+        cy?.on('pan zoom resize', update);
+        return {el, component, node, update};
+    }
+
+    /** @param {Popper | undefined} entry */
+    function unmountPopper(entry) {
+        if (!entry) return;
+        entry.node.off('position', entry.update);
+        cy?.off('pan zoom resize', entry.update);
+        unmount(entry.component);
+        entry.el.remove();
+    }
+
+    /** @param {boolean} collapsed */
+    function setActorStateCollapsed(collapsed) {
+        for (const popper of actorPoppers.values()) {
+            popper.component.setStateCollapsed(collapsed);
+            popper.update();
+        }
+    }
+
+    /** @param {boolean} collapsed */
+    function setActorMethodsCollapsed(collapsed) {
+        for (const popper of actorPoppers.values()) {
+            popper.component.setMethodsCollapsed(collapsed);
+            popper.update();
+        }
+    }
+
+    /** @param {string} id */
+    function closeMessagePopper(id) {
+        unmountPopper(messagePoppers.get(id));
+        messagePoppers.delete(id);
+    }
+
+    /** @param {any} node */
+    function openMessagePopper(node) {
+        const id = node.id();
+        if (messagePoppers.has(id)) return;
+
+        messagePoppers.set(id, mountPopper(node, MessagePopper, {
+            get message() { return sim.inTransit.find(m => m.id === id); },
+            close: () => closeMessagePopper(id),
+        }, {placement: 'right'}));
+    }
 
     onMount(() => {
-        cyInstance = cytoscape({
+        const instance = cytoscape({
             container: cyContainer,
             elements: [],
             style: [
                 {
-                    selector: 'node',
+                    selector: 'node.actor',
                     style: {
-                        'background-color': 'data(color)',
+                        'background-color': '#1d4ed8',
                         label: 'data(id)',
                         color: '#fff',
                         'text-valign': 'center',
@@ -233,274 +150,139 @@
                     style: {
                         width: 2,
                         'line-color': '#707075',
-                        'target-arrow-color': '#707075',
                         'curve-style': 'bezier',
-                        label: 'data(label)',
-                        'font-size': '10px',
-                        'text-rotation': 'autorotate',
-                        'text-margin-y': -5
                     }
                 },
                 {
-                    selector: '.message',
+                    selector: 'node.message',
                     style: {
                         'background-color': '#253478',
-                        label: "data(type)",
-                        'width': 25,
-                        'height': 25
+                        label: 'data(label)',
+                        'font-size': '10px',
+                        width: 25,
+                        height: 25
                     }
                 }
             ],
-            layout: { name: 'circle', animate: true}
         });
 
-        //Listen for clicks on message nodes
-        cyInstance.on('tap', '.message',
-            /** @param {import('cytoscape').EventObject} evt - The Cytoscape event object*/
-            (evt) => {
+        instance.on('tap', 'node.message', (evt) => openMessagePopper(evt.target));
+
+        cy = instance;
+        return () => {
+            for (const popper of [...actorPoppers.values(), ...messagePoppers.values()]) {
+                unmountPopper(popper);
             }
-        )
-        cyInstance.on('tap', 'edge',
-            /** @param {import('cytoscape').EventObject} evt - The Cytoscape event object*/
-            (evt) => {
-                toggleEdge(evt);
-            }
-        )
+            actorPoppers.clear();
+            messagePoppers.clear();
+            instance.destroy();
+        };
     });
 
-    onDestroy(() => {
-        // If Graph component is removed, ensure poppers/components don’t leak
-        removeAllPoppers();
-    });
+    // Sync actors → nodes (fully connected, as the backend has no network topology yet).
+    $effect(() => {
+        if (!cy) return;
+        const graph = cy;
+        const ids = new Set(sim.actors.map(a => String(a.id)));
+        let changed = false;
 
+        graph.batch(() => {
+            graph.nodes('.actor').forEach(node => {
+                if (ids.has(node.id())) return;
+                unmountPopper(actorPoppers.get(Number(node.id())));
+                actorPoppers.delete(Number(node.id()));
+                node.remove(); // also removes its edges
+                changed = true;
+            });
 
-    /** @type {(event: String) => void}  */
-    export let logEvent;
+            for (const actor of sim.actors) {
+                const id = String(actor.id);
+                if (!graph.getElementById(id).empty()) continue;
 
-    /** Function used to kill an actor in page.svelte (from graph -> page.svelte)
-     * @type {(actor: Actor) => void} */
-    export let toggleAlive;
-
-    /** @type {(source: number, target: number) => boolean}  */
-    export let toggleConnection;
-
-    /**
-     * @param {import('cytoscape').EventObject} evt - The Cytoscape event object
-     */
-    function toggleEdge(evt) {
-        let edge = evt.target;
-
-        const source = Number(edge.source().id());
-        const target = Number(edge.target().id());
-
-        let active = toggleConnection(source, target);
-
-        if (active) {
-            edge.style('line-color', '#707075');
-            edge.style('target-arrow-color', '#707075');
-            edge.style('line-style', 'solid');
-        } else {
-            edge.style('line-color', '#b8b8bd');
-            edge.style('target-arrow-color', '#b8b8bd');
-            edge.style('line-style', 'dotted');
-        }
-    }
-
-    /**@param {number} source
-     * @param {number} target
-     * @param {boolean} state */
-    export function setEdgeState(source, target, state) {
-        const edgeId = `${source}->${target}`;
-        let edge = cyInstance.getElementById(edgeId);
-
-        if (edge.empty()) {
-            edge = cyInstance.getElementById(`${target}->${source}`);
-        }
-
-        if (edge.empty()) {
-            console.warn("Edge not found:", edgeId);
-            return;
-        }
-
-        if (state) {
-            edge.style('line-color', '#707075');
-            edge.style('target-arrow-color', '#707075');
-            edge.style('line-style', 'solid');
-        } else {
-            edge.style('line-color', '#b8b8bd');
-            edge.style('target-arrow-color', '#b8b8bd');
-            edge.style('line-style', 'dotted');
-        }
-    }
-
-    /**
-     * @param {any} color
-     * @param {Actor} actor
-     * */
-    export function changeColor(color, actor){
-        if (typeof color === 'string') {
-            if (color.includes("#")) {color = color.slice(0, 7);}
-            const node = cyInstance.getElementById(String(actor.id));
-            node.style("background-color", color);
-        } else {
-            console.error("color not a string", color);
-        }
-    }
-
-    /** @param {Actor} actor **/
-    export function addActorNodeManually(actor){
-        if (!actor) {
-            console.warn("addActorNodeManually called with undefined actor");
-            return;
-        }
-
-        cyInstance.batch(() => {
-
-            const { added } = ensureActorNode(actor);
-            if (!added) return;
-
-            const newId = String(actor.id);
-
-            const existingActors = cyInstance.nodes(`.actor[id != "${newId}"]`);
-
-            for (const node of existingActors) {
-
-                const otherNum = Number(node.id());
-                const newNum = Number(newId);
-
-                const source = otherNum
-                const target = newNum
-
-
-                const newEdge = { source, target, label: "" };
-
-                const edgeAdded = ensureEdge(newEdge);
-
-                if (edgeAdded) {
-                    edges = [...edges, newEdge];
-                }
-            }
-
-            rearrangeGraph();
-        });
-    }
-
-    //Adding Nodes (incrementally)
-    $: if (cyInstance) {
-
-        console.log("Updating graph");
-
-        // Only add what’s new; do NOT remove existing nodes/edges/messages
-        cyInstance.batch(() => {
-            let addedSomething = false;
-
-            // 1) Ensure all actor nodes exist
-            const actors = sim.actors;
-            for (const actor of actors) {
-                const { added } = ensureActorNode(actor);
-                if (added) addedSomething = true;
-            }
-
-            // 2) Keep your “connect everyone to newest node” behavior,
-            //    but only create missing edges (no duplicates)
-            if (actors.length >= 2) {
-                const newest = actors[actors.length - 1];
-                for (let i = 0; i < actors.length - 1; i++) {
-                    const nodeA = actors[i];
-                    const newEdge = { source: nodeA.id, target: newest.id, label: "" };
-
-                    // keep your local edges array updated (optional but consistent)
-                    // and ensure the edge exists in Cytoscape
-                    const edgeAdded = ensureEdge(newEdge);
-                    if (edgeAdded) {
-                        edges = [...edges, newEdge];
-                        addedSomething = true;
-                    }
-                }
-            }
-
-            // 3) Only re-run layout when we actually added nodes/edges
-            if (addedSomething) {
-                rearrangeGraph()
+                const others = graph.nodes('.actor');
+                graph.add({group: 'nodes', data: {id}, classes: 'actor'});
+                others.forEach(other => {
+                    graph.add({group: 'edges', data: {id: `${other.id()}-${id}`, source: other.id(), target: id}});
+                });
+                changed = true;
             }
         });
-    }
 
-    function rearrangeGraph() {
-        cyInstance.nodes('.actor')
+        if (!changed) return;
+
+        graph.nodes('.actor')
             .layout({name: 'circle', radius: 120, avoidOverlap: true, fit: true})
             .run();
 
-        let n = messages.length;
-        for (let i = 0; i < n; i++) {
-            let message = messages.pop()
-            if (message == null) continue;
-            messages.push(message);
-            animateMessage(message, true)
+        const newIds = sim.actors.map(a => a.id).filter(id => !actorPoppers.has(id));
+        untrack(() => {
+            layoutVersion++;
+
+            // Poppers are mounted after layout so they are placed next to their final node position.
+            for (const actorId of newIds) {
+                actorPoppers.set(actorId, mountPopper(graph.getElementById(String(actorId)), ActorPopper, {
+                    get actor() { return sim.actors.find(a => a.id === actorId); },
+                    setStateCollapsedGlobal: setActorStateCollapsed,
+                    setMethodsCollapsedGlobal: setActorMethodsCollapsed,
+                }));
+            }
+        });
+    });
+
+    // Sync in-transit messages → message nodes, animated along their edge.
+    $effect(() => {
+        if (!cy) return;
+        const graph = cy;
+        const {tick, running} = sim;
+        const duration = sim.settings.tickDurationMs;
+        const version = layoutVersion;
+        const live = new Set(sim.inTransit.map(m => m.id));
+
+        graph.nodes('.message').forEach(node => {
+            if (live.has(node.id())) return;
+            untrack(() => closeMessagePopper(node.id()));
+            node.remove();
+        });
+
+        for (const msg of sim.inTransit) {
+            const src = graph.getElementById(String(msg.from));
+            const dst = graph.getElementById(String(msg.to));
+            if (src.empty() || dst.empty()) continue;
+
+            let node = graph.getElementById(msg.id);
+            if (node.empty()) {
+                node = graph.add({
+                    group: 'nodes',
+                    data: {id: msg.id, label: payloadLabel(msg.payload)},
+                    position: {...src.position()},
+                    classes: 'message',
+                });
+            }
+
+            // Only restart the animation when something affecting it changed, so
+            // unrelated updates (e.g. another message being sent) don't make it jump.
+            const key = `${tick}:${msg.deliverAtTick}:${running}:${version}`;
+            if (node.scratch('animKey') === key) continue;
+            node.scratch('animKey', key);
+
+            const sp = src.position();
+            const dp = dst.position();
+            const total = Math.max(1, msg.deliverAtTick - msg.sentTick);
+            /** @param {number} ticksElapsed */
+            const positionAt = (ticksElapsed) => {
+                const t = Math.min(1, Math.max(0, ticksElapsed / total));
+                return {x: sp.x + (dp.x - sp.x) * t, y: sp.y + (dp.y - sp.y) * t};
+            };
+
+            node.stop();
+            node.position(positionAt(tick - msg.sentTick));
+            if (running) {
+                // Head for where the message will be at the next tick.
+                node.animate({position: positionAt(tick + 1 - msg.sentTick)}, {duration, easing: 'linear'});
+            }
         }
-    }
-
-    /** @param {InTransitMsg} message
-     *  @param {boolean} instant */
-    export function animateMessage(message, instant) {
-        const source = cyInstance.getElementById(message.from).position();
-        const target = cyInstance.getElementById(message.to).position();
-
-        if (source == null || target == null) return;
-
-        //Create the message node in graph, if it does not exist.
-        let msg = cyInstance.getElementById(message.id)
-        if (msg.empty()) {
-            msg = cyInstance.add({
-                group: 'nodes',
-                data: {id: message.id, type: message.payload},
-                position: {x: source.x, y: source.y},
-                classes: 'message'
-            });
-            graphMessageNodes.push(msg);
-            messagesToNodes.set(message.id, msg);
-        }
-
-        let elapsedTicks = (tick - message.sentTick)
-        let transitTicks = (message.deliverAtTick - message.sentTick) - 1
-        if (tick > message.deliverAtTick){ // dont overshoot if a message is in queue
-            elapsedTicks = message.deliverAtTick - message.sentTick;
-        }
-
-        // elapsedticks             transitTicks
-        let targetPosThisTickX = source.x + (((target.x - source.x) * elapsedTicks) / transitTicks)
-        let targetPosThisTickY = source.y + (((target.y - source.y) * elapsedTicks) / transitTicks)
-
-        if (elapsedTicks >= transitTicks) {
-            targetPosThisTickX = target.x;
-            targetPosThisTickY = target.y;
-        }
-
-        if (instant) {
-            msg.position({ x: targetPosThisTickX, y: targetPosThisTickY });
-        } else {
-            msg.animate({
-                position: {x: targetPosThisTickX, y: targetPosThisTickY}
-            }, {
-                duration: tickSize,
-                easing: 'linear',
-                queue: false,
-                complete: () => {
-                    if (!(messages.find(/** @param {InTransitMsg} msg */msg => msg.id == message.id))) {
-                        // remove message node from graph & array
-
-                        if (msg.scratch('messagePopup')) {
-                            messagesToNodes.delete(message.id);
-                        }
-                        cyInstance.remove(msg);
-                        graphMessageNodes.splice(graphMessageNodes.indexOf(msg), 1);
-
-                    }
-                }
-            });
-        }
-    }
-
+    });
 </script>
 
-<div bind:this={cyContainer} class="w-full h-96 border border-gray-300 rounded-md relative overflow-hidden"></div>
+<div bind:this={cyContainer} class="cy-graph w-full h-96 border border-gray-300 rounded-md relative overflow-hidden"></div>
+<div bind:this={uiLayer}></div>
