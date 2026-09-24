@@ -28,6 +28,7 @@ type Simulator struct {
 	mu             sync.Mutex
 	actors         map[int]Actor
 	actorTypeNames map[int]string
+	dead           map[int]bool
 	tickQueues     map[int][]Message
 	deliveredIDs   map[string]bool
 	tick           int
@@ -47,6 +48,7 @@ func New() *Simulator {
 	return &Simulator{
 		actors:         make(map[int]Actor),
 		actorTypeNames: make(map[int]string),
+		dead:           make(map[int]bool),
 		tickQueues:     make(map[int][]Message),
 		deliveredIDs:   make(map[string]bool),
 		tick:           0,
@@ -149,6 +151,9 @@ func (s *Simulator) Send(from, to int, payload any) error {
 	if _, ok := s.actors[to]; !ok {
 		return fmt.Errorf("%w: %d", ErrActorNotFound, to)
 	}
+	if s.dead[from] {
+		return fmt.Errorf("%w: %d", ErrActorDead, from)
+	}
 
 	msg := Message{ID: newMessageID(), From: from, To: to, Payload: payload, SentTick: s.tick}
 	idx := s.tick + s.TransitTicks
@@ -245,6 +250,9 @@ func (s *Simulator) InvokeActor(actorID int, method string, args []any) (result 
 	if actor == nil {
 		return nil, ErrActorNotFound
 	}
+	if s.dead[actorID] {
+		return nil, fmt.Errorf("%w: %d", ErrActorDead, actorID)
+	}
 	if isActorInterfaceMethod(method) {
 		return nil, ErrMethodNotFound
 	}
@@ -268,12 +276,7 @@ func (s *Simulator) InvokeActor(actorID int, method string, args []any) (result 
 		}
 	}
 
-	// Actor code is user code; don't let a panic take down the simulator.
-	defer func() {
-		if r := recover(); r != nil {
-			result, err = nil, fmt.Errorf("%s panicked: %v", method, r)
-		}
-	}()
+	defer recoverActorPanic(method, &err)
 	out := methodV.Call(argsV)
 	// The method may have changed actor state outside a tick.
 	s.emit(EventSnapshot, s.GetSnapshot())
@@ -296,6 +299,53 @@ func (s *Simulator) InvokeActor(actorID int, method string, args []any) (result 
 			values[i] = v.Interface()
 		}
 		return values, nil
+	}
+}
+
+// KillActor stops an actor: messages arriving at it are dropped, and it can
+// neither send messages nor have its methods invoked. Its state is kept, and
+// messages it sent before dying are still delivered. Killing a dead actor is a no-op.
+func (s *Simulator) KillActor(actorID int) error {
+	if s.actors[actorID] == nil {
+		return ErrActorNotFound
+	}
+	if s.dead[actorID] {
+		return nil
+	}
+	s.dead[actorID] = true
+	s.emit(EventActorKilled, ActorKilledPayload{ActorID: actorID})
+	return nil
+}
+
+// ReviveActor lets a killed actor take part in the simulation again, with the
+// state it had when killed. If the actor implements Reviver, its OnRevive is
+// called. Reviving a live actor is a no-op.
+func (s *Simulator) ReviveActor(actorID int) (err error) {
+	actor := s.actors[actorID]
+	if actor == nil {
+		return ErrActorNotFound
+	}
+	if !s.dead[actorID] {
+		return nil
+	}
+	delete(s.dead, actorID)
+	s.emit(EventActorRevived, ActorRevivedPayload{ActorID: actorID})
+
+	if reviver, ok := actor.(Reviver); ok {
+		defer recoverActorPanic("OnRevive", &err)
+		reviver.OnRevive()
+		// OnRevive may have changed actor state outside a tick.
+		s.emit(EventSnapshot, s.GetSnapshot())
+	}
+	return nil
+}
+
+// recoverActorPanic turns a panic in actor code into an error, so a bug in a
+// user's actor doesn't take down the simulator. Use it as
+// `defer recoverActorPanic(name, &err)` in a function with a named error result.
+func recoverActorPanic(name string, err *error) {
+	if r := recover(); r != nil {
+		*err = fmt.Errorf("%s panicked: %v", name, r)
 	}
 }
 
@@ -389,6 +439,13 @@ func (s *Simulator) deliverMessage(msg Message) {
 		return
 	}
 	s.deliveredIDs[msg.ID] = true
+	if s.dead[msg.To] {
+		s.emit(EventMessageDropped, MessageDroppedPayload{
+			MessageID: msg.ID,
+			Reason:    fmt.Sprintf("actor %d is dead", msg.To),
+		})
+		return
+	}
 	s.history = append(s.history, msg)
 	s.emit(EventMessageDelivered, MessageDeliveredPayload{
 		MessageID: msg.ID,

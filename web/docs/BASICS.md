@@ -13,6 +13,14 @@ You can see the state and methods of an actor by pressing the icons at the top o
 Through this box you can also modify the state by pressing the small pencil next to a field,
 or run a method by pressing the small arrow.
 
+## Killing and reviving actors
+Press **Kill** in an actor's box to simulate a crash. A dead actor is shown in grey. Messages that
+arrive at it are dropped, and it can't send messages or run methods. Messages it sent before
+dying still arrive. Its state is kept, and you can still edit it.
+
+Press **Revive** to bring it back with the state it had. If the actor has an `OnRevive()` method,
+it is called as the actor comes back, which you can use to reset state a real node would lose in a crash.
+
 ## Ticks
 The simulator is built on a "tick" system, like you might see in a video game.
 Ticks serve as the smallest unit of time in the simulation.
@@ -98,8 +106,17 @@ A `json` struct tag changes the name a field is shown under, and `json:"-"` hide
 Editing supports strings, numbers and booleans.
 
 ## Methods
-Exported methods (other than `ID`, `Init` and `OnMessage`) can be run from the visualizer.
+Exported methods (other than `ID`, `Init`, `OnMessage` and `OnRevive`) can be run from the visualizer.
 Arguments of type string, number or bool are supported. If the last return value is an `error`, it is shown when it is not `nil`.
+
+## Reviving
+An actor can optionally implement `OnRevive()`. It's called when the actor is revived after being killed:
+
+```go
+func (a *PingActor) OnRevive() {
+    a.PingsReceived = 0 // state kept only in memory is lost in a crash
+}
+```
 
 ## Sending messages
 `sim.Send(from, to, payload)` puts a message in transit from actor `from` to actor `to`.

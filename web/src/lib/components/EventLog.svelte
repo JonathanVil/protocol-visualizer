@@ -13,12 +13,18 @@
                 const p = event.payload;
                 return `Delivered ${formatValue(p.payload)} from actor ${p.from} to actor ${p.to}`;
             }
-            case 'message.dropped':
-                return `Dropped message ${event.payload.messageId}`;
+            case 'message.dropped': {
+                const {messageId, reason} = event.payload;
+                return reason ? `Dropped message ${messageId}: ${reason}` : `Dropped message ${messageId}`;
+            }
             case 'message.delayed':
                 return `Delayed message ${event.payload.messageId} until tick ${event.payload.newDeliverTick}`;
             case 'actor.spawned':
                 return `Spawned ${event.payload.typeName} actor ${event.payload.actorId}`;
+            case 'actor.killed':
+                return `Killed actor ${event.payload.actorId}`;
+            case 'actor.revived':
+                return `Revived actor ${event.payload.actorId}`;
             case 'actor.fieldChanged': {
                 const p = event.payload;
                 return `Set ${p.field} = ${formatValue(p.value)} on actor ${p.actorId}`;

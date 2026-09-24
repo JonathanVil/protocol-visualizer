@@ -8,6 +8,7 @@ var (
 	ErrMessageNotFound         = errors.New("message not found")
 	ErrMessageAlreadyDelivered = errors.New("message already delivered")
 	ErrActorNotFound           = errors.New("actor not found")
+	ErrActorDead               = errors.New("actor is dead")
 	ErrFieldNotFound           = errors.New("field not found")
 	ErrMethodNotFound          = errors.New("method not found")
 	ErrInvalidArgument         = errors.New("invalid argument")
@@ -21,6 +22,8 @@ func GetCode(err error) string {
 		return "MESSAGE_ALREADY_DELIVERED"
 	case errors.Is(err, ErrActorNotFound):
 		return "ACTOR_NOT_FOUND"
+	case errors.Is(err, ErrActorDead):
+		return "ACTOR_DEAD"
 	case errors.Is(err, ErrFieldNotFound):
 		return "FIELD_NOT_FOUND"
 	case errors.Is(err, ErrMethodNotFound):

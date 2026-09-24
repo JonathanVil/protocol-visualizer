@@ -71,6 +71,14 @@ type ActorSetFieldPayload struct {
 	Value   any    `json:"value"`
 }
 
+type ActorKillPayload struct {
+	ActorID int `json:"actorId"`
+}
+
+type ActorRevivePayload struct {
+	ActorID int `json:"actorId"`
+}
+
 type ActorInvokePayload struct {
 	ActorID int    `json:"actorId"`
 	Method  string `json:"method"`

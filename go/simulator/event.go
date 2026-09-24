@@ -9,6 +9,8 @@ const (
 	EventMessageDelayed     EventType = "message.delayed"
 	EventActorSpawned       EventType = "actor.spawned"
 	EventActorFieldChanged  EventType = "actor.fieldChanged"
+	EventActorKilled        EventType = "actor.killed"
+	EventActorRevived       EventType = "actor.revived"
 	EventSimSettingsChanged EventType = "sim.settingsChanged"
 	EventSnapshot           EventType = "snapshot"
 )
@@ -39,6 +41,7 @@ type MessageDeliveredPayload struct {
 
 type MessageDroppedPayload struct {
 	MessageID string `json:"messageId"`
+	Reason    string `json:"reason,omitempty"` // set when the simulator, not a user, dropped it
 }
 
 type MessageDelayedPayload struct {
@@ -49,6 +52,14 @@ type MessageDelayedPayload struct {
 type ActorSpawnedPayload struct {
 	ActorID  int    `json:"actorId"`
 	TypeName string `json:"typeName"`
+}
+
+type ActorKilledPayload struct {
+	ActorID int `json:"actorId"`
+}
+
+type ActorRevivedPayload struct {
+	ActorID int `json:"actorId"`
 }
 
 type ActorFieldChangedPayload struct {

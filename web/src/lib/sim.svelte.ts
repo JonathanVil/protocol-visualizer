@@ -17,6 +17,7 @@ export interface Actor {
 	typeName: string;
 	fields: Record<string, unknown>;
 	methods: MethodInfo[];
+	alive: boolean;
 }
 
 export interface InTransitMsg {
@@ -58,10 +59,16 @@ export type SimEvent = { seq: number; tick: number } & (
 			type: 'message.delivered';
 			payload: { messageId: string; from: number; to: number; payload: unknown };
 	  }
-	| { type: 'message.dropped'; payload: { messageId: string } }
+	| {
+			type: 'message.dropped';
+			/** `reason` is set when the simulator, not a user, dropped the message. */
+			payload: { messageId: string; reason?: string };
+	  }
 	| { type: 'message.delayed'; payload: { messageId: string; newDeliverTick: number } }
 	| { type: 'actor.spawned'; payload: { actorId: number; typeName: string } }
 	| { type: 'actor.fieldChanged'; payload: { actorId: number; field: string; value: unknown } }
+	| { type: 'actor.killed'; payload: { actorId: number } }
+	| { type: 'actor.revived'; payload: { actorId: number } }
 	| { type: 'sim.settingsChanged'; payload: Settings }
 );
 
@@ -197,6 +204,14 @@ class Sim {
 		return this.send('actor.invoke', { actorId, method, args });
 	}
 
+	kill(actorId: number) {
+		return this.send('actor.kill', { actorId });
+	}
+
+	revive(actorId: number) {
+		return this.send('actor.revive', { actorId });
+	}
+
 	setTickDuration(tickDurationMs: number) {
 		return this.send('sim.setSpeed', { tickDurationMs });
 	}
@@ -241,8 +256,14 @@ class Sim {
 			case 'actor.spawned': {
 				const p = event.payload;
 				if (!this.actors.some((a) => a.id === p.actorId)) {
-					this.actors.push({ id: p.actorId, typeName: p.typeName, fields: {}, methods: [] });
+					this.actors.push({ id: p.actorId, typeName: p.typeName, fields: {}, methods: [], alive: true });
 				}
+				break;
+			}
+			case 'actor.killed':
+			case 'actor.revived': {
+				const actor = this.actors.find((a) => a.id === event.payload.actorId);
+				if (actor) actor.alive = event.type === 'actor.revived';
 				break;
 			}
 			case 'actor.fieldChanged': {

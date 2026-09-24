@@ -288,3 +288,45 @@ func TestIntegration_UnknownCommandError(t *testing.T) {
 		t.Fatalf("replyTo = %v, want c-99", frame["replyTo"])
 	}
 }
+
+func TestIntegration_KillAndRevive(t *testing.T) {
+	hs, sim := newTestServer(t)
+	sim.RegisterActorType(reflect.TypeFor[*testActor](), "test")
+	actor := sim.SpawnActor("test", -1)
+
+	conn, cancel := dialWS(t, hs)
+	defer cancel()
+	ctx, ctxCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer ctxCancel()
+
+	readFrame(t, ctx, conn) // consume snapshot
+
+	for _, cmd := range []struct{ command, event string }{
+		{"actor.kill", "actor.killed"},
+		{"actor.revive", "actor.revived"},
+	} {
+		if err := wsjson.Write(ctx, conn, map[string]any{
+			"id": "c-" + cmd.command, "type": cmd.command,
+			"payload": map[string]any{"actorId": actor.ID()},
+		}); err != nil {
+			t.Fatalf("write %s: %v", cmd.command, err)
+		}
+
+		sawAck, sawEvent := false, false
+		for !sawAck || !sawEvent {
+			f := readFrame(t, ctx, conn)
+			switch f["type"] {
+			case "ack":
+				sawAck = f["replyTo"] == "c-"+cmd.command
+			case "error":
+				t.Fatalf("%s: unexpected error %v", cmd.command, f)
+			case cmd.event:
+				payload, _ := f["payload"].(map[string]any)
+				if payload["actorId"] != float64(actor.ID()) {
+					t.Errorf("%s actorId = %v, want %d", cmd.event, payload["actorId"], actor.ID())
+				}
+				sawEvent = true
+			}
+		}
+	}
+}

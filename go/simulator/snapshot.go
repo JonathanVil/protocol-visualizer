@@ -11,6 +11,7 @@ type ActorSnapshot struct {
 	TypeName string         `json:"typeName"`
 	Fields   map[string]any `json:"fields"`
 	Methods  []MethodInfo   `json:"methods"`
+	Alive    bool           `json:"alive"`
 }
 
 type MessageSnapshot struct {
@@ -47,6 +48,7 @@ func (s *Simulator) GetSnapshot() Snapshot {
 			TypeName: s.actorTypeNames[a.ID()],
 			Fields:   fields,
 			Methods:  actorMethods(a),
+			Alive:    !s.dead[a.ID()],
 		})
 	}
 	slices.SortFunc(actors, func(a, b ActorSnapshot) int { return a.ID - b.ID })

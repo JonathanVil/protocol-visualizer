@@ -81,6 +81,12 @@
         sim.setField(actor.id, key, newValue).catch(notifyError);
     }
 
+    function toggleAlive(event: MouseEvent) {
+        event.stopPropagation();
+        if (!actor) return;
+        (actor.alive ? sim.kill(actor.id) : sim.revive(actor.id)).catch(notifyError);
+    }
+
     let selectedMethod = $state<MethodInfo | null>(null);
 
     /** Result of the most recent method call, shown under the method list. */
@@ -140,11 +146,16 @@
 
         <div class="pr-6">
             <div class="flex flex-row items-center gap-28">
-                <div class="mb-0.5 font-semibold opacity-90">Actor {actor.id} ({actor.typeName})</div>
-                <button class="bg-blue-600 text-white rounded w-13 h-5 text-xs flex text-center justify-center items-center opacity-50 cursor-not-allowed"
-                        disabled
-                        title="Killing actors is not supported by the Go simulator yet">
-                    Kill
+                <div class="mb-0.5 font-semibold opacity-90">
+                    Actor {actor.id} ({actor.typeName}){#if !actor.alive}<span class="ml-1 text-red-300">· dead</span>{/if}
+                </div>
+                <button class="bg-blue-600 text-white rounded hover:bg-blue-700 w-15 h-5 text-xs flex text-center justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={!sim.connected}
+                        title={actor.alive
+                            ? 'Kill: the actor drops incoming messages and can no longer send or run methods'
+                            : 'Revive: the actor takes part in the simulation again'}
+                        onclick={toggleAlive}>
+                    {actor.alive ? 'Kill' : 'Revive'}
                 </button>
             </div>
 
@@ -187,9 +198,10 @@
 
                             <button
                                     type="button"
-                                    class="ml-1 inline-flex h-5 w-5 items-center justify-center rounded text-white/70 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                                    class="ml-1 inline-flex h-5 w-5 items-center justify-center rounded text-white/70 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                                     aria-label={"Run " + method.name}
-                                    title={"Run " + method.name}
+                                    title={actor.alive ? "Run " + method.name : "Dead actors can't run methods"}
+                                    disabled={!actor.alive}
                                     onclick={() => selectedMethod = method}
                             >
                                 <i class="fa fa-play"></i>
@@ -203,7 +215,7 @@
                         <p class="mt-1 opacity-70">{lastResult}</p>
                     {/if}
 
-                    {#if selectedMethod}
+                    {#if selectedMethod && actor.alive}
                         {@const method = selectedMethod}
                         {#key method.name}
                             <RunActorMethod run={(args) => runMethod(method.name, args)} cancel={() => selectedMethod = null} methodName={method.name} argumentTypes={method.args} />

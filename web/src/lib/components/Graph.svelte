@@ -143,6 +143,12 @@
                     }
                 },
                 {
+                    selector: 'node.actor.dead',
+                    style: {
+                        'background-color': '#525252',
+                    }
+                },
+                {
                     selector: 'edge',
                     style: {
                         width: 2,
@@ -202,6 +208,10 @@
                     graph.add({group: 'edges', data: {id: `${other.id()}-${id}`, source: other.id(), target: id}});
                 });
                 changed = true;
+            }
+
+            for (const actor of sim.actors) {
+                graph.getElementById(String(actor.id)).toggleClass('dead', !actor.alive);
             }
         });
 

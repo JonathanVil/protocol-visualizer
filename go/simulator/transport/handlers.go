@@ -61,6 +61,14 @@ func registerHandlers(sim *simulator.Simulator, reg map[string]Handler) {
 		return sim.InvokeActor(p.ActorID, p.Method, p.Args)
 	})
 
+	Register(reg, "actor.kill", func(p frames.ActorKillPayload) (any, error) {
+		return nil, sim.KillActor(p.ActorID)
+	})
+
+	Register(reg, "actor.revive", func(p frames.ActorRevivePayload) (any, error) {
+		return nil, sim.ReviveActor(p.ActorID)
+	})
+
 	// --- Sim settings ---
 
 	Register(reg, "sim.setSpeed", func(p frames.SimSetSpeedPayload) (any, error) {
